@@ -1,0 +1,3 @@
+# Data files must never be committed
+*.h5
+*.hdf5
