@@ -1,0 +1,60 @@
+"""Stage 1: pretrain an encoder per seed and store its representations (D10).
+
+Usage:
+    uv run python scripts/pretrain.py configs/ts2vec_forda.yaml
+
+Creates runs/<date_time>_<name>/ and, per seed, seed_<k>/ containing the model,
+the representations of the training and test series, and the training loss.
+Only training inputs are used for pretraining; test inputs never are.
+"""
+
+import os
+import sys
+
+import numpy as np
+import torch
+
+from harness import runs
+from harness.data import canonical
+from harness.methods import ts2vec
+
+METHODS = {"ts2vec": ts2vec}
+
+
+def load_split(cfg, meta, split):
+    """Inputs and class labels of one official split."""
+    caps = meta["captures"][meta["captures"].official_split == split]
+    X = canonical.load_captures(cfg["data_root"], cfg["dataset"], cfg["run_id"], caps.capture_id, cfg["channels"])
+    return X, caps.label.to_numpy()
+
+
+def main(config_path):
+    cfg = runs.load_config(config_path)
+    folder = runs.new_run_dir(config_path, cfg)
+    method = METHODS[cfg["method"]]
+
+    meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
+    X_train, labels_train = load_split(cfg, meta, "train")
+    X_test, labels_test = load_split(cfg, meta, "test")
+    # Class labels -> 0..K-1, ordered as in the training set (as TS2Vec does).
+    classes = np.unique(labels_train)
+    y_train, y_test = np.searchsorted(classes, labels_train), np.searchsorted(classes, labels_test)
+
+    for seed in cfg["seeds"]:
+        print(f"seed {seed}: pretraining on {len(X_train)} training series", flush=True)
+        out = os.path.join(folder, f"seed_{seed}")
+        os.makedirs(out)
+        runs.set_seed(seed)
+        model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
+        model.save(os.path.join(out, "model.pt"))
+        np.save(os.path.join(out, "Z_train.npy"), method.encode(model, X_train))
+        np.save(os.path.join(out, "Z_test.npy"), method.encode(model, X_test))
+        np.save(os.path.join(out, "y_train.npy"), y_train)
+        np.save(os.path.join(out, "y_test.npy"), y_test)
+        runs.save_json(os.path.join(out, "loss.json"), [float(x) for x in loss_log])
+    print(f"Done: {folder}")
+
+
+if __name__ == "__main__":
+    torch.set_num_threads(os.cpu_count())
+    main(sys.argv[1])

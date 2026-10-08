@@ -6,3 +6,19 @@ Evaluation tasks, protocols, probes and metrics. Index: `../DECISIONS.md`.
 **Decision:** Not every test is run for every method. Each test must answer a stated research question. Tasks (regression, classification, anomaly detection) follow from each dataset's labels; protocols (frozen probe, fine-tuning, transfer to an unseen domain) are used only where they answer a question (e.g. fine-tuning where comparison with published results requires it; transfer only on datasets built for it). Within a study, the test grid is fixed in the study plan before running, and every method fills every cell; a cell a method cannot run is reported as missing with the reason, never dropped. The grid is built incrementally: comparisons are added only when shown to be necessary. The Step 1 grid discussed on 2026-10-06 is preliminary and not decided.
 **Alternatives considered:** Running every task and protocol for every method and dataset (full factorial; hundreds of runs, most answering no specific question). Choosing tests per method (invites cherry-picking).
 **Rationale:** Keeps comparisons fair and the number of runs proportionate to the questions asked.
+
+## 2026-10-07 — D26: Evaluation protocol for the first slice (TS2Vec on FordA)
+**Decision:**
+1. *Two probes on the same frozen representations* (one 320-dimensional vector per series, max-pooled over time as in TS2Vec). (a) Reproduction check: TS2Vec's own protocol — RBF-kernel SVM, C chosen by 5-fold cross-validation on the training set over 10⁻⁴…10⁴ and ∞ (exactly as in the official code). (b) Harness probe: logistic regression with L2 regularisation on features standardised with training-set statistics, C chosen by 5-fold cross-validation on the training set over 10⁻⁴…10⁴.
+2. *Test set used once.* All choices (probe C) are made by cross-validation inside the training set. No checkpoint selection: TS2Vec trains for a fixed number of iterations.
+3. *Metrics:* accuracy and macro-F1.
+4. *Seeds:* 3. The seed controls TS2Vec's initialisation and random crops; probes are deterministic.
+5. *Label budgets:* 1 %, 10 % and 100 % of the training labels for the probes. Pretraining always uses all training inputs (without labels).
+6. *Reproduction criterion:* the published 0.936 accuracy (TS2Vec paper, batch size 8) must lie within our mean ± 2 standard deviations over seeds; if the spread is very small, a difference of up to 1 percentage point is accepted. If it fails, investigate before going further.
+**Alternatives considered:** Only the plan's logistic-regression probe (no comparison with the published number). TS2Vec's own logistic regression (no tuning of C). 100 % labels only (label budgets deferred).
+**Rationale:** (a) validates our wrapped TS2Vec against the published result (D10); (b) is the harness's standard probe from the research plan. Choosing everything inside the training set keeps the test set clean.
+
+## 2026-10-07 — D29: Label subsets and probe cross-validation details
+**Decision:** For label budgets below 100 %, a new stratified random subset of the training labels is drawn for each seed (using that seed), so the spread over seeds includes the effect of which labels were drawn. The logistic-regression probe chooses C by cross-validated accuracy (scikit-learn's default scoring for classifiers), with `max_iter=10000` so the solver converges.
+**Alternatives considered:** One fixed subset per label budget shared by all seeds (spread would reflect only pretraining randomness). Macro-F1 as the cross-validation score.
+**Rationale:** Reported spread reflects both sources of randomness a user of the method would face; accuracy matches the reproduction metric.

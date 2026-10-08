@@ -23,6 +23,7 @@ Ingestion, canonical storage and metadata. Index: `../DECISIONS.md`.
 **Rationale:** Keeps dataset-specific code small; every transformation lives in shared, configurable pipeline stages.
 
 ## 2026-09-30 — D5: No transformation at ingestion; immutable canonical data
+**Status:** Checksum part superseded by D24 (2026-10-07).
 **Decision:** Values are stored as recorded, with units and calibration in metadata. No scaling, filtering or resampling at ingestion; all transformations are transparent, configurable pipeline steps. Canonical data is immutable and tagged with a checksum of its source files.
 **Alternatives considered:** Normalising or resampling during conversion.
 **Rationale:** Preprocessing choices are experimental variables and must be visible and reversible; checksums tie every result to its exact source data.
@@ -46,3 +47,18 @@ Ingestion, canonical storage and metadata. Index: `../DECISIONS.md`.
 **Decision:** Signal datasets in canonical HDF5 files are chunked in blocks of 16,384 samples.
 **Alternatives considered:** 4,096; 65,536; 250,000; 500,000 (whole sweep). Tested on 40 Herning sweeps (int16, gzip level 4): size 0.51–0.55 MB per sweep for all; random 4,096-sample window reads 0.14–2.2 ms; whole-sweep reads 2.3–3.1 ms.
 **Rationale:** Best balance in the test: fast reads of short windows, near-minimal file size, whole-sweep reads only marginally slower. Chunk size does not affect stored values, only size and speed.
+
+## 2026-10-07 — D23: Compression and loaded data type
+**Decision:** Canonical HDF5 signal datasets use gzip compression level 4 (lossless). `load_signal` returns physical values (e.g. volts) as 64-bit floats; conversion to 32-bit for training is an explicit step in the training code.
+**Alternatives considered:** lzf compression (faster, larger, essentially Python-only); no compression (about 6× larger). Returning 32-bit floats from the loader (halves memory, but rounds values at load time as a hidden transformation).
+**Rationale:** gzip is readable by every HDF5 tool and gave about 0.5 MB per sweep in the D21 test; exact values at load keep every transformation visible (D5).
+
+## 2026-10-07 — D24: Source files identified by name, size and modification time
+**Decision:** Each converted run records the source file's name, size in bytes and modification time, instead of a full checksum. Supersedes the checksum part of D5.
+**Alternatives considered:** Full SHA-256 checksum (detects any change, but reads the whole file: minutes for 38.8 GB). Checksum of the first and last 100 MB (about a second; misses edits in the middle). Source file name only (no detection of replaced files).
+**Rationale:** Instant, and detects re-exports and most replacements; a file edited without changing its size or modification time is unlikely.
+
+## 2026-10-07 — D31: Datasets may add per-capture columns to the captures table
+**Decision:** Besides the fixed captures columns (D2), a dataset may add its own per-capture columns, such as class labels or official splits (first used for FordA, D30).
+**Alternatives considered:** A separate table for labels and splits.
+**Rationale:** Simplest way to keep per-capture facts filterable; extends D2.
