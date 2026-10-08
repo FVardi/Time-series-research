@@ -47,3 +47,18 @@ def new_run_dir(config_path, config):
 def save_json(path, obj):
     with open(path, "w") as f:
         json.dump(obj, f, indent=2)
+
+
+def check_no_overlap(windows):
+    """Stop if any capture is used both for training (incl. pretraining) and for testing (D33).
+
+    windows: the run's window table, with columns split, run_id and capture_id.
+    Captures are compared as (run_id, capture_id), because capture IDs are only unique within a run.
+    """
+    def captures(split):
+        rows = windows[windows.split == split]
+        return set(zip(rows.run_id, rows.capture_id))
+
+    shared = captures("train") & captures("test")
+    if shared:
+        raise ValueError(f"{len(shared)} captures are in both training and test, e.g. {sorted(shared)[:5]}")

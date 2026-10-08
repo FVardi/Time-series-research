@@ -36,3 +36,9 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Decision:** Flat layout: `harness/` (library: `data/` with one reader per dataset and `canonical.py`, `windows.py`, `targets.py`, `methods/` with one file per method, `evaluate.py`, `runs.py`), `scripts/` (small entry points), `configs/` (YAML), `external/` (official method repositories, D19), `studies/<name>/` (D11), `tests/`, `runs/` and `data/` (`raw/`, `canonical/`; both not committed). Files and folders are created only when first needed.
 **Alternatives considered:** The "src layout" (`src/harness/`): guards against some import mistakes, but adds a folder level with little gain for a single-user project.
 **Rationale:** Small, flat and readable; each file has one clear job.
+
+## 2026-10-08 — D33: Representations saved with a window table; overlap check before pretraining
+**Decision:** Every run writes `windows.csv` in its run folder, with one row per stored representation: `split`, `row` (row in `Z_<split>.npy`), `run_id`, `capture_id`, `channels`, `start`, `stop` (samples, stop exclusive). The table is the same for all seeds, so it is written once per run. Before pretraining, the run stops with an error if any (run, capture) is in both the training and the test set.
+**Alternatives considered:** Rows of `Z` matched to labels by position only (the previous behaviour; any target not saved at pretraining time would need the encoder re-run, or would rely on the loader always returning rows in the same order).
+**Rationale:** Step 2 probes the same representations for targets that do not exist yet (band energies of the same window, speed, temperature, operating condition); with the table, each is a lookup through the reader. It also allows error breakdowns per recording or bearing, and enforces in code that no test capture is used for pretraining. The check works at capture level; a stricter unit (recording, bearing) is part of each dataset's split decision.
+

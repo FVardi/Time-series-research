@@ -12,6 +12,7 @@ import os
 import sys
 
 import numpy as np
+import pandas as pd
 import torch
 
 from harness import runs
@@ -22,10 +23,28 @@ METHODS = {"ts2vec": ts2vec, "tloss": tloss}
 
 
 def load_split(cfg, meta, split):
-    """Inputs and class labels of one official split."""
+    """Inputs, class labels and capture IDs of one official split."""
     caps = meta["captures"][meta["captures"].official_split == split]
     X = canonical.load_captures(cfg["data_root"], cfg["dataset"], cfg["run_id"], caps.capture_id, cfg["channels"])
-    return X, caps.label.to_numpy()
+    return X, caps.label.to_numpy(), caps.capture_id.to_numpy()
+
+
+def window_table(cfg, split, capture_ids, n_samples):
+    """Which data each representation was computed from (D33).
+
+    Row i of Z_<split>.npy belongs to the row of this table with this split and row == i.
+    Here every input is a whole capture, so start = 0 and stop = its length
+    (stop is exclusive, as in canonical.load_signal).
+    """
+    return pd.DataFrame({
+        "split": split,
+        "row": np.arange(len(capture_ids)),
+        "run_id": cfg["run_id"],
+        "capture_id": capture_ids,
+        "channels": ";".join(cfg["channels"]),
+        "start": 0,
+        "stop": n_samples,
+    })
 
 
 def main(config_path):
@@ -34,8 +53,15 @@ def main(config_path):
     method = METHODS[cfg["method"]]
 
     meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
-    X_train, labels_train = load_split(cfg, meta, "train")
-    X_test, labels_test = load_split(cfg, meta, "test")
+    X_train, labels_train, ids_train = load_split(cfg, meta, "train")
+    X_test, labels_test, ids_test = load_split(cfg, meta, "test")
+
+    # Record where every representation comes from, and stop if a test capture
+    # would be used for pretraining (D33). The table is the same for all seeds.
+    windows = pd.concat([window_table(cfg, "train", ids_train, X_train.shape[1]),
+                         window_table(cfg, "test", ids_test, X_test.shape[1])], ignore_index=True)
+    runs.check_no_overlap(windows)
+    windows.to_csv(os.path.join(folder, "windows.csv"), index=False)
     # Class labels -> 0..K-1, ordered as in the training set (as TS2Vec does).
     classes = np.unique(labels_train)
     y_train, y_test = np.searchsorted(classes, labels_train), np.searchsorted(classes, labels_test)
@@ -53,6 +79,8 @@ def main(config_path):
         np.save(os.path.join(out, "y_test.npy"), y_test)
         runs.save_json(os.path.join(out, "loss.json"), [float(x) for x in loss_log])
     print(f"Done: {folder}")
+    # The next step, ready to copy (forward slashes work in PowerShell too).
+    print(f"Next: uv run python scripts/evaluate.py {folder.replace(os.sep, '/')}")
 
 
 if __name__ == "__main__":

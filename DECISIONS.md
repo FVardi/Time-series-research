@@ -38,6 +38,8 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D30 | 2026-10-07 | FordA metadata | [decisions/datasets/forda.md](decisions/datasets/forda.md) |
 | D31 | 2026-10-07 | Datasets may add per-capture columns to the captures table | [decisions/data.md](decisions/data.md) |
 | D32 | 2026-10-08 | T-Loss on FordA | [decisions/training.md](decisions/training.md) |
+| D33 | 2026-10-08 | Representations saved with a window table; overlap check before pretraining | [decisions/repo.md](decisions/repo.md) |
+| D34 | 2026-10-08 | Change detection is not used as a test | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

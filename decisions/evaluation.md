@@ -22,3 +22,9 @@ Evaluation tasks, protocols, probes and metrics. Index: `../DECISIONS.md`.
 **Decision:** For label budgets below 100 %, a new stratified random subset of the training labels is drawn for each seed (using that seed), so the spread over seeds includes the effect of which labels were drawn. The logistic-regression probe chooses C by cross-validated accuracy (scikit-learn's default scoring for classifiers), with `max_iter=10000` so the solver converges.
 **Alternatives considered:** One fixed subset per label budget shared by all seeds (spread would reflect only pretraining randomness). Macro-F1 as the cross-validation score.
 **Rationale:** Reported spread reflects both sources of randomness a user of the method would face; accuracy matches the reproduction metric.
+
+## 2026-10-08 — D34: Change detection is not used as a test
+**Decision:** Unsupervised change detection (is the bearing still in its reference state?) is not one of the harness's evaluation tasks. Lubrication condition is evaluated through supervised targets (e.g. κ, discrete lubrication conditions, Stribeck regions, degradation mechanisms), whichever is chosen once the data allow it.
+**Alternatives considered:** Change detection as a fourth task type alongside regression, classification and ordinal classification (needs no labels; would fit unlabelled field data).
+**Rationale:** User's decision (2026-10-08).
+
