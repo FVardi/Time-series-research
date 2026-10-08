@@ -1,0 +1,31 @@
+# TF-C, official 2023 code, FD-A -> FD-B (D35 step 1, D36-D39).
+# Every setting is written out; nothing is filled in by our code.
+name: tfc_official_fd
+dataset: fd
+source_run: fd_a  # pretraining data (its 'train' split)
+target_run: fd_b  # fine-tuning (train), validation (val) and test (test)
+channels: [x]
+data_root: data/canonical
+seeds: [0, 1, 2, 3, 4]  # D38
+device: cuda  # the official frequency augmentation only runs on a GPU
+
+tfc_official:
+  subset: false  # D37; the official main.py hard-codes True (debugging subset)
+  weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimizers
+  official_config:  # checked against external/tfc/code/config_files/FD_A_Configs.py; a difference stops the run
+    num_epoch: 40  # used for both pretraining and fine-tuning
+    batch_size: 64  # pretraining batch
+    target_batch_size: 60  # fine-tuning batch (= all 60 FD-B training windows)
+    lr: 0.0003
+    beta1: 0.9
+    beta2: 0.99
+    drop_last: true
+    TSlength_aligned: 5120  # window length; also the Transformer's width
+    num_classes_target: 3
+    Context_Cont.temperature: 0.2
+    Context_Cont.use_cosine_similarity: true
+    augmentation.jitter_ratio: 0.1
+
+evaluation:  # D38
+  published_accuracy: 0.8934  # TF-C paper (arXiv 2206.08496), Table 5, FD-A -> FD-B, 5 runs
+  published_macro_f1: 0.9162

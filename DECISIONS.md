@@ -40,6 +40,17 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D32 | 2026-10-08 | T-Loss on FordA | [decisions/training.md](decisions/training.md) |
 | D33 | 2026-10-08 | Representations saved with a window table; overlap check before pretraining | [decisions/repo.md](decisions/repo.md) |
 | D34 | 2026-10-08 | Change detection is not used as a test | [decisions/evaluation.md](decisions/evaluation.md) |
+| D35 | 2026-10-08 | TF-C study sequence: reproduce, full Paderborn, own corrected version, possibly FordA | [decisions/training.md](decisions/training.md) |
+| D36 | 2026-10-08 | Official TF-C reference = 2023 code (commit 9667582); our own corrected TF-C alongside | [decisions/training.md](decisions/training.md) |
+| D37 | 2026-10-08 | Official TF-C run without debugging subset; official and clean protocol reported | [decisions/training.md](decisions/training.md) |
+| D38 | 2026-10-08 | TF-C reproduction target (FD-A → FD-B, 0.8934) and 5 seeds | [decisions/training.md](decisions/training.md) |
+| D39 | 2026-10-08 | FD-A and FD-B used as distributed by the TF-C authors | [decisions/datasets/fd.md](decisions/datasets/fd.md) |
+| D40 | 2026-10-08 | Label budgets 1 %, 10 % and 100 % throughout Part 1 | [decisions/evaluation.md](decisions/evaluation.md) |
+| D41 | 2026-10-08 | Design of our own TF-C (paper CNN and loss, corrected symmetric frequency augmentation, selection by validation F1); time-augmentation parameters open | [decisions/training.md](decisions/training.md) |
+| D42 | 2026-10-08 | Our TF-C time augmentations: jitter, scaling, permutation (no time shift) | [decisions/training.md](decisions/training.md) |
+| D43 | 2026-10-08 | Official TF-C clean protocol selects by validation macro-F1 (supersedes part of D37) | [decisions/training.md](decisions/training.md) |
+| D44 | 2026-10-08 | Official TF-C divergence recorded per seed; extra run with the debugging subset | [decisions/training.md](decisions/training.md) |
+| D45 | 2026-10-08 | Frozen-probe diagnostic of our TF-C encoders on FD-B (100 % labels, untrained reference) | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

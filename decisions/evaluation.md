@@ -28,3 +28,12 @@ Evaluation tasks, protocols, probes and metrics. Index: `../DECISIONS.md`.
 **Alternatives considered:** Change detection as a fourth task type alongside regression, classification and ordinal classification (needs no labels; would fit unlabelled field data).
 **Rationale:** User's decision (2026-10-08).
 
+## 2026-10-08 — D40: Label budgets 1 %, 10 % and 100 % throughout Part 1
+**Decision:** All Part 1 tests use the three label budgets 1 %, 10 % and 100 % of the training labels for the probes, as in D26 for the first slice; subsets drawn as in D29.
+**Alternatives considered:** Fewer budgets outside the FordA slice (fewer runs, but less information on label efficiency, the main argument for SSL).
+**Rationale:** User's decision (2026-10-08).
+
+## 2026-10-08 — D45: Frozen-probe diagnostic of our TF-C encoders on FD-B
+**Decision:** Diagnostic (`scripts/probe_tfc.py`, `configs/probe_tfc_fd.yaml`): the pretrained encoders of our TF-C run (D41, D42; run `20261008_142751_tfc_fd`, 5 seeds) are frozen; their representation [z_T; z_F] is probed with both harness probes (D26) trained on the 60 FD-B training windows and scored once on the FD-B test set. Label budget: 100 % only, as an exception to D40 for this dataset: 1 % of 60 labels is less than one window, and 10 % (2 per class) is too few for the logistic-regression probe's 5-fold cross-validation. Reference: an untrained encoder of the same architecture, initialised with the same seeds, probed the same way.
+**Alternatives considered:** 100 % and 10 % with only the SVM probe at 10 %. A different cross-validation rule for small label sets. No untrained reference (then it cannot be told whether pretraining helped).
+**Rationale:** User's decision (2026-10-08). Separates "pretraining learned little" from "fine-tuning too short or selection too noisy" (our TF-C: 0.706 ± 0.112 accuracy vs 0.893 published), without new training.

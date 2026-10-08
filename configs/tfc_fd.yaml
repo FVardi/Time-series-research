@@ -1,0 +1,54 @@
+# TF-C, our implementation (D41), FD-A -> FD-B. Same data, splits and seeds as
+# configs/tfc_official_fd.yaml (D38, D39). Every setting is written out; nothing is
+# filled in by the code. 'null' marks an open placeholder: the run refuses to start.
+name: tfc_fd
+dataset: fd
+source_run: fd_a  # pretraining data (its 'train' split)
+target_run: fd_b  # fine-tuning (train), epoch selection (val), test (test)
+channels: [x]
+data_root: data/canonical
+seeds: [0, 1, 2, 3, 4]  # D38
+device: cuda
+
+tfc:
+  encoder:  # D41 item 1: the paper's CNN, both branches
+    channels: [32, 64, 128]  # paper
+    kernel_size: 8  # paper
+    strides: [8, 1, 1]  # paper
+    padding: 4  # not in paper; 2022 code (kernel_size // 2)
+    pool_padding: 1  # not in paper; 2022 code
+    conv_bias: false  # not in paper; 2022 code
+    dropout_block1: 0.35  # not in paper; 2022 code (dropout after the first block only)
+    projector: [256, 128]  # paper
+  classifier:
+    hidden: 64  # paper; sigmoid between the two layers as in the code
+  loss:  # D41 item 4, paper
+    temperature: 0.2
+    lambda: 0.5
+    delta: 1.0
+  freq_aug:  # D41 item 3 (user's design), paper values
+    n_components: 1  # E
+    alpha: 0.5
+  time_aug:  # D42: one of three per window (2022 code's set)
+    jitter_sigma: 0.1  # noise standard deviation; official code (FD_A config jitter_ratio)
+    scaling_mean: 1.0  # one factor per window from N(mean, sigma); our choice, approved in D42 (not from paper or code)
+    scaling_sigma: 0.1  # our choice, approved in D42 (not from paper or code)
+    max_segments: 5  # M: permutation into 1 .. M segments (TS-TCC's description); M from the official code (max_seg)
+  pretrain:  # D41 item 5
+    epochs: 40  # paper
+    batch_size: 64  # paper
+    drop_last: true  # code; NT-Xent batches of equal size
+    lr: 0.0003  # paper
+    betas: [0.9, 0.99]  # code (paper silent)
+    weight_decay: 0.0005  # paper
+  finetune:  # D41 item 6: same settings as pretraining (paper)
+    epochs: 40
+    batch_size: 60  # all 60 FD-B training windows in one batch (as the code)
+    drop_last: false
+    lr: 0.0003
+    betas: [0.9, 0.99]
+    weight_decay: 0.0005
+  eval_chunk: 512  # windows per forward pass when scoring; does not change results
+
+evaluation:
+  published_accuracy: 0.8934  # TF-C paper, Table 5 (D38)

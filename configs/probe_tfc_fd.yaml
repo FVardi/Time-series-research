@@ -1,0 +1,9 @@
+# Diagnostic (D45): frozen-encoder probes on the pretrained encoders of our TF-C run.
+name: probe_tfc_fd
+tfc_run: runs/20261008_142751_tfc_fd  # the finished tfc_ours run (FD-A pretraining, 5 seeds)
+device: cuda
+
+evaluation:
+  probes: [svm_ts2vec, logreg]  # D26
+  label_fractions: [1.0]  # D45: all 60 FD-B training labels (1 % and 10 % are too few here; exception to D40)
+  random_init_reference: true  # D45: also probe an untrained encoder of the same architecture, same seeds
