@@ -1,3 +1,6 @@
 [submodule "external/ts2vec"]
 	path = external/ts2vec
 	url = https://github.com/zhihanyue/ts2vec
+[submodule "external/tloss"]
+	path = external/tloss
+	url = https://github.com/White-Link/UnsupervisedScalableRepresentationLearningTimeSeries

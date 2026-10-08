@@ -37,6 +37,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D29 | 2026-10-07 | Label subsets and probe cross-validation details | [decisions/evaluation.md](decisions/evaluation.md) |
 | D30 | 2026-10-07 | FordA metadata | [decisions/datasets/forda.md](decisions/datasets/forda.md) |
 | D31 | 2026-10-07 | Datasets may add per-capture columns to the captures table | [decisions/data.md](decisions/data.md) |
+| D32 | 2026-10-08 | T-Loss on FordA | [decisions/training.md](decisions/training.md) |
 
 <!--
 Entry template:

@@ -4,18 +4,14 @@ The official code lives unmodified in external/ts2vec (git submodule,
 commit b0088e1). This file only calls it:
     pretrain(X, settings, device) -> trained model
     encode(model, X)              -> one vector per series
+    save(model, path)
 """
-
-import os
-import sys
 
 import numpy as np
 
-# The official code imports its own modules as top-level names ('from models import ...'),
-# so its folder must be on the import path.
-TS2VEC_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "external", "ts2vec")
-sys.path.insert(0, os.path.abspath(TS2VEC_DIR))
-from ts2vec import TS2Vec  # noqa: E402  (import after the path change above)
+from harness.methods.external import import_official
+
+TS2Vec = import_official("ts2vec", "ts2vec", local_names=("ts2vec", "models", "utils")).TS2Vec
 
 
 def pretrain(X, s, device):
@@ -39,6 +35,11 @@ def pretrain(X, s, device):
     # Conversion to 32-bit happens here, at training (D23).
     loss_log = model.fit(X.astype(np.float32), n_iters=s["n_iters"])
     return model, loss_log
+
+
+def save(model, path):
+    """Save the model weights (official method)."""
+    model.save(path)
 
 
 def encode(model, X):

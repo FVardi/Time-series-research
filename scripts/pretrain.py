@@ -16,9 +16,9 @@ import torch
 
 from harness import runs
 from harness.data import canonical
-from harness.methods import ts2vec
+from harness.methods import tloss, ts2vec
 
-METHODS = {"ts2vec": ts2vec}
+METHODS = {"ts2vec": ts2vec, "tloss": tloss}
 
 
 def load_split(cfg, meta, split):
@@ -46,7 +46,7 @@ def main(config_path):
         os.makedirs(out)
         runs.set_seed(seed)
         model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
-        model.save(os.path.join(out, "model.pt"))
+        method.save(model, os.path.join(out, "model"))
         np.save(os.path.join(out, "Z_train.npy"), method.encode(model, X_train))
         np.save(os.path.join(out, "Z_test.npy"), method.encode(model, X_test))
         np.save(os.path.join(out, "y_train.npy"), y_train)

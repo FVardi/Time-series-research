@@ -1,8 +1,8 @@
 """End-to-end check of the first slice on a tiny synthetic stand-in for FordA.
 
 Writes two small FordA-format files (two classes: sine vs noise), converts
-them, pretrains TS2Vec for a few iterations and runs both probes. This checks
-that the pieces fit together; it says nothing about TS2Vec's accuracy.
+them, pretrains each method for a few iterations and runs both probes. This checks
+that the pieces fit together; it says nothing about the methods' accuracy.
 """
 
 import glob
@@ -10,6 +10,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 import yaml
 
 from harness.data import canonical, forda
@@ -25,7 +26,14 @@ def write_fake_forda(folder, n, length=64, seed=0):
         np.savetxt(os.path.join(folder, f"FordA_{part}.tsv"), np.column_stack([labels, x]), delimiter="\t")
 
 
-def test_slice_end_to_end(tmp_path, monkeypatch):
+TINY = {  # small settings so the test runs in seconds
+    "ts2vec": dict(repr_dims=16, hidden_dims=8, depth=2, n_iters=5),
+    "tloss": dict(channels=4, depth=1, reduced_size=8, out_channels=16, nb_steps=5, nb_random_samples=2),
+}
+
+
+@pytest.mark.parametrize("method", ["ts2vec", "tloss"])
+def test_slice_end_to_end(tmp_path, monkeypatch, method):
     raw = tmp_path / "raw"
     raw.mkdir()
     write_fake_forda(raw, n=200)
@@ -38,11 +46,12 @@ def test_slice_end_to_end(tmp_path, monkeypatch):
     assert np.allclose(x0, np.loadtxt(raw / "FordA_TRAIN.tsv")[0, 1:])
 
     # A config like configs/ts2vec_forda.yaml, but tiny.
-    with open("configs/ts2vec_forda.yaml") as f:
+    with open(f"configs/{method}_forda.yaml") as f:
         cfg = yaml.safe_load(f)
     cfg["data_root"] = str(tmp_path / "canonical")
     cfg["seeds"] = [0, 1]
-    cfg["ts2vec"].update(repr_dims=16, hidden_dims=8, depth=2, n_iters=5)
+    cfg["device"] = "cpu"
+    cfg[method].update(TINY[method])
     cfg["evaluation"]["label_fractions"] = [0.1, 1.0]
     config_path = tmp_path / "config.yaml"
     config_path.write_text(yaml.safe_dump(cfg))
