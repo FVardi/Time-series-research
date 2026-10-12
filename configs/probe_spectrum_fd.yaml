@@ -1,0 +1,10 @@
+# Baseline (D46): harness probes on the plain |FFT| spectra of FD-B, no encoder.
+name: probe_spectrum_fd
+dataset: fd
+target_run: fd_b  # probes trained on its 'train' split (60 windows), scored on 'test'
+channels: [x]
+data_root: data/canonical
+
+evaluation:
+  probes: [svm_ts2vec, logreg]  # D26
+  label_fractions: [1.0]  # as D45: all 60 FD-B training labels

@@ -37,3 +37,53 @@ Evaluation tasks, protocols, probes and metrics. Index: `../DECISIONS.md`.
 **Decision:** Diagnostic (`scripts/probe_tfc.py`, `configs/probe_tfc_fd.yaml`): the pretrained encoders of our TF-C run (D41, D42; run `20261008_142751_tfc_fd`, 5 seeds) are frozen; their representation [z_T; z_F] is probed with both harness probes (D26) trained on the 60 FD-B training windows and scored once on the FD-B test set. Label budget: 100 % only, as an exception to D40 for this dataset: 1 % of 60 labels is less than one window, and 10 % (2 per class) is too few for the logistic-regression probe's 5-fold cross-validation. Reference: an untrained encoder of the same architecture, initialised with the same seeds, probed the same way.
 **Alternatives considered:** 100 % and 10 % with only the SVM probe at 10 %. A different cross-validation rule for small label sets. No untrained reference (then it cannot be told whether pretraining helped).
 **Rationale:** User's decision (2026-10-08). Separates "pretraining learned little" from "fine-tuning too short or selection too noisy" (our TF-C: 0.706 ± 0.112 accuracy vs 0.893 published), without new training.
+
+## 2026-10-08 — D46: Baseline: probes on the plain |FFT| spectra of FD-B
+**Decision:** Baseline (`scripts/probe_spectrum.py`, `configs/probe_spectrum_fd.yaml`): both harness probes (D26) trained directly on the full FFT magnitude spectrum of each FD-B training window (the input TF-C's frequency branch receives, D41 item 2), no encoder; 100 % of the 60 training labels (as D45); scored once on the FD-B test set. The probes are deterministic, so there are no seeds.
+**Alternatives considered:** No baseline (then it cannot be told whether FD-B separates methods at all).
+**Rationale:** User's decision (2026-10-08). The untrained-encoder SVM probe reached 0.973 (D45); if the plain spectra score as high, FD-B cannot separate the methods.
+
+## 2026-10-09 — D49: Feature baseline: the MSSP statistics per octave band (details open) (partly settled by D50)
+**Decision:** A hand-crafted feature baseline is added as a method without training (`encode(X)` returns features; the harness probes go on top, logistic regression for classes and a ridge probe for regression, the latter still to be decided). Features: the 14 statistics of the MSSP feature code (`publication-ceramicspeed-dataset/src/ceramicspeed/features.py`: RMS, skewness, kurtosis, crest, shape and margin factor, Hjorth mobility and complexity; dominant frequency, spectral centroid, bandwidth, skewness, kurtosis and flatness), computed per band of an octave filter bank instead of the MSSP pipeline's hand-picked bands. The MSSP pipeline is not reproduced as such (it is unpublished). Open: octave or third-octave, band edges, frequency range, filter implementation, window, and whether a broadband set is kept.
+**Alternatives considered:** Octave-band energies only (simpler, but not the features). The MSSP pipeline as it stands (hand-picked bands, rig-specific).
+**Rationale:** User's decision (2026-10-09). Same statistics, but a neutral band choice that applies to every dataset.
+
+## 2026-10-09 — D50: Feature baseline details: third-octave bands, Butterworth filters, broadband set kept (band spacing superseded by D53)
+**Decision:** For D49: third-octave bands; each band filtered with a zero-phase Butterworth band-pass of order 5 (as `bandpass_filter` in the MSSP code); the 14 statistics are also computed on a broadband version of each signal. Still open: band-edge convention and the frequency range per sensor (the range follows from D52).
+**Alternatives considered:** Full octaves (only 3–4 bands in the AE range). FFT-bin summation instead of filters. No broadband set.
+**Rationale:** User's decision (2026-10-09).
+
+## 2026-10-09 — D53: Feature baseline uses full-octave bands, base 10, standard edges (bands per sensor superseded by D60)
+**Decision:** The filter bank of D49/D50 uses full-octave bands, base 10 (centre frequencies f_m = 1 kHz · 10^(0.3·x), edges f_m · 10^(±0.15)), with the standard edges unchanged (outer bands are not cut at the sensor's range limits). With the current ranges: AE 4 bands (centres 63.1, 126, 251, 501 kHz; 44.7–708 kHz in total); US 8 bands (centres 1.0 … 126 kHz; 0.71–178 kHz in total). Supersedes the third-octave spacing in D50 (third-octave bands give 490 features for AE + US). The frequency range per sensor still follows from D52.
+**Alternatives considered:** Third-octave (12 AE / 21 US bands). Half-octave (8 / 15). Cutting the outer bands at the range limits, or dropping bands mostly outside the range.
+**Rationale:** User's decision (2026-10-09). Fewer, wider bands: 14 statistics × (bands + broadband) gives 70 AE + 126 US features.
+
+## 2026-10-09 — D54: Feature baseline: four US bands; features over whole sweeps (US bands superseded by D57)
+**Decision:** (1) The four lowest US octave bands (centres 1.0–7.94 kHz) are dropped, leaving four US bands (centres 15.8, 31.6, 63.1, 126 kHz; 11.2–178 kHz), the same number as for AE. The US broadband set starts at 0 Hz (upper limit from D52); content below 11.2 kHz is thus only in the broadband statistics. (2) The 14 statistics are computed over whole sweeps (one feature vector per sweep and sensor), as in the MSSP code.
+**Alternatives considered:** All eight US bands. Features per window (the unit the SSL methods see).
+**Rationale:** User's decision (2026-10-09). The lowest bands are too low; equal band count for both sensors.
+
+## 2026-10-09 — D57: Feature baseline: seven US bands (lowest kept, highest dropped) (bands per sensor superseded by D60)
+**Decision:** US octave bands: centres 1.0, 2.0, 3.98, 7.94, 15.8, 31.6, 63.1 kHz (0.71–89.1 kHz); the 126 kHz band is dropped. Supersedes part (1) of D54. AE keeps its four bands (D53).
+**Alternatives considered:** Four US bands 15.8–126 kHz (D54): the strongest US content (below 8 kHz, MSSP config) would only enter through the broadband statistics.
+**Rationale:** User's decision (2026-10-09).
+
+## 2026-10-09 — D58: Ridge probe for regression, regularisation chosen on a grid
+**Decision:** Regression targets (κ) are probed with ridge regression; the regularisation strength is chosen by cross-validation over a fixed grid (deterministic, like the logistic probe, D26), not by Optuna. The label budgets of D40 (1 %, 10 %, 100 %) also apply to regression. Open: grid range, cross-validation grouping on the rig (D56), standardisation and metrics (research plan: MAE and R²).
+**Alternatives considered:** Optuna (useful for several hyperparameters, here only one; adds a seed).
+**Rationale:** User's decision (2026-10-09).
+
+## 2026-10-09 — D59: Ridge probe details
+**Decision:** For D58: features standardised with training-set statistics; regularisation strength chosen by cross-validation over the grid 10⁻⁴ … 10⁴ (powers of ten, as the logistic probe's C grid, D26); on the rig, cross-validation folds grouped by acquisition hold with "twin" holds merged (as the MSSP `grouping.py`); metrics MAE and R² (research plan).
+**Alternatives considered:** Ungrouped folds (near-duplicate sweeps of one hold in both fold parts bias the choice of regularisation).
+**Rationale:** User's decision (2026-10-09).
+
+## 2026-10-09 — D60: Feature bands per sensor after the band check (D52) (AE bands superseded by D61)
+**Decision:** AE: nothing below 50 kHz is used (its origin is unknown; the AE coupler high-passes at 50 kHz), and the top octave band (centre 501 kHz, 355–708 kHz) is excluded as mostly noise. AE bands: centres 63.1, 126, 251 kHz (edges 44.7–89.1, 89.1–178, 178–355 kHz). US: the 126 kHz band (89.1–178 kHz) is included again, because the band check shows rpm-dependent content there. US bands: centres 1.0, 2.0, 3.98, 7.94, 15.8, 31.6, 63.1, 126 kHz (0.71–178 kHz). Supersedes the band lists of D53 (AE) and D57 (US). Open: the lowest AE band's edge at 44.7 kHz lies below 50 kHz; the AE broadband range (50 kHz up to 355 kHz, or up to about 560 kHz where the band check still shows signal).
+**Alternatives considered:** AE bands from D53 (including 501 kHz); US bands from D57 (up to 89.1 kHz).
+**Rationale:** User's decision (2026-10-09), based on `runs/20261009_085307_band_check_herning`. Caveat: whether US content above about 40 kHz is bearing signal or electrical interference is open (QUESTIONS.md, Q3).
+
+## 2026-10-10 — D61: AE feature bands as octaves from 50 kHz, top band ending at 560 kHz
+**Decision:** AE bands start at exactly 50 kHz and double: 50–100, 100–200, 200–400 kHz, plus a shortened top band 400–560 kHz, ending where the band check (D52) shows the AE signal stops. AE broadband set: 50–560 kHz (the range these bands cover). An exception to the base-10 standard edges of D53 for AE; US keeps its base-10 bands (D60). Supersedes the AE bands of D60.
+**Alternatives considered:** Three bands 50–400 kHz (drops the weak signal 400–560 kHz). Top band ending at 600 kHz (MSSP config limit). Base-10 bands (lowest band edge at 44.7 kHz, below the 50 kHz limit).
+**Rationale:** User's decision (2026-10-10). Nothing below 50 kHz (unknown origin), nothing above about 560 kHz (noise, D52).

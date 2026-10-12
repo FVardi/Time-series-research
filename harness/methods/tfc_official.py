@@ -116,6 +116,12 @@ def new_model_and_optimizers(configs, device, s):
     return model, classifier, torch.optim.Adam(model.parameters(), **adam), torch.optim.Adam(classifier.parameters(), **adam)
 
 
+def cpu_copy(state):
+    """Weights moved to main memory, so the GPU is free for the fresh fine-tuning model.
+    (Same values; without this, two 842 M-parameter models and an optimiser share the GPU.)"""
+    return {k: v.detach().cpu() for k, v in state.items()}
+
+
 def pretrain(data, s, device, seed):
     """main.py with --training_mode pre_train.
 
@@ -135,8 +141,8 @@ def pretrain(data, s, device, seed):
         losses.append({"epoch": epoch, "loss": float(loss)})
         if not np.isfinite(float(loss)):
             print(f"  pretraining diverged at epoch {epoch} (loss {float(loss)}); stopping this seed", flush=True)
-            return model.state_dict(), pd.DataFrame(losses), True
-    return model.state_dict(), pd.DataFrame(losses), False
+            return cpu_copy(model.state_dict()), pd.DataFrame(losses), True
+    return cpu_copy(model.state_dict()), pd.DataFrame(losses), False
 
 
 def finetune_and_test(pretrained, data, s, device, seed):

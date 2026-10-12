@@ -8,7 +8,6 @@ import subprocess
 from datetime import datetime
 
 import numpy as np
-import torch
 import yaml
 
 
@@ -20,6 +19,7 @@ def load_config(path):
 
 def set_seed(seed):
     """Seed Python, NumPy and PyTorch."""
+    import torch  # imported here so scripts without PyTorch (e.g. check_bands.py) can use this module
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

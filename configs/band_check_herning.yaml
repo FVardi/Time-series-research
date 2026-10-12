@@ -1,0 +1,24 @@
+# D52: where is the information? Band power per sweep for AE and UL, compared with
+# non-rotating sweeps and correlated with rpm, temperature and kappa.
+name: band_check_herning
+source: data/raw/herning/scope_20260901_112732.h5
+channels: [AE, UL]
+
+operating_point:  # D55, as the MSSP code
+  rpm_per_cmd_hz: 59.5  # rpm = telem_vfd_cmd_hz * 59.5 (measured rpm unreliable)
+  temperature_field: telem_omron_pv_c
+  rpm_min: 50
+  rpm_max: 3600
+  temp_min: 38
+  non_rotating_rpm_target: 100  # bearing confirmed not rotating -> noise reference (D52)
+  cooldown_temp_target: 25  # cool-down tail, excluded everywhere
+  d_pw_mm: 38.0
+  nu_40_cst: 22.0  # MSSP fallback; the file's lubricant metadata has no viscosities
+  nu_100_cst: 4.1  # MSSP fallback
+
+spectrum:  # implementation choices for the check (stated in the reply, not a decision on the features)
+  welch_nperseg: 65536  # 38 Hz resolution at 2.5 MHz, so third-octave bands from 1 kHz have several bins
+  welch_noverlap: 32768
+  welch_window: hann
+  low_band_hz: [0, 891.25]  # everything below the first third-octave band
+  third_octave_from_hz: 1000  # base-10 third-octave bands from 1 kHz up to Nyquist

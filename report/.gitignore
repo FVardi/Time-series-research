@@ -1,0 +1,5 @@
+# LaTeX build files (rebuild with: pdflatex results && pdflatex results)
+*.aux
+*.log
+*.out
+*.toc
