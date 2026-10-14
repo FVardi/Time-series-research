@@ -17,9 +17,9 @@ import torch
 
 from harness import runs
 from harness.data import canonical
-from harness.methods import tloss, ts2vec
+from harness.methods import tloss, ts2vec, tsjepa
 
-METHODS = {"ts2vec": ts2vec, "tloss": tloss}
+METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa}
 
 
 def load_split(cfg, meta, split):
@@ -49,8 +49,10 @@ def window_table(cfg, split, capture_ids, n_samples):
 
 def main(config_path):
     cfg = runs.load_config(config_path)
-    folder = runs.new_run_dir(config_path, cfg)
     method = METHODS[cfg["method"]]
+    if hasattr(method, "check_settings"):  # stop before any work if a setting is still a placeholder
+        method.check_settings(cfg[cfg["method"]])
+    folder = runs.new_run_dir(config_path, cfg)
 
     meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
     X_train, labels_train, ids_train = load_split(cfg, meta, "train")

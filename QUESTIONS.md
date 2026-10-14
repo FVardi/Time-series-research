@@ -76,3 +76,17 @@ is decoupled or not loaded; check whether the high-band content contains the VFD
 switching frequency and its harmonics; ask the rig team about shielding/grounding.
 
 **Status.** Partly answered by the user (2026-10-10): AE above 560 kHz is noise (D61, D62). US above 40 kHz may carry information and is kept (US bands up to 178 kHz, D60; US downsampled to 500 kHz, D62); whether it is bearing signal or interference is still open — to discuss with supervisor / rig team.
+
+
+**Evidence (2026-10-12).** The AE spectrum contains a comb of narrow lines at multiples of
+4,666.7 Hz, visible up to at least the 40th harmonic (187 kHz), i.e. across the kept AE range
+(50–560 kHz, D61). Test (`scripts/check_vfd_lines.py`, `runs/20261012_210217_vfd_lines_herning`): with the frequency converter off
+(rpm target 0) the lines are absent (< 1 dB above the local floor); with the converter running but
+the bearing not rotating (rpm target 100) they stand 9–27 dB above the floor at harmonics 2–30.
+So the comb is electrical interference from the converter (or its cabling), not bearing signal.
+In the US channel the same lines are weak (≤ 6.5 dB, mainly harmonics 7–11, 33–51 kHz).
+Open: does the comb's level change with speed (then it can carry rpm/κ information that is
+not from the bearing, e.g. in the US 40–200 kHz content and the AE 400–560 kHz band)? Options:
+notch the harmonics before feature extraction/SSL input, compare models with and without notching,
+or fix it on the rig (shielding, grounding, filter on the converter output). Note also: the
+noise reference used in the band check (D52, rpm target 100) contains this interference.

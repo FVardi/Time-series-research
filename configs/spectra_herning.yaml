@@ -1,0 +1,17 @@
+# Diagnostic: average power spectra of AE and US for a few operating points (user request 2026-10-12).
+# Groups are chosen to show the effect of speed (at 60 C) and of temperature (at 1500 rpm), plus the
+# non-rotating reference. Choice of groups by Claude, for looking only; not used anywhere else.
+name: spectra_herning
+source: data/raw/herning/scope_20260901_112732.h5
+channels: [AE, UL]
+welch_nperseg: 65536  # 38 Hz resolution, as the band check (D52)
+welch_noverlap: 32768
+welch_window: hann
+n_freq_points: 3000  # spectra are stored on this many log-spaced frequencies (mean power within each bin)
+groups:  # name: [rpm target, temperature target]
+  not_rotating_60C: [100, 60]
+  500rpm_60C: [500, 60]
+  1500rpm_60C: [1500, 60]
+  2900rpm_60C: [2900, 60]
+  1500rpm_40C: [1500, 40]
+  1500rpm_100C: [1500, 100]

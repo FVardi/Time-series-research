@@ -1,0 +1,16 @@
+# Diagnostic: is the comb of narrow spectral lines (spacing about 4.67 kHz) electrical interference
+# from the frequency converter (VFD)? Compares sweeps with the VFD off (rpm target 0) and with the
+# VFD running but the bearing not rotating (rpm target 100), at one temperature target.
+# Choices below are Claude's, for this check only (QUESTIONS.md, Q3).
+name: vfd_lines_herning
+source: data/raw/herning/scope_20260901_112732.h5
+channels: [AE, UL]
+temp_target: 60
+n_sweeps: 10  # per group
+line_spacing_hz: 4666.7  # measured fundamental of the comb (AE, VFD on)
+harmonics: [1, 40]  # first and last harmonic checked
+line_halfwidth_hz: 150  # line = maximum within +-150 Hz of the harmonic
+floor_halfwidth_hz: 1500  # local floor = median within +-1500 Hz
+welch_nperseg: 65536
+welch_noverlap: 32768
+welch_window: hann
