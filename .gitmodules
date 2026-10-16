@@ -7,3 +7,6 @@
 [submodule "external/tfc"]
 	path = external/tfc
 	url = https://github.com/mims-harvard/TFC-pretraining
+[submodule "external/tsjepa"]
+	path = external/tsjepa
+	url = https://github.com/Sennadir/TS_JEPA

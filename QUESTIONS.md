@@ -80,7 +80,7 @@ switching frequency and its harmonics; ask the rig team about shielding/groundin
 
 **Evidence (2026-10-12).** The AE spectrum contains a comb of narrow lines at multiples of
 4,666.7 Hz, visible up to at least the 40th harmonic (187 kHz), i.e. across the kept AE range
-(50–560 kHz, D61). Test (`scripts/check_vfd_lines.py`, `runs/20261012_210217_vfd_lines_herning`): with the frequency converter off
+(50–560 kHz, D61). Test (`eda/herning/check_vfd_lines.py`, formerly in `scripts/`; `runs/20261012_210217_vfd_lines_herning`): with the frequency converter off
 (rpm target 0) the lines are absent (< 1 dB above the local floor); with the converter running but
 the bearing not rotating (rpm target 100) they stand 9–27 dB above the floor at harmonics 2–30.
 So the comb is electrical interference from the converter (or its cabling), not bearing signal.
@@ -90,3 +90,25 @@ not from the bearing, e.g. in the US 40–200 kHz content and the AE 400–560 k
 notch the harmonics before feature extraction/SSL input, compare models with and without notching,
 or fix it on the rig (shielding, grounding, filter on the converter output). Note also: the
 noise reference used in the band check (D52, rpm target 100) contains this interference.
+
+---
+
+## Q4 (2026-10-16) — Add FordB and/or CWRU to the Step 1 datasets?
+**Context.** D70 fixes the core datasets: FordA, Paderborn (split by bearing), Herning.
+FD-A/FD-B are kept only for the TF-C reproduction.
+
+**Options.**
+- *FordB* (UCR archive): same kind of data and format as FordA, so cheap to add. Gives a
+  second reproduction check: TS-JEPA's paper reports 73.8 (pretrained on FordA, evaluated on
+  FordB); the TS2Vec and T-Loss papers cover the UCR archive and probably report FordB too
+  (to be verified). Adds little scientifically (another engine-noise dataset).
+- *CWRU* (Case Western Reserve University bearing data): in the research plan's Step 1 table and
+  reported by most bearing-diagnosis papers, so it gives comparability with the literature.
+  Weaknesses: very few recordings per fault and load (roughly one each, to be verified), so
+  splitting by recording leaves little to train on; widely considered easy. Paderborn covers
+  the same need (vibration faults, several operating conditions, leakage-safe splits) better.
+
+**Claude's suggestion.** Add FordB (cheap); include CWRU only if comparability with the
+literature matters for the Part 1 report.
+
+**Status.** Open — user to discuss with supervisor.

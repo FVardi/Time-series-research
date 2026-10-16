@@ -31,7 +31,7 @@ tsjepa:
     nhead: 2  # paper, README, code
     num_layers: 1  # README, code, downstream config all 1; paper silent
   optimizer:
-    lr: null  # PLACEHOLDER: paper searched 1e-3, 1e-4, 1e-5, 1e-6 (chosen value not given); README 1e-7; code 6e-5
+    lr: 6.0e-5  # D69: the official pretraining config's value (what pretrain.py uses without arguments); no tuning, as TS2Vec/T-Loss (README 1e-7 is from their weather run; paper searched 1e-3..1e-6)
     lr_end_factor: 0.5  # code: LinearLR from 1.0 to 0.5 x lr over the epochs (code's end_lr 1e-4 is never used)
     betas: [0.9, 0.999]  # code uses PyTorch's AdamW defaults
     eps: 1.0e-8  # PyTorch AdamW default (code)

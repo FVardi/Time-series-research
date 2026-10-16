@@ -72,6 +72,10 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D64 | 2026-10-12 | Downsampling on the fly; AE and US both to 1.25 MHz (supersedes D62 US factor) | [decisions/datasets/herning.md](decisions/datasets/herning.md) |
 | D65 | 2026-10-12 | TS-JEPA wrapped from official code (830ee5c); masking, epochs, layers, lr, pooling open | [decisions/training.md](decisions/training.md) |
 | D66 | 2026-10-13 | TS-JEPA: both masking variants, 5,000 epochs, 1 encoder layer, mean pooling; lr open | [decisions/training.md](decisions/training.md) |
+| D67 | 2026-10-14 | TS-JEPA learning rate: search 1e-3..1e-6, fixed variant, 80/20 split of FordA train, logistic-regression probe, seed 0 | [decisions/training.md](decisions/training.md) |
+| D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [decisions/repo.md](decisions/repo.md) |
+| D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [decisions/training.md](decisions/training.md) |
+| D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

@@ -1,7 +1,7 @@
 """Diagnostic: height of the ~4.67 kHz comb lines with the frequency converter off and on (QUESTIONS.md, Q3).
 
 Usage:
-    uv run python scripts/check_vfd_lines.py configs/vfd_lines_herning.yaml
+    uv run python eda/herning/check_vfd_lines.py configs/vfd_lines_herning.yaml
 
 Groups (same temperature target): 'vfd_off' = rpm target 0 (converter not running),
 'vfd_on_not_rotating' = rpm target 100 (converter running, bearing confirmed not rotating).

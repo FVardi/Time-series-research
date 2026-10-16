@@ -122,16 +122,20 @@ def test_training_loop_equals_official_script(tmp_path):
 
     dl.get_jepa_loaders = lambda *a, **kw: torch.utils.data.DataLoader(Items(), batch_size=8, shuffle=True)
     mu.prepare_args_pretrain = args
-    cwd, filters = os.getcwd(), warnings.filters[:]
+    cwd, filters, cuda_available = os.getcwd(), warnings.filters[:], torch.cuda.is_available
     os.chdir(off)
+    # The script picks the GPU itself if there is one; ours ran on the CPU, and GPU arithmetic
+    # differs slightly, so the script is made to see no GPU for this comparison.
+    torch.cuda.is_available = lambda: False
     try:
         runpy.run_path("pretrain.py", run_name="__main__")
     finally:  # undo the script's side effects: working folder, warnings switched off, imported modules
+        torch.cuda.is_available = cuda_available
         os.chdir(cwd)
         warnings.filters[:] = filters
         sys.path.remove(off)
         for name in [n for n in sys.modules if n.split(".")[0] in ("src", "main", "config")]:
             del sys.modules[name]
-    theirs = torch.load(tmp_path / "ckpt_epoch_2.pt")["encoder"]
+    theirs = torch.load(tmp_path / "ckpt_epoch_2.pt", map_location="cpu")["encoder"]
     assert set(ours) == set(theirs)
     assert all(torch.equal(ours[k], theirs[k]) for k in ours)

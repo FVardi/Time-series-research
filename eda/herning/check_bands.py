@@ -1,7 +1,7 @@
 """D52: per-band check of where the Herning signals carry information.
 
 Usage:
-    uv run python scripts/check_bands.py configs/band_check_herning.yaml
+    uv run python eda/herning/check_bands.py configs/band_check_herning.yaml
 
 Reads the source file sweep by sweep (no conversion needed). For every sweep and
 channel, the Welch power spectral density is integrated over each band. Writes into

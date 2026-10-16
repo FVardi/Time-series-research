@@ -1,7 +1,7 @@
 """Diagnostic: average Welch power spectra per operating-point group (Herning source file).
 
 Usage:
-    uv run python scripts/spectra_herning.py configs/spectra_herning.yaml
+    uv run python eda/herning/spectra_herning.py configs/spectra_herning.yaml
 
 Writes runs/<date_time>_<name>/spectra.csv: one row per group, channel and frequency
 bin (log-spaced bins up to Nyquist; mean power spectral density within the bin, V^2/Hz),
