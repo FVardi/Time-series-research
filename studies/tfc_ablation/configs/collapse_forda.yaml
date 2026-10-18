@@ -1,0 +1,55 @@
+# TF-C study, part 1: collapse of our TF-C during pretraining on FordA (D72, D73).
+# Validation run of the collapse examination. Every setting is written out; 'null' marks an
+# open placeholder and the run refuses to start until it is set.
+name: collapse_forda
+dataset: forda
+run_id: forda
+split: train  # pretraining windows: FordA's official training set (3,601 series of 500 samples); test never used
+channels: [x]
+data_root: data/canonical
+seeds: [0]  # D74: one seed for the validation run
+device: cuda
+
+tfc:  # our TF-C (D41, D42), settings as in configs/tfc_fd.yaml; pretraining only, so no classifier/finetune
+  encoder:  # D41 item 1: the paper's CNN, both branches
+    channels: [32, 64, 128]  # paper
+    kernel_size: 8  # paper
+    strides: [8, 1, 1]  # paper
+    padding: 4  # not in paper; 2022 code (kernel_size // 2)
+    pool_padding: 1  # not in paper; 2022 code
+    conv_bias: false  # not in paper; 2022 code
+    dropout_block1: 0.35  # not in paper; 2022 code (dropout after the first block only)
+    projector: [256, 128]  # paper
+  loss:  # D41 item 4, paper
+    temperature: 0.2
+    lambda: 0.5
+    delta: 1.0
+  freq_aug:  # D41 item 3 (user's design), paper values
+    n_components: 1  # E
+    alpha: 0.5
+  time_aug:  # D42
+    jitter_sigma: 0.1  # official code (FD_A config jitter_ratio)
+    scaling_mean: 1.0  # our choice, approved in D42
+    scaling_sigma: 0.1  # our choice, approved in D42
+    max_segments: 5  # official code (max_seg)
+  pretrain:  # D41 item 5
+    epochs: 40  # paper
+    batch_size: 64  # paper
+    drop_last: true  # code; NT-Xent batches of equal size
+    lr: 0.0003  # paper
+    betas: [0.9, 0.99]  # code (paper silent)
+    weight_decay: 0.0005  # paper
+  eval_chunk: 512  # windows per forward pass when measuring; does not change results
+
+diagnostics:  # D73, D74. 'null' = open placeholder: the run refuses to start
+  representations: [h_t, h_f, z_t, z_f, z]  # D74: all five; z = [z_T; z_F] (what the probes use)
+  windows: all  # D74: all 3,601 FordA training windows
+  seed: 0  # D74; seed for the diagnostic subset, the fixed augmented views and the SIGReg directions
+  alignment: true  # D74: also cosine(window, its augmented version), augmented views drawn once
+  rankme_epsilon: 1.0e-7  # D74 (our choice; the paper gives no value for epsilon in RankMe's p_k)
+  std_threshold_relative: 0.01  # D74: a dimension is 'dead' if its std < 1 % of the largest std of that representation
+  sigreg:  # official LeJEPA code, commit c293d29 (EppsPulley, trapezoid; SlicingUnivariateTest)
+    t_max: 3  # official EppsPulley default and MINIMAL.md
+    n_points: 17  # official default and MINIMAL.md (knots)
+    n_slices: 1024  # D74; official README quick start (MINIMAL.md uses 256)
+    same_directions_every_epoch: true  # D74, so epochs are comparable (the official code draws new directions every call)

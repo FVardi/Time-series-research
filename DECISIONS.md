@@ -76,6 +76,10 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [decisions/repo.md](decisions/repo.md) |
 | D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [decisions/training.md](decisions/training.md) |
 | D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open | [decisions/evaluation.md](decisions/evaluation.md) |
+| D71 | 2026-10-17 | `studies/` holds studies and paper material; method-independent diagnostics in `harness/diagnostics.py`; first study `studies/tfc_ablation/` | [decisions/repo.md](decisions/repo.md) |
+| D72 | 2026-10-17 | TF-C study `studies/tfc_ablation/`: examination of collapse and ablation by building blocks; own training loop; stages open | [decisions/training.md](decisions/training.md) |
+| D73 | 2026-10-17 | Collapse diagnostics (effective rank, spectrum, std, cosine similarity, SIGReg statistic) every epoch to `collapse.csv`; settings and threshold in D74 | [decisions/evaluation.md](decisions/evaluation.md) |
+| D74 | 2026-10-17 | Collapse diagnostics settings (all representations, alignment, 1,024 fixed SIGReg slices); dead dimension = std < 1 % of the largest; FordA validation run: seed 0, all training windows | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:
