@@ -4,6 +4,7 @@
 [submodule "external/tloss"]
 	path = external/tloss
 	url = https://github.com/White-Link/UnsupervisedScalableRepresentationLearningTimeSeries
+	ignore = untracked
 [submodule "external/tfc"]
 	path = external/tfc
 	url = https://github.com/mims-harvard/TFC-pretraining
