@@ -2,19 +2,19 @@
 \begin{table}[htbp]
 \centering
 \small
-\caption{Reproduction checks: published accuracy against our mean over seeds. Criterion as implemented in \texttt{scripts/evaluate.py} and \texttt{scripts/tfc\_official.py} (D26, D38): pass if $|\Delta| \le \max(2\,\mathrm{SD}, 0.01)$.}
+\caption{Reproduction checks: published accuracy against our mean over seeds, with the method's own probe and all labels. Criterion as implemented in \texttt{scripts/evaluate.py} and \texttt{scripts/tfc\_official.py} (D26, D38): pass if $|\Delta| \le \max(2\,\mathrm{SD}, 0.01)$.}
 \label{tab:repro}
 \begin{adjustbox}{max width=\linewidth}
 \begin{tabular}{lllccccc}
 \toprule
-Entry & Method & Data & Published & Ours (mean $\pm$ SD) & $|\Delta|$ & Allowed & Criterion \\
+Section & Method & Data & Published & Ours (mean $\pm$ SD) & $|\Delta|$ & Allowed & Criterion \\
 \midrule
-R2 & TS2Vec (CPU check) & FordA & 0.9360 & $0.932 \pm 0.003$ ($n=3$) & 0.004 & 0.010 & pass \\
-R3 & TS2Vec & FordA & 0.9360 & $0.932 \pm 0.002$ ($n=3$) & 0.004 & 0.010 & pass \\
-R4 & T-Loss & FordA & 0.9280 & $0.933 \pm 0.005$ ($n=3$) & 0.005 & 0.010 & pass \\
-R5 & TF-C, official, full data & FD & 0.8934 & no test result & -- & -- & -- \\
-R6 & TF-C, ours & FD & 0.8934 & $0.706 \pm 0.112$ ($n=5$) & 0.187 & 0.224 & pass \\
-R9 & TF-C, official, subset & FD & 0.8934 & $0.382 \pm 0.164$ ($n=5$) & 0.511 & 0.327 & fail \\
+\ref{forda-repro} & TS2Vec & FordA & 0.9360 & $0.936 \pm 0.003$ ($n=3$) & 0.000 & 0.010 & pass \\
+\ref{forda-repro} & T-Loss & FordA & 0.9280 & $0.932 \pm 0.007$ ($n=3$) & 0.004 & 0.015 & pass \\
+\ref{forda-repro} & MiniRocket & FordA & 0.9500 & $0.946 \pm 0.003$ ($n=3$) & 0.004 & 0.010 & pass \\
+\ref{tfc-full} & TF-C, official, full data & FD & 0.8934 & no test result & -- & -- & -- \\
+\ref{tfc-ours} & TF-C, ours & FD & 0.8934 & $0.706 \pm 0.112$ ($n=5$) & 0.187 & 0.224 & pass \\
+\ref{tfc-subset} & TF-C, official, subset & FD & 0.8934 & $0.382 \pm 0.164$ ($n=5$) & 0.511 & 0.327 & fail \\
 \bottomrule
 \end{tabular}
 \end{adjustbox}

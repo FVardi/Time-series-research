@@ -5,6 +5,7 @@ import os
 import random
 import shutil
 import subprocess
+import sys
 from datetime import datetime
 
 import numpy as np
@@ -36,12 +37,26 @@ def git_commit():
 
 
 def new_run_dir(config_path, config):
-    """Create runs/<date_time>_<name>/ with a copy of the config and the git commit."""
+    """Create runs/<date_time>_<name>/ with a copy of the config and the git commit.
+
+    Warns when the working tree has uncommitted changes (D99): runs meant for the report
+    are made from a committed tree, because the commit alone then reproduces the code.
+    The run still starts; git.json records the state either way.
+    """
     folder = os.path.join("runs", f"{datetime.now():%Y%m%d_%H%M%S}_{config['name']}")
     os.makedirs(folder)
     shutil.copy(config_path, os.path.join(folder, "config.yaml"))
-    save_json(os.path.join(folder, "git.json"), git_commit())
+    git = git_commit()
+    save_json(os.path.join(folder, "git.json"), git)
+    if git["uncommitted_changes"]:
+        print(UNCOMMITTED_WARNING, file=sys.stderr, flush=True)
     return folder
+
+
+UNCOMMITTED_WARNING = (
+    "\n*** WARNING: the working tree has uncommitted changes. ***\n"
+    "The run is recorded with commit + 'uncommitted_changes: true' (git.json), so the commit alone\n"
+    "does not reproduce the code. Runs meant for the report should start from a committed tree (D99).\n")
 
 
 def save_json(path, obj):

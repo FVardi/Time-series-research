@@ -3,13 +3,17 @@
 Usage (from the repository root):
     uv run python scripts/make_report.py
 
-Reads the run folders listed in RUNS (runs/ is not committed) and writes, into report/
+Reads the run folders named below (runs/ is not committed) and writes, into report/
 (committed):
-    tables/*.tex     LaTeX tables, included with \\input
+    tables/*.tex        LaTeX tables, included with \\input
     tables/numbers.tex  \\newcommand definitions for every number quoted in the prose
-    figures/*.pdf    figures, included with \\includegraphics
-Every number in the document comes from here; none is typed by hand. Rerun after a new
-run has been added to RUNS and described in results.tex.
+    figures/*.pdf       figures, included with \\includegraphics
+Every number in the document comes from here; none is typed by hand (D98).
+
+The document reports current results only, organised by topic (D98). Every run folder in
+runs/ is listed in the run index (RUN_INDEX, appendix of the document), including runs
+that are superseded or not written up; a folder missing from RUN_INDEX is listed as
+"not indexed" and a warning is printed.
 
 Needs matplotlib in addition to the project's dependencies.
 """
@@ -27,24 +31,78 @@ import pandas as pd
 import yaml
 
 # ---------------------------------------------------------------------------
-# Which run folder belongs to which result entry (R-number in results.tex).
+# Run folders behind each part of the document. The keys are only used in this script.
 # ---------------------------------------------------------------------------
 RUNS = {
-    "R2": "runs/20261007_214220_ts2vec_forda_cpu_check",
-    "R3": "runs/20261008_084722_ts2vec_forda",
-    "R4": "runs/20261008_092321_tloss_forda",
-    "R5a": "runs/20261008_134951_tfc_official_fd",  # first attempt, seed 0 only
-    "R5b": "runs/20261008_143021_tfc_official_fd",  # second attempt, all seeds
-    "R5c": "runs/20261008_155516_tfc_official_fd",  # third attempt, after the D44 change
-    "R6": "runs/20261008_142751_tfc_fd",
-    "R7": "runs/20261008_151014_probe_tfc_fd",
-    "R8": "runs/20261008_162447_probe_spectrum_fd",
-    "R9": "runs/20261008_171159_tfc_official_fd_subset",
-    "R10": "runs/20261009_085307_band_check_herning",
+    # TF-C on FD-A -> FD-B
+    "tfc_full_1": "runs/20261008_134951_tfc_official_fd",  # official, full data: first attempt, seed 0 only
+    "tfc_full_2": "runs/20261008_143021_tfc_official_fd",  # second attempt, all seeds
+    "tfc_full_3": "runs/20261008_155516_tfc_official_fd",  # third attempt, after the D44 change
+    "tfc_ours": "runs/20261008_142751_tfc_fd",
+    "tfc_probe": "runs/20261008_151014_probe_tfc_fd",
+    "fdb_spectrum": "runs/20261008_162447_probe_spectrum_fd",
+    "tfc_subset": "runs/20261008_171159_tfc_official_fd_subset",
+    # Herning
+    "band_check": "runs/20261009_085307_band_check_herning",
 }
-# Run folders with no results (started and stopped before writing anything but the config).
-EMPTY_RUNS = {
-    "R10": "runs/20261009_085150_band_check_herning",
+
+# FordA: SSL methods and baselines (D75-D80, D85, D89, D90), all run on 2026-10-20 with timing (D79).
+FORDA_SSL = {
+    "TS2Vec": "runs/20261020_144711_ts2vec_forda",
+    "T-Loss": "runs/20261020_144932_tloss_forda",
+}
+FORDA_BASELINES = {
+    "Raw samples": "runs/20261020_143928_raw_forda",  # also holds the floor probe (D83)
+    "|FFT|": "runs/20261020_144122_fft_forda",
+    "catch24": "runs/20261020_144235_catch22_forda",
+    "MiniRocket": "runs/20261020_152809_minirocket_forda",
+}
+# The runs these replaced (quoted in one sentence: run-to-run variation).
+FORDA_EARLIER = {
+    "TS2Vec": "runs/20261008_084722_ts2vec_forda",
+    "T-Loss": "runs/20261008_092321_tloss_forda",
+}
+
+# ---------------------------------------------------------------------------
+# Run index (D98): every folder in runs/ with what it was for and its status.
+# Status: "In <section label>" for a reported run; "Superseded by <folder>"; "Empty";
+# "Not written up yet"; "Examination" (one-off dataset checks, cited where used).
+# ---------------------------------------------------------------------------
+RUN_INDEX = {
+    "20261007_214220_ts2vec_forda_cpu_check": ("TS2Vec on FordA, CPU check in the cloud workspace",
+                                               "Superseded by 20261008_084722_ts2vec_forda"),
+    "20261008_084722_ts2vec_forda": ("TS2Vec on FordA (reproduction)",
+                                     "Superseded by 20261020_144711_ts2vec_forda (rerun with timing)"),
+    "20261008_092321_tloss_forda": ("T-Loss on FordA (reproduction)",
+                                    "Superseded by 20261020_144932_tloss_forda (rerun with timing)"),
+    "20261008_134951_tfc_official_fd": ("Official TF-C, full FD-A data, attempt 1", "In \\S\\ref{tfc-full}"),
+    "20261008_142751_tfc_fd": ("Our TF-C, FD-A to FD-B", "In \\S\\ref{tfc-ours}"),
+    "20261008_143021_tfc_official_fd": ("Official TF-C, full FD-A data, attempt 2", "In \\S\\ref{tfc-full}"),
+    "20261008_151014_probe_tfc_fd": ("Frozen probes on our TF-C encoders", "In \\S\\ref{tfc-probe}"),
+    "20261008_155516_tfc_official_fd": ("Official TF-C, full FD-A data, attempt 3", "In \\S\\ref{tfc-full}"),
+    "20261008_162447_probe_spectrum_fd": ("Probes on the |FFT| spectra of FD-B", "In \\S\\ref{fdb-spectrum}"),
+    "20261008_171159_tfc_official_fd_subset": ("Official TF-C, debugging subset", "In \\S\\ref{tfc-subset}"),
+    "20261009_085150_band_check_herning": ("Herning band check, stopped before writing results", "Empty"),
+    "20261009_085307_band_check_herning": ("Herning band check", "In \\S\\ref{band-check}"),
+    "20261012_205347_spectra_herning": ("Herning spectra", "Examination (QUESTIONS.md, Q3)"),
+    "20261012_210217_vfd_lines_herning": ("Frequency-converter lines in the Herning spectra",
+                                          "Examination (QUESTIONS.md, Q3)"),
+    "20261014_herning_examination": ("Herning dataset examination", "Examination (eda/herning)"),
+    "20261016_114600_tsjepa_forda": ("TS-JEPA on FordA", "Not written up yet"),
+    "20261016_114616_tsjepa_forda_fixed": ("TS-JEPA (masking fixed) on FordA", "Not written up yet"),
+    "20261017_115419_collapse_forda": ("Collapse check on FordA", "Not written up yet"),
+    "20261019_130910_patchtst_forda": ("PatchTST on FordA", "Not written up yet"),
+    "20261019_154248_patchtst_forda_mean": ("PatchTST re-encoded with mean pooling (D86, D87)", "Not written up yet"),
+    "20261019_154305_patchtst_forda_flatten": ("PatchTST re-encoded with flatten pooling (D86)", "Not written up yet"),
+    "20261020_135846_ablation_forda_A": ("TF-C ablation on FordA, step A", "Not written up yet"),
+    "20261020_140639_ablation_forda_B": ("TF-C ablation on FordA, step B", "Not written up yet"),
+    "20261020_141430_ablation_forda_C": ("TF-C ablation on FordA, step C", "Not written up yet"),
+    "20261020_143928_raw_forda": ("Baseline: raw samples (and floor) on FordA", "In \\S\\ref{forda-baselines}"),
+    "20261020_144122_fft_forda": ("Baseline: |FFT| on FordA", "In \\S\\ref{forda-baselines}"),
+    "20261020_144235_catch22_forda": ("Baseline: catch24 on FordA", "In \\S\\ref{forda-baselines}"),
+    "20261020_144711_ts2vec_forda": ("TS2Vec on FordA, with timing", "In \\S\\ref{forda-repro}, \\S\\ref{forda-baselines}"),
+    "20261020_144932_tloss_forda": ("T-Loss on FordA, with timing", "In \\S\\ref{forda-repro}, \\S\\ref{forda-baselines}"),
+    "20261020_152809_minirocket_forda": ("Baseline: MiniRocket on FordA", "In \\S\\ref{forda-repro}, \\S\\ref{forda-baselines}"),
 }
 
 # Published numbers that are not in the run configs: standard deviations of the TF-C paper
@@ -57,12 +115,9 @@ US_BAND_HZ = (1e3 * 10 ** -0.15, 126e3 * 10 ** 0.15)  # D60: base-10 octaves, ce
 AE_NYQUIST_HZ = 1.25e6 / 2  # D62: AE downsampled by 2
 US_NYQUIST_HZ = 0.5e6 / 2  # D62: US downsampled by 5
 
-# Colours (light-mode categorical slots 1-3 of the validated reference palette) and ink.
-BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
+# Colours: light-mode categorical slots 1-6 of the validated reference palette (dataviz), and ink.
+BLUE, ORANGE, AQUA, YELLOW, MAGENTA, GREEN = "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"
 INK, MUTED, GRID = "#0b0b0b", "#8a8984", "#e4e3df"
-
-# LaTeX command names may only contain letters: R3 -> \\RthreeVerdict etc.
-WORD = {"R2": "Rtwo", "R3": "Rthree", "R4": "Rfour", "R5": "Rfive", "R6": "Rsix", "R9": "Rnine"}
 
 ROOT = "."
 OUT = "report"
@@ -85,8 +140,8 @@ def read_yaml(run):
         return yaml.safe_load(f)
 
 
-def read_git(run):
-    with open(path(run, "git.json")) as f:
+def read_json(run, name):
+    with open(path(run, name)) as f:
         return json.load(f)
 
 
@@ -98,6 +153,16 @@ def f3(x):
 def pm(mean, sd):
     """'mean ± sd' in math mode, three decimals."""
     return f"${mean:.3f} \\pm {sd:.3f}$"
+
+
+def signed(x):
+    """Signed difference with three decimals, real minus sign (math mode)."""
+    return f"${x:+.3f}$"
+
+
+def tex(text):
+    """Escape the characters of plain text that LaTeX treats specially."""
+    return text.replace("\\", "\\textbackslash{}").replace("_", "\\_").replace("|", "$|$").replace("%", "\\%")
 
 
 def number(name, text):
@@ -120,8 +185,9 @@ def write_table(name, header, rows, colspec, caption, label, notes=None):
     A row that is the string 'MIDRULE' becomes \\midrule."""
     lines = ["\\begin{table}[htbp]", "\\centering", "\\small", f"\\caption{{{caption}}}",
              f"\\label{{{label}}}", "\\begin{adjustbox}{max width=\\linewidth}",
-             f"\\begin{{tabular}}{{{colspec}}}", "\\toprule",
-             " & ".join(header) + " \\\\", "\\midrule"]
+             f"\\begin{{tabular}}{{{colspec}}}", "\\toprule"]
+    lines += [" & ".join(h) + " \\\\" for h in (header if isinstance(header[0], list) else [header])]
+    lines.append("\\midrule")
     for r in rows:
         lines.append("\\midrule" if r == "MIDRULE" else " & ".join(r) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}", "\\end{adjustbox}"]
@@ -149,62 +215,188 @@ def save(fig, name):
 
 
 # ---------------------------------------------------------------------------
-# FordA: TS2Vec and T-Loss (R2, R3, R4)
+# FordA: reproductions, and SSL methods against the baselines (D75-D80)
 # ---------------------------------------------------------------------------
-def forda():
-    methods = {"TS2Vec": RUNS["R3"], "T-Loss": RUNS["R4"]}
-    probes = {"svm_ts2vec": "SVM (TS2Vec protocol)", "logreg": "Logistic regression"}
+PROBE_NAMES = {"logreg": "Logistic regression", "svm_ts2vec": "SVM (TS2Vec protocol)"}
+FRACTIONS = [0.01, 0.1, 1.0]
 
-    # Table: all probes and label budgets, mean ± SD over the 3 seeds.
+
+def pct(frac):
+    return f"{frac:.0%}".replace("%", "\\,\\%")
+
+
+def forda_results():
+    """{method: results.csv} for the SSL methods and baselines."""
+    return {m: read_csv(run, "results.csv") for m, run in {**FORDA_SSL, **FORDA_BASELINES}.items()}
+
+
+def forda_accuracy_table(res):
+    """Mean ± SD accuracy per method, probe and label budget; best mean per column in bold."""
+    floor = res["Raw samples"][res["Raw samples"].probe == "floor"]
+    cols = [(p, f) for p in PROBE_NAMES for f in FRACTIONS]
+    cell = {}  # (method, probe, frac) -> (mean, sd)
+    for m, r in res.items():
+        for p, f in cols:
+            g = r[(r.probe == p) & (r.label_fraction == f)].accuracy
+            if len(g):
+                cell[(m, p, f)] = (g.mean(), g.std())
+    best = {c: max(v[0] for k, v in cell.items() if (k[1], k[2]) == c) for c in cols}
+
+    def fmt(m, p, f):
+        if (m, p, f) not in cell:
+            return "not run"
+        mean, sd = cell[(m, p, f)]
+        text = f"{mean:.3f} \\pm {sd:.3f}"
+        return f"$\\mathbf{{{mean:.3f}}} \\pm {sd:.3f}$" if np.isclose(mean, best[(p, f)]) else f"${text}$"
+
+    header = [["", "\\multicolumn{3}{c}{Logistic regression}", "\\multicolumn{3}{c}{SVM (TS2Vec protocol)}"],
+              ["Method"] + [pct(f) for f in FRACTIONS] * 2]
     rows = []
-    for method, run in methods.items():
-        res = read_csv(run, "results.csv")
-        for probe, probe_name in probes.items():
-            for frac, g in res[res.probe == probe].groupby("label_fraction"):
-                rows.append([method, probe_name, f"{frac:.0%}".replace("%", "\\%"), str(g.n_labels.iloc[0]),
-                             pm(g.accuracy.mean(), g.accuracy.std()), pm(g.macro_f1.mean(), g.macro_f1.std())])
+    for f_group, methods in (("ssl", FORDA_SSL), ("base", FORDA_BASELINES)):
+        for m in methods:
+            rows.append([tex(m)] + [fmt(m, p, f) for p, f in cols])
         rows.append("MIDRULE")
-    write_table("forda_probes", ["Method", "Probe", "Labels", "$n$", "Accuracy", "Macro-F1"], rows[:-1],
-                "llrrcc", "FordA test set, frozen representations: mean $\\pm$ SD over 3 seeds "
-                "(R3, R4). The label subset is redrawn for each seed (D29).", "tab:forda")
+    fl = [f"${floor[floor.label_fraction == f].accuracy.mean():.3f}$" for f in FRACTIONS]
+    rows.append(["Floor (most frequent class)"] + fl + fl)
+    write_table("forda_accuracy", header, rows, "lcccccc",
+                "FordA test accuracy, frozen representations: mean $\\pm$ SD over 3 seeds; the same "
+                "labelled series for every method at each budget (D78). Bold: best mean per column. "
+                "Raw samples are not probed with logistic regression (D89). The floor ignores the "
+                "features, so it is the same under both probes (D83).", "tab:forda-accuracy")
+    return cell
 
-    # Figure: accuracy vs label budget, one panel per probe, published values as reference lines.
-    fig, axes = plt.subplots(1, 2, figsize=(6.3, 2.5), sharey=True)
-    for ax, (probe, probe_name) in zip(axes, probes.items()):
-        for (method, run), colour, dx in zip(methods.items(), (BLUE, ORANGE), (-0.03, 0.03)):
-            res = read_csv(run, "results.csv")
-            g = res[res.probe == probe].groupby("label_fraction").accuracy
-            x = np.log10(g.mean().index * 100)
-            ax.errorbar(x + dx, g.mean(), yerr=g.std(), color=colour, linewidth=2, marker="o",
-                        markersize=4, capsize=2, label=method)
-            seeds = res[res.probe == probe]
-            ax.scatter(np.log10(seeds.label_fraction * 100) + dx, seeds.accuracy, s=6, color=colour,
-                       alpha=0.5, linewidths=0)
-            if probe == "svm_ts2vec":  # the published numbers use this protocol
-                pub = read_yaml(run)["evaluation"]["published_accuracy"]
-                ax.axhline(pub, color=colour, linestyle="--", linewidth=1)
-                ax.text(-0.05, pub + 0.003, f"{method} published {pub:.3f}", fontsize=6, color=INK)
-        ax.set_xticks([0, 1, 2], ["1 %", "10 %", "100 %"])
-        ax.set_xlim(-0.2, 2.2)
-        ax.set_title(probe_name, fontsize=8, color=INK, loc="left")
-        ax.set_xlabel("Training labels used by the probe", fontsize=7)
-        style(ax)
-    axes[0].set_ylabel("Test accuracy", fontsize=7)
-    axes[1].legend(fontsize=7, frameon=False, loc="lower right")
-    save(fig, "forda_label_budget")
 
-    # Reproduction checks (SVM probe, 100 % labels) and the preliminary CPU check (R2).
-    out = {}
-    for key, method in (("R2", "TS2Vec (CPU check)"), ("R3", "TS2Vec"), ("R4", "T-Loss")):
-        run = RUNS[key]
-        res = read_csv(run, "results.csv")
-        acc = res[(res.probe == "svm_ts2vec") & (res.label_fraction == 1.0)].accuracy
-        out[key] = (method, "FordA", read_yaml(run)["evaluation"]["published_accuracy"], acc)
+def forda_paired_table(res):
+    """Per probe and budget: the best baseline (by mean test accuracy, D80) and each SSL method's
+    paired difference to it, per seed (same seeds, same label subsets, D78)."""
+    rows, out = [], {}
+    for p, pname in PROBE_NAMES.items():
+        for f in FRACTIONS:
+            means = {m: res[m][(res[m].probe == p) & (res[m].label_fraction == f)].accuracy.mean()
+                     for m in FORDA_BASELINES}
+            means = {m: v for m, v in means.items() if not np.isnan(v)}
+            b = max(means, key=means.get)
+            base = res[b][(res[b].probe == p) & (res[b].label_fraction == f)].set_index("seed").accuracy
+            row = [pname if f == FRACTIONS[0] else "", pct(f), f"{tex(b)} (${means[b]:.3f}$)"]
+            for m in FORDA_SSL:
+                ssl = res[m][(res[m].probe == p) & (res[m].label_fraction == f)].set_index("seed").accuracy
+                d = (ssl - base).dropna()
+                out[(m, p, f)] = d
+                row.append(f"{signed(d.mean())} \\,$({', '.join(f'{x:+.3f}' for x in d)})$")  # math mode: real minus signs
+            rows.append(row)
+        rows.append("MIDRULE")
+    write_table("forda_paired", ["Probe", "Labels", "Best baseline (mean)"] +
+                [f"{m}: mean (per seed)" for m in FORDA_SSL], rows[:-1], "lllcc",
+                "FordA: paired difference in test accuracy, SSL method minus the best baseline at that "
+                "probe and label budget (positive: the SSL method is better). Per seed, the two use the "
+                "same labelled series (D78). The best baseline is chosen by its mean test accuracy, which "
+                "favours the baselines (D80). Seeds in the order 0, 1, 2.", "tab:forda-paired")
     return out
 
 
+def forda_timing_table():
+    """Wall-clock time per stage (D79): median over seeds, with the range."""
+    rows = []
+    for m, run in {**FORDA_SSL, **FORDA_BASELINES}.items():
+        seeds = sorted(d for d in os.listdir(path(run)) if d.startswith("seed_"))
+        t = pd.DataFrame([read_json(run, f"{s}/timing.json") for s in seeds])
+        hw = read_json(run, "hardware.json")
+        device = "GPU" if hw["device"].startswith("cuda") else "CPU"
+        res = read_csv(run, "results.csv")
+        probe_s = []
+        for p in PROBE_NAMES:
+            g = res[(res.probe == p) & (res.label_fraction == 1.0)].probe_fit_s
+            probe_s.append(f"{g.median():.1f}" if len(g) else "--")
+        fit = t.pretrain_s
+        fit_text = "none" if fit.max() < 1e-3 else f"{fit.median():.2f} ({fit.min():.2f}--{fit.max():.2f})"
+        rows.append([tex(m), device, fit_text, f"{t.encode_series_per_s.median():,.0f}"] + probe_s)
+    compile_s = read_json(FORDA_BASELINES["MiniRocket"], "compile.json")["compile_s"]
+    hw = read_json(FORDA_SSL["TS2Vec"], "hardware.json")
+    write_table("forda_timing", [["", "", "Fit / pretraining (s)", "Encoding", "\\multicolumn{2}{c}{Probe fit, 100\\,\\% labels (s)}"],
+                                 ["Method", "Device", "median (range)", "series/s", "Logistic", "SVM"]],
+                rows, "llrrrr",
+                f"FordA: wall-clock time per stage (D79), median over 3 seeds. Encoding: training and test "
+                f"series (4,921) per second. Probe fit includes the probe's cross-validation. Hardware: "
+                f"{hw['gpu']} GPU, {hw['cpu_count']}-thread CPU. MiniRocket's code compiles once on import "
+                f"({compile_s:.2f}~s, not included, D81).", "tab:forda-timing")
+
+
+def forda_figure(res):
+    """Accuracy against label budget, one panel per probe; SSL methods solid, baselines dashed."""
+    colours = dict(zip(list(FORDA_SSL) + list(FORDA_BASELINES), (BLUE, ORANGE, GREEN, AQUA, YELLOW, MAGENTA)))
+    floor = res["Raw samples"][res["Raw samples"].probe == "floor"].accuracy.mean()
+    fig, axes = plt.subplots(1, 2, figsize=(6.3, 2.7), sharey=True)
+    for ax, (p, pname) in zip(axes, PROBE_NAMES.items()):
+        for m, r in res.items():
+            g = r[r.probe == p].groupby("label_fraction").accuracy
+            if not len(g.mean()):
+                continue  # raw samples: no logistic probe (D89)
+            ssl = m in FORDA_SSL
+            ax.errorbar(np.log10(g.mean().index * 100), g.mean(), yerr=g.std(), color=colours[m],
+                        linewidth=2, linestyle="-" if ssl else "--", marker="o" if ssl else "s",
+                        markersize=4, capsize=2, label=m)
+        ax.axhline(floor, color=MUTED, linestyle=":", linewidth=1)
+        ax.text(2.18, floor + 0.008, "floor", fontsize=6, color=INK, ha="right")
+        ax.set_xticks([0, 1, 2], ["1 %", "10 %", "100 %"])
+        ax.set_xlim(-0.15, 2.2)
+        ax.set_title(pname, fontsize=8, color=INK, loc="left")
+        ax.set_xlabel("Training labels used by the probe", fontsize=7)
+        style(ax)
+    axes[0].set_ylabel("Test accuracy", fontsize=7)
+    handles, labels = axes[1].get_legend_handles_labels()
+    fig.legend(handles, labels, fontsize=7, frameon=False, loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.06))
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    save(fig, "forda_label_efficiency")
+
+
+def forda():
+    """All FordA tables, the figure and the numbers quoted in the prose. Returns the reproduction checks."""
+    res = forda_results()
+    cell = forda_accuracy_table(res)
+    paired = forda_paired_table(res)
+    forda_timing_table()
+    forda_figure(res)
+
+    # Numbers quoted in the prose.
+    for m, key in (("TS2Vec", "Tsvec"), ("T-Loss", "Tloss")):
+        earlier = read_csv(FORDA_EARLIER[m], "results.csv")
+        e = earlier[(earlier.probe == "svm_ts2vec") & (earlier.label_fraction == 1.0)].accuracy
+        number(f"Forda{key}Earlier", f3(e.mean()))
+        for p, pk in (("logreg", "Log"), ("svm_ts2vec", "Svm")):
+            for f, fk in zip(FRACTIONS, ("One", "Ten", "Hundred")):
+                d = paired[(m, p, f)]
+                number(f"Forda{key}Diff{pk}{fk}", signed(d.mean()))
+                number(f"Forda{key}Neg{pk}{fk}", str(int((d < 0).sum())))
+    for m, key in (("TS2Vec", "Tsvec"), ("T-Loss", "Tloss"), ("MiniRocket", "Minirocket")):
+        run = {**FORDA_SSL, **FORDA_BASELINES}[m]
+        seeds = sorted(d for d in os.listdir(path(run)) if d.startswith("seed_"))
+        t = pd.DataFrame([read_json(run, f"{s}/timing.json") for s in seeds])
+        number(f"Forda{key}Fit", f"{t.pretrain_s.median():.2f}~s" if t.pretrain_s.median() < 60
+               else f"{t.pretrain_s.median() / 60:.1f}~min")
+    # First GPU seed vs the others (start-up time is included in the first, D79).
+    run = FORDA_SSL["TS2Vec"]
+    t = [read_json(run, f"seed_{s}/timing.json")["pretrain_s"] for s in range(3)]
+    number("FordaTsvecFitFirst", f"{t[0]:.0f}~s")
+    number("FordaTsvecFitRest", f"{min(t[1:]):.0f}--{max(t[1:]):.0f}~s")
+    mr = res["MiniRocket"]
+    ridge = mr[(mr.probe == "ridge_minirocket") & (mr.label_fraction == 1.0)].accuracy
+    number("FordaMinirocketRidge", pm(ridge.mean(), ridge.std()))
+    number("FordaFftLogTen", f"{cell[('|FFT|', 'logreg', 0.1)][0]:.3f}")
+    number("FordaTsvecLogTen", f"{cell[('TS2Vec', 'logreg', 0.1)][0]:.3f}")
+
+    # Reproduction checks: each method's own probe with all labels against the published accuracy.
+    checks = {}
+    for m, run in (("TS2Vec", FORDA_SSL["TS2Vec"]), ("T-Loss", FORDA_SSL["T-Loss"]),
+                   ("MiniRocket", FORDA_BASELINES["MiniRocket"])):
+        ev = read_yaml(run)["evaluation"]
+        r = read_csv(run, "results.csv")
+        acc = r[(r.probe == ev["reproduction_probe"]) & (r.label_fraction == 1.0)].accuracy
+        checks[m] = (m, "FordA", ev["published_accuracy"], acc, "\\ref{forda-repro}")
+    return checks
+
+
 # ---------------------------------------------------------------------------
-# TF-C on FD-A -> FD-B (R5 - R9)
+# TF-C on FD-A -> FD-B
 # ---------------------------------------------------------------------------
 def pretrain_losses(run):
     """{seed: loss per epoch (NaN where not finite / not written)} for a TF-C run."""
@@ -213,33 +405,33 @@ def pretrain_losses(run):
 
 
 def tfc_official_full():
-    """R5: official TF-C on the full data. Per seed: how far pretraining got, and whether
+    """Official TF-C on the full data. Per seed: how far pretraining got, and whether
     fine-tuning wrote anything."""
-    losses = pretrain_losses(RUNS["R5c"])
+    losses = pretrain_losses(RUNS["tfc_full_3"])
     # The second and third attempts ran the same settings; check the loss curves are identical.
-    other = pretrain_losses(RUNS["R5b"])
+    other = pretrain_losses(RUNS["tfc_full_2"])
     identical = all(losses[s].loss.equals(other[s].loss) for s in losses)
-    first = pretrain_losses(RUNS["R5a"])[0]
+    first = pretrain_losses(RUNS["tfc_full_1"])[0]
     # The first attempt (older code) kept writing after the loss became non-finite: compare finite epochs.
     identical_first = first.loss.dropna().reset_index(drop=True).equals(losses[0].loss.dropna().reset_index(drop=True))
-    number("RfiveIdentical", "identical" if identical else "not identical")
-    number("RfiveFirstIdentical", "identical" if identical_first else "not identical")
+    number("TfcFullIdentical", "identical" if identical else "not identical")
+    number("TfcFullFirstIdentical", "identical" if identical_first else "not identical")
 
     rows = []
     for seed, df in losses.items():
         finite = df.loss.notna()
         n_ok = int(finite.sum())
         first_bad = "--" if n_ok == len(df) else str(int(df.epoch[~finite].iloc[0]))
-        finetuned = os.path.exists(path(RUNS["R5c"], f"seed_{seed}", "epochs.csv"))
+        finetuned = os.path.exists(path(RUNS["tfc_full_3"], f"seed_{seed}", "epochs.csv"))
         rows.append([str(seed), str(len(df)), str(n_ok), first_bad, f3(df.loss[finite].iloc[-1]),
                      "yes" if finetuned else "no"])
     n_div = sum(r[3] != "--" for r in rows)
-    number("RfiveDiverged", str(n_div))
-    number("RfiveSeeds", str(len(rows)))
-    number("RfiveResultsWritten", "yes" if os.path.exists(path(RUNS["R5c"], "results.csv")) else "no")
+    number("TfcFullDiverged", str(n_div))
+    number("TfcFullSeeds", str(len(rows)))
+    number("TfcFullResultsWritten", "yes" if os.path.exists(path(RUNS["tfc_full_3"], "results.csv")) else "no")
     write_table("tfc_official_full", ["Seed", "Epochs run", "Finite", "First non-finite", "Last finite loss",
                                       "Fine-tuning output"], rows, "rccccc",
-                "Official TF-C, full FD-A pretraining data (R5, third attempt). Pretraining loss "
+                "Official TF-C, full FD-A pretraining data (third attempt). Pretraining loss "
                 "per epoch is empty in \\texttt{pretrain\\_loss.csv} once it is no longer finite.",
                 "tab:tfc-official-full",
                 notes=f"Second and third attempt: pretraining losses {'identical' if identical else 'NOT identical'} "
@@ -248,8 +440,8 @@ def tfc_official_full():
 
 
 def tfc_official_subset():
-    """R9: official TF-C with the debugging subset."""
-    run = RUNS["R9"]
+    """Official TF-C with the debugging subset."""
+    run = RUNS["tfc_subset"]
     res = read_csv(run, "results.csv")
     rows = []
     for seed, g in res.groupby("seed"):
@@ -264,32 +456,32 @@ def tfc_official_subset():
                  "Recall $=1/3$"],
                 [["", "Epoch", "Acc.", "F1", "Epoch", "Acc.", "F1", "all epochs"], "MIDRULE"] + rows,
                 "rccccccc",
-                "Official TF-C with the debugging subset (R9). Official protocol: epoch with the best "
+                "Official TF-C with the debugging subset. Official protocol: epoch with the best "
                 "test accuracy; clean protocol: epoch with the best validation macro-F1 (D43). Last "
                 "column: macro recall on test and validation is exactly $1/3$ at every one of the "
                 "40 fine-tuning epochs.", "tab:tfc-official-subset")
     acc = res[res.protocol == "official"].accuracy
-    number("RnineAcc", pm(acc.mean(), acc.std()))
+    number("TfcSubsetAcc", pm(acc.mean(), acc.std()))
     f1 = res[res.protocol == "official"].macro_f1
-    number("RnineFone", pm(f1.mean(), f1.std()))
+    number("TfcSubsetFone", pm(f1.mean(), f1.std()))
     return res
 
 
 def tfc_ours():
-    """R6: our TF-C."""
-    run = RUNS["R6"]
+    """Our TF-C."""
+    run = RUNS["tfc_ours"]
     res = read_csv(run, "results.csv")
     cols = ["accuracy", "precision", "recall", "f1", "auroc", "auprc"]
     rows = [[str(r.seed), str(int(r.epoch))] + [f3(getattr(r, c)) for c in cols] for r in res.itertuples()]
     rows += ["MIDRULE", ["Mean $\\pm$ SD", ""] + [pm(res[c].mean(), res[c].std()) for c in cols]]
     write_table("tfc_ours", ["Seed", "Epoch", "Acc.", "Prec.", "Recall", "F1", "AUROC", "AUPRC"], rows,
-                "rrcccccc", "Our TF-C (D41, D42), FD-A $\\rightarrow$ FD-B test set (R6). Epoch: "
+                "rrcccccc", "Our TF-C (D41, D42), FD-A $\\rightarrow$ FD-B test set. Epoch: "
                 "fine-tuning epoch with the best validation macro-F1; the test set is scored once, "
                 "for that epoch. Precision, recall and F1 are macro averages.", "tab:tfc-ours")
-    number("RsixAcc", pm(res.accuracy.mean(), res.accuracy.std()))
-    number("RsixFone", pm(res.f1.mean(), res.f1.std()))
-    number("RsixAccMin", f3(res.accuracy.min()))
-    number("RsixAccMax", f3(res.accuracy.max()))
+    number("TfcOursAcc", pm(res.accuracy.mean(), res.accuracy.std()))
+    number("TfcOursFone", pm(res.f1.mean(), res.f1.std()))
+    number("TfcOursAccMin", f3(res.accuracy.min()))
+    number("TfcOursAccMax", f3(res.accuracy.max()))
 
     # Figure: validation macro-F1 per fine-tuning epoch, selected epoch marked.
     fig, ax = plt.subplots(figsize=(6.3, 2.2))
@@ -305,15 +497,15 @@ def tfc_ours():
     style(ax)
     save(fig, "tfc_ours_validation")
     n_val = int((read_csv(run, "windows.csv").split == "val").sum())
-    number("RsixNval", str(n_val))
+    number("TfcOursNval", str(n_val))
     return res
 
 
 def tfc_losses_figure(full):
-    """Pretraining loss per epoch: official full data (R5), official subset (R9), ours (R6)."""
-    panels = [("Official TF-C, full data (R5)", full),
-              ("Official TF-C, debugging subset (R9)", pretrain_losses(RUNS["R9"])),
-              ("Our TF-C (R6)", pretrain_losses(RUNS["R6"]))]
+    """Pretraining loss per epoch: official full data, official subset, ours."""
+    panels = [("Official TF-C, full data", full),
+              ("Official TF-C, debugging subset", pretrain_losses(RUNS["tfc_subset"])),
+              ("Our TF-C", pretrain_losses(RUNS["tfc_ours"]))]
     fig, axes = plt.subplots(1, 3, figsize=(6.3, 2.2))
     for ax, (title, losses) in zip(axes, panels):
         for seed, df in losses.items():
@@ -332,37 +524,37 @@ def tfc_losses_figure(full):
 
 
 def fdb_overview(subset_res, ours_res):
-    """R7, R8 and the TF-C results side by side on the FD-B test set."""
-    probes = read_csv(RUNS["R7"], "results.csv")
-    spectrum = read_csv(RUNS["R8"], "results.csv")
+    """The TF-C results and the FD-B diagnostics side by side on the FD-B test set."""
+    probes = read_csv(RUNS["tfc_probe"], "results.csv")
+    spectrum = read_csv(RUNS["fdb_spectrum"], "results.csv")
     name = {"svm_ts2vec": "SVM", "logreg": "log. reg."}
     entries = []  # (label, accuracies per seed, macro-F1 per seed, entry)
     official = subset_res[subset_res.protocol == "official"]
-    entries.append(("Official TF-C, subset, fine-tuned", official.accuracy, official.macro_f1, "R9"))
-    entries.append(("Our TF-C, fine-tuned", ours_res.accuracy, ours_res.f1, "R6"))
+    entries.append(("Official TF-C, subset, fine-tuned", official.accuracy, official.macro_f1, "\\ref{tfc-subset}"))
+    entries.append(("Our TF-C, fine-tuned", ours_res.accuracy, ours_res.f1, "\\ref{tfc-ours}"))
     for enc, enc_name in (("pretrained", "pretrained TF-C encoder"), ("random_init", "untrained encoder")):
         for probe in ("svm_ts2vec", "logreg"):
             g = probes[(probes.encoder == enc) & (probes.probe == probe)]
-            entries.append((f"{name[probe]} on {enc_name}", g.accuracy, g.macro_f1, "R7"))
+            entries.append((f"{name[probe]} on {enc_name}", g.accuracy, g.macro_f1, "\\ref{tfc-probe}"))
     for probe in ("svm_ts2vec", "logreg"):
         g = spectrum[spectrum.probe == probe]
-        entries.append((f"{name[probe]} on $|$FFT$|$ spectrum", g.accuracy, g.macro_f1, "R8"))
+        entries.append((f"{name[probe]} on $|$FFT$|$ spectrum", g.accuracy, g.macro_f1, "\\ref{fdb-spectrum}"))
 
     rows = [["TF-C paper (published)", "--", pm(TFC_PUBLISHED["accuracy"], TFC_PUBLISHED["accuracy_sd"]),
              pm(TFC_PUBLISHED["macro_f1"], TFC_PUBLISHED["macro_f1_sd"]), "5"], "MIDRULE"]
     for label, acc, f1, entry in entries:
         cell = (lambda s: f3(s.iloc[0])) if len(acc) == 1 else (lambda s: pm(s.mean(), s.std()))
         rows.append([label, entry, cell(acc), cell(f1), str(len(acc))])
-    write_table("fdb_overview", ["Model / probe", "Entry", "Accuracy", "Macro-F1", "Seeds"], rows, "llccr",
-                "FD-B test set: TF-C results and the diagnostics (R6--R9). Probes use all 60 FD-B "
+    write_table("fdb_overview", ["Model / probe", "Section", "Accuracy", "Macro-F1", "Seeds"], rows, "llccr",
+                "FD-B test set: TF-C results and the diagnostics. Probes use all 60 FD-B "
                 "training labels (D45, D46). The $|$FFT$|$ probes are deterministic (one value).",
                 "tab:fdb")
     for enc, key in (("pretrained", "Pre"), ("random_init", "Rand")):
         for probe, pkey in (("svm_ts2vec", "Svm"), ("logreg", "Logreg")):
             g = probes[(probes.encoder == enc) & (probes.probe == probe)].accuracy
-            number(f"Rseven{key}{pkey}", pm(g.mean(), g.std()))
+            number(f"TfcProbe{key}{pkey}", pm(g.mean(), g.std()))
     for probe, pkey in (("svm_ts2vec", "Svm"), ("logreg", "Logreg")):
-        number(f"Reight{pkey}", f3(spectrum[spectrum.probe == probe].accuracy.iloc[0]))
+        number(f"FdbSpec{pkey}", f3(spectrum[spectrum.probe == probe].accuracy.iloc[0]))
 
     # Figure: one row per model/probe, a dot per seed, a bar at the mean, published band shaded.
     fig, ax = plt.subplots(figsize=(6.3, 2.8))
@@ -383,10 +575,10 @@ def fdb_overview(subset_res, ours_res):
 
 
 # ---------------------------------------------------------------------------
-# Herning band check (R10)
+# Herning band check
 # ---------------------------------------------------------------------------
 def herning():
-    run = RUNS["R10"]
+    run = RUNS["band_check"]
     summ = read_csv(run, "summary.csv")
     drift = read_csv(run, "drift_control.csv")
     sweeps = read_csv(run, "sweeps.csv")
@@ -396,28 +588,28 @@ def herning():
     roles = sweeps.role.value_counts()
     for role, key in (("analysed", "Analysed"), ("noise_reference", "Noise"), ("non_rotating_0", "Zero"),
                       ("excluded", "Excluded")):
-        number(f"Rten{key}", f"{int(roles.get(role, 0)):,}")
-    number("RtenSweeps", f"{len(sweeps):,}")
+        number(f"Band{key}", f"{int(roles.get(role, 0)):,}")
+    number("BandSweeps", f"{len(sweeps):,}")
     an = sweeps[sweeps.role == "analysed"]
-    number("RtenKappaMin", f"{an.kappa.min():.3f}")
-    number("RtenKappaMax", f"{an.kappa.max():.3f}")
+    number("BandKappaMin", f"{an.kappa.min():.3f}")
+    number("BandKappaMax", f"{an.kappa.max():.3f}")
 
     # Numbers quoted in the prose about the band check.
     ae, us = d[d.channel == "AE"], d[d.channel == "UL"]
     peaks = ae[ae.f_hi < 50e3].nlargest(1, "ratio_db").iloc[0], ae[ae.f_lo >= 50e3].nlargest(1, "ratio_db").iloc[0]
-    number("RtenAePeakLow", f"{peaks[0].ratio_db:.1f}~dB at {peaks[0].band}")
-    number("RtenAePeakHigh", f"{peaks[1].ratio_db:.1f}~dB at {peaks[1].band}")
+    number("BandAePeakLow", f"{peaks[0].ratio_db:.1f}~dB at {peaks[0].band}")
+    number("BandAePeakHigh", f"{peaks[1].ratio_db:.1f}~dB at {peaks[1].band}")
     ae_core = ae[(ae.f_lo >= 11e3) & (ae.f_hi <= 450e3)]  # bands 12.6 ... 398 kHz
-    number("RtenAeCoreRpm", f"{ae_core.within_block_rpm_median.min():.2f}--{ae_core.within_block_rpm_median.max():.2f}")
+    number("BandAeCoreRpm", f"{ae_core.within_block_rpm_median.min():.2f}--{ae_core.within_block_rpm_median.max():.2f}")
     ae_top = ae[ae.f_lo >= 560e3]  # bands from 631 kHz up
-    number("RtenAeTopDb", f"${ae_top.ratio_db.max():.2f}$")
-    number("RtenAeTopRpm", f"${ae_top.within_block_rpm_median.min():.2f}$ to ${ae_top.within_block_rpm_median.max():.2f}$")
+    number("BandAeTopDb", f"${ae_top.ratio_db.max():.2f}$")
+    number("BandAeTopRpm", f"${ae_top.within_block_rpm_median.min():.2f}$ to ${ae_top.within_block_rpm_median.max():.2f}$")
     us_mid = us[(us.f_lo >= 35e3) & (us.f_hi <= 225e3)]  # bands 39.8 ... 199.5 kHz
-    number("RtenUsMidDb", f"{us_mid.ratio_db.min():.1f}--{us_mid.ratio_db.max():.1f}")
-    number("RtenUsMidRpm", f"{us_mid.within_block_rpm_median.min():.2f}--{us_mid.within_block_rpm_median.max():.2f}")
-    number("RtenUsMidKappa", f"{us_mid.spearman_kappa.min():.2f}--{us_mid.spearman_kappa.max():.2f}")
+    number("BandUsMidDb", f"{us_mid.ratio_db.min():.1f}--{us_mid.ratio_db.max():.1f}")
+    number("BandUsMidRpm", f"{us_mid.within_block_rpm_median.min():.2f}--{us_mid.within_block_rpm_median.max():.2f}")
+    number("BandUsMidKappa", f"{us_mid.spearman_kappa.min():.2f}--{us_mid.spearman_kappa.max():.2f}")
     us_low = us[us.f_hi <= 7.1e3]  # bands up to 6.3 kHz
-    number("RtenUsLowDb", f"{us_low.ratio_db.min():.0f}--{us_low.ratio_db.max():.0f}")
+    number("BandUsLowDb", f"{us_low.ratio_db.min():.0f}--{us_low.ratio_db.max():.0f}")
 
     # Figure: excess power over the non-rotating reference, and Spearman correlations, per band.
     fig, axes = plt.subplots(2, 2, figsize=(6.3, 4.2), sharex=True)
@@ -467,7 +659,7 @@ def herning():
     HEAD = "Sensor & Band & Ratio (dB) & $\\rho$ rpm & $\\rho$ rpm in block & $\\rho$ temp. & $\\rho$ $\\kappa$ \\\\"
     lines = ["% Generated by scripts/make_report.py - do not edit by hand.",
              "\\begin{small}", "\\begin{longtable}{llrrrrr}",
-             "\\caption{Herning band check, all bands (R10). Ratio: median band power of analysed sweeps "
+             "\\caption{Herning band check, all bands. Ratio: median band power of analysed sweeps "
              "over that of the non-rotating reference. $\\rho$: Spearman correlation of band power with "
              "rpm (all analysed sweeps, and median within temperature blocks), temperature and $\\kappa$.}"
              "\\label{tab:bands}\\\\", "\\toprule", HEAD, "\\midrule", "\\endfirsthead",
@@ -487,41 +679,61 @@ def herning():
 def reproduction_table(checks):
     """One row per reproduction check, with the D26 criterion as implemented."""
     rows = []
-    for key, (method, dataset, published, acc) in checks.items():
+    for key, (method, dataset, published, acc, section) in checks.items():
         if acc is None:
-            rows.append([key, method, dataset, f"{published:.4f}", "no test result", "--", "--", "--"])
+            rows.append([section, method, dataset, f"{published:.4f}", "no test result", "--", "--", "--"])
             continue
         r = reproduction(acc, published)
         verdict = "pass" if r["pass"] else "fail"
-        rows.append([key, method, dataset, f"{published:.4f}", f"{pm(r['mean'], r['sd'])} ($n={r['n']}$)",
+        rows.append([section, method, dataset, f"{published:.4f}", f"{pm(r['mean'], r['sd'])} ($n={r['n']}$)",
                      f3(r["diff"]), f3(r["allowed"]), verdict])
-        number(f"{WORD[key]}Verdict", verdict)
-    write_table("reproduction", ["Entry", "Method", "Data", "Published", "Ours (mean $\\pm$ SD)",
+        number(f"{key}Verdict", verdict)
+        number(f"{key}Acc", pm(r["mean"], r["sd"]))
+    write_table("reproduction", ["Section", "Method", "Data", "Published", "Ours (mean $\\pm$ SD)",
                                  "$|\\Delta|$", "Allowed", "Criterion"], rows, "lllccccc",
-                "Reproduction checks: published accuracy against our mean over seeds. Criterion as "
-                "implemented in \\texttt{scripts/evaluate.py} and \\texttt{scripts/tfc\\_official.py} "
-                "(D26, D38): pass if $|\\Delta| \\le \\max(2\\,\\mathrm{SD}, 0.01)$.", "tab:repro")
-    for key in ("R3", "R4"):  # accuracies quoted in the prose (R6, R9 are set in their own functions)
-        acc = checks[key][3]
-        number(f"{WORD[key]}Acc", pm(acc.mean(), acc.std()))
+                "Reproduction checks: published accuracy against our mean over seeds, with the method's "
+                "own probe and all labels. Criterion as implemented in \\texttt{scripts/evaluate.py} and "
+                "\\texttt{scripts/tfc\\_official.py} (D26, D38): pass if "
+                "$|\\Delta| \\le \\max(2\\,\\mathrm{SD}, 0.01)$.", "tab:repro")
 
 
-def provenance_table():
-    """Run folder, commit and device for every run behind the document."""
-    rows = []
-    for key, run in list(RUNS.items()) + [(k + " (empty)", v) for k, v in EMPTY_RUNS.items()]:
-        git = read_git(run)
-        commit = git["commit"][:7] if git.get("commit") else "none"
-        dirty = {True: "yes", False: "no", None: "--"}[git.get("uncommitted_changes")]
+def run_index_table():
+    """Every folder in runs/ (D98): what it was for, its status, commit and device.
+    Folders not in RUN_INDEX are listed as 'not indexed' and reported on the console."""
+    folders = sorted(d for d in os.listdir(path("runs")) if os.path.isdir(path("runs", d)))
+    HEAD = "Run folder (\\texttt{runs/}) & What & Status & Commit & Device \\\\"
+    lines = ["% Generated by scripts/make_report.py - do not edit by hand.",
+             "\\begin{footnotesize}", "\\begin{longtable}{>{\\raggedright\\arraybackslash}p{0.28\\linewidth}"
+             ">{\\raggedright\\arraybackslash}p{0.22\\linewidth}>{\\raggedright\\arraybackslash}p{0.22\\linewidth}ll}",
+             "\\caption{Run index: every folder in \\texttt{runs/} (D98). Commit with $^{*}$: the working "
+             "tree had uncommitted changes when the run started, so the commit alone does not reproduce "
+             "the code.}\\label{tab:runs}\\\\",
+             "\\toprule", HEAD, "\\midrule", "\\endfirsthead", "\\toprule", HEAD, "\\midrule", "\\endhead"]
+    missing = []
+    for d in folders:
+        what, status = RUN_INDEX.get(d, ("--", "Not indexed"))
+        if d not in RUN_INDEX:
+            missing.append(d)
         try:
-            device = read_yaml(run).get("device", "--")
+            git = read_json(f"runs/{d}", "git.json")
+            commit = (git["commit"][:7] if git.get("commit") else "none") + ("$^{*}$" if git.get("uncommitted_changes") else "")
+        except FileNotFoundError:
+            commit = "--"
+        try:
+            device = str(read_yaml(f"runs/{d}").get("device", "--"))
         except FileNotFoundError:
             device = "--"
-        rows.append([key.replace("R5a", "R5").replace("R5b", "R5").replace("R5c", "R5"),
-                     "\\texttt{" + os.path.basename(run).replace("_", "\\_") + "}", commit, dirty, str(device)])
-    write_table("provenance", ["Entry", "Run folder (\\texttt{runs/})", "Commit", "Uncommitted", "Device"], rows,
-                "llccc", "Run folders behind each entry. 'Uncommitted': the working tree had changes "
-                "when the run started, so the commit alone does not reproduce the code.", "tab:provenance")
+        status = status if status.startswith("In ") else tex(status).replace("\\_", "\\_\\allowbreak{}")
+        name = tex(d).replace("\\_", "\\_\\allowbreak{}")  # long folder names may break after an underscore
+        lines.append(f"\\texttt{{{name}}} & {tex(what)} & {status} & {commit} & {device} \\\\")
+    lines += ["\\bottomrule", "\\end{longtable}", "\\end{footnotesize}"]
+    with open(os.path.join(OUT, "tables", "run_index.tex"), "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    for name in RUN_INDEX:
+        if name not in folders:
+            print(f"Warning: RUN_INDEX names {name}, which is not in runs/")
+    for d in missing:
+        print(f"Warning: runs/{d} is not in RUN_INDEX (listed as 'Not indexed')")
 
 
 def main():
@@ -536,12 +748,15 @@ def main():
     fdb_overview(subset, ours)
     herning()
 
+    # Reproduction checks; the key is also the prefix of the quoted numbers (\TsvecVerdict, ...).
     pub = TFC_PUBLISHED["accuracy"]
-    checks["R5"] = ("TF-C, official, full data", "FD", pub, None)
-    checks["R6"] = ("TF-C, ours", "FD", pub, ours.accuracy)
-    checks["R9"] = ("TF-C, official, subset", "FD", pub, subset[subset.protocol == "official"].accuracy)
-    reproduction_table(checks)
-    provenance_table()
+    rows = {"Tsvec": checks["TS2Vec"], "Tloss": checks["T-Loss"], "Minirocket": checks["MiniRocket"],
+            "TfcFull": ("TF-C, official, full data", "FD", pub, None, "\\ref{tfc-full}"),
+            "TfcOurs": ("TF-C, ours", "FD", pub, ours.accuracy, "\\ref{tfc-ours}"),
+            "TfcSubset": ("TF-C, official, subset", "FD", pub, subset[subset.protocol == "official"].accuracy,
+                          "\\ref{tfc-subset}")}
+    reproduction_table(rows)
+    run_index_table()
 
     with open(os.path.join(OUT, "tables", "numbers.tex"), "w", encoding="utf-8") as f:
         f.write("% Generated by scripts/make_report.py - do not edit by hand.\n")
