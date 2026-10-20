@@ -5,8 +5,7 @@ imported but never changed here (D11, D91):
 
 1. **Examination of collapse** (D93): when and where TF-C's representations collapse
    during pretraining. — `collapse.py`
-2. **Ablation by building blocks**: TF-C built up one component at a time. — not started;
-   stages open (D95).
+2. **Ablation by building blocks** (D96, D97): TF-C built up one component at a time. — `ablation.py`
 
 ## Collapse examination
 
@@ -35,3 +34,45 @@ and most eigenvalues are near 0. If h collapses while z does not, the projector 
 
 `collapse_forda.yaml` is complete (D94). `collapse_fd.yaml` still has open placeholders (`null`: seeds and number of
 diagnostic windows); the run refuses to start until they are set.
+
+## Ablation by building blocks
+
+    uv run python studies/tfc_ablation/ablation.py studies/tfc_ablation/configs/ablation_forda_A.yaml
+
+| stage | branches | loss | probed on |
+|---|---|---|---|
+| A | time | L_T | h_T |
+| B | frequency | L_F | h_F |
+| C | both, uncoupled | L_T + L_F | h_T, h_F, h |
+| D | both, aligned | λ(L_T + L_F) + (1 − λ) S_TF | h_T, h_F, h, z |
+| E | full TF-C | λ(L_T + L_F) + (1 − λ) L_C | h_T, h_F, h, z |
+
+Per seed: pretraining with the collapse diagnostics after every epoch (same output files as
+`collapse.py`), then frozen probes (D26: `svm_ts2vec` and `logreg`; label budgets 1/10/100 %)
+trained on the training split and scored once on the test split: `probes.csv`, `summary.csv`.
+Stage E is exactly `tfc.pretrain` (tested in `tests/test_ablation.py`). In C the projectors get no
+gradient (only their BatchNorm running statistics move), so z is not evaluated there.
+
+The probes need the TS2Vec submodule (`external/ts2vec`): `git submodule update --init`.
+
+## Figures
+
+Notebook `figures_forda.ipynb` (functions in `plots.py`, settings and run folders in
+`configs/plots_forda.yaml`; add D and E there once they have run):
+
+    uv sync --group eda
+
+then open the notebook (VS Code with the repo's `.venv`, or `uv run --group eda jupyter lab`)
+and run all cells. Nothing is written to disk: the figures exist only in the notebook, which
+is committed with outputs cleared (as in `eda/`, D68). Each section of the notebook says
+what its figure shows and how to read it.
+
+Figures: loss parts per epoch; effective rank, directions holding 90 % of the variance and
+dead dimensions; cumulative variance at the last epoch and eigenvalue spectra per stage;
+scale (norm, std); mean cosine, alignment and the two against each other; SIGReg; probe
+accuracy against label budget with TS2Vec and T-Loss as reference; PCA of the diagnostic
+windows at epoch 0 and the last epoch, coloured by class.
+
+Only measured values are drawn. With several seeds a line is the mean over seeds and the
+band runs from the smallest to the largest seed. A and B share one colour (they never share
+a panel); every line carries its stage letter.

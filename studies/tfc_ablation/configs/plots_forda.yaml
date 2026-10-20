@@ -1,0 +1,17 @@
+# TF-C study, part 2: figures of the ablation stages on FordA (notebook figures_forda.ipynb, functions in plots.py).
+# Every setting is written out; 'null' marks an open placeholder and loading stops.
+
+runs:  # stage -> run folder of ablation.py; add D and E when they have run
+  A: runs/20261020_135846_ablation_forda_A
+  B: runs/20261020_140639_ablation_forda_B
+  C: runs/20261020_141430_ablation_forda_C
+  # D: runs/<date_time>_ablation_forda_D
+  # E: runs/<date_time>_ablation_forda_E
+
+references:  # other methods on FordA (results.csv), grey reference lines in the probe figure; same probes (D26)
+  TS2Vec: runs/20261008_084722_ts2vec_forda  # R3
+  T-Loss: runs/20261008_092321_tloss_forda  # R4
+
+variance_share: 0.9  # our choice: 'directions holding 90 % of the variance' (computed from spectra.csv)
+spectrum_epochs: [0, 1, 5, 10, 20, 40]  # our choice: epochs drawn in the spectrum figures
+pca_device: cpu  # the forward passes for the PCA figures; 3,601 windows, fast on the CPU

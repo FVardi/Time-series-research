@@ -28,7 +28,7 @@ from harness import diagnostics, runs, transfer
 from harness.data import canonical
 from harness.methods import tfc
 
-REPRESENTATIONS = ("h_t", "h_f", "z_t", "z_f", "z")  # z = [z_T; z_F], the representation for probes (tfc.encode)
+REPRESENTATIONS = ("h_t", "h_f", "z_t", "z_f", "h", "z")  # h = [h_T; h_F]; z = [z_T; z_F], the representation for probes (tfc.encode)
 
 
 def check_diagnostics(d):
@@ -53,14 +53,26 @@ def diagnostic_rows(n, windows, seed):
 
 
 def represent(model, x_t, x_f, chunk):
-    """h_T, h_F, z_T, z_F and [z_T; z_F] for time inputs x_t and frequency inputs x_f, in evaluation mode."""
+    """Representations of time inputs x_t and frequency inputs x_f, in evaluation mode.
+
+    Works for the full TF-C model and for single-branch models (ablation stages A and B,
+    D96): only the branches the model has are run. With both branches, also the
+    concatenations h = [h_T; h_F] and z = [z_T; z_F].
+    """
     model.eval()
-    parts = {name: [] for name in REPRESENTATIONS}
+    parts = {}
     with torch.no_grad():
         for i in range(0, len(x_t), chunk):
-            h_t, z_t, h_f, z_f = model(x_t[i:i + chunk], x_f[i:i + chunk])
-            for name, value in zip(("h_t", "z_t", "h_f", "z_f", "z"), (h_t, z_t, h_f, z_f, torch.cat([z_t, z_f], 1))):
-                parts[name].append(value)
+            out = {}
+            if hasattr(model, "time"):
+                out["h_t"], out["z_t"] = model.time(x_t[i:i + chunk])
+            if hasattr(model, "freq"):
+                out["h_f"], out["z_f"] = model.freq(x_f[i:i + chunk])
+            if hasattr(model, "time") and hasattr(model, "freq"):
+                out["h"] = torch.cat([out["h_t"], out["h_f"]], 1)
+                out["z"] = torch.cat([out["z_t"], out["z_f"]], 1)
+            for name, value in out.items():
+                parts.setdefault(name, []).append(value)
     return {name: torch.cat(v) for name, v in parts.items()}
 
 
