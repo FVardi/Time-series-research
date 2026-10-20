@@ -76,8 +76,8 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [decisions/repo.md](decisions/repo.md) |
 | D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [decisions/training.md](decisions/training.md) |
 | D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open | [decisions/evaluation.md](decisions/evaluation.md) |
-| D71 | 2026-10-17 | TF-C study as an ablation of the time–frequency consistency idea; separate from the baseline list; standalone runs for now | [decisions/training.md](decisions/training.md) |
-| D72 | 2026-10-17 | TF-C ablation first on simple datasets: FordA, in-domain; Herning later, unfiltered first | [decisions/training.md](decisions/training.md) |
+| D71 | 2026-10-17 | TF-C study as an ablation of the time–frequency consistency idea; separate from the baseline list; standalone runs for now (superseded by D95) | [decisions/training.md](decisions/training.md) |
+| D72 | 2026-10-17 | TF-C ablation first on simple datasets: FordA, in-domain; Herning later, unfiltered first (superseded by D95) | [decisions/training.md](decisions/training.md) |
 | D73 | 2026-10-19 | PatchTST (self-supervised) wrapped from the official code (204c21e); official Learner and callbacks; any number of channels | [decisions/training.md](decisions/training.md) |
 | D74 | 2026-10-19 | PatchTST settings: patch 12/stride 12, 100 epochs, official lr finder, 12.5 % validation hold-out, d_ff 256, default size, last-patch representation (item 7 superseded by D87) | [decisions/training.md](decisions/training.md) |
 | D75 | 2026-10-16 | Baselines: floor, raw samples, \|FFT\|, MSSP statistics, MiniRocket; untrained encoders as control; supervised-from-scratch deferred (first recorded as D69, renumbered; item d partly superseded by D85) | [decisions/evaluation.md](decisions/evaluation.md) |
@@ -96,6 +96,11 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D88 | 2026-10-20 | No training-setting tuning on FordA; tuning reserved for harder datasets, chosen on the unlabelled pretraining validation loss; which methods it applies to is open | [decisions/training.md](decisions/training.md) |
 | D89 | 2026-10-19 | Raw-samples baseline: floor and SVM probes only; logistic cell not run (series not phase-aligned); raw run only where series are short enough (first recorded as D87, renumbered) | [decisions/evaluation.md](decisions/evaluation.md) |
 | D90 | 2026-10-20 | catch24 with pycatch22==1.0.2 (features match hctsa v3.0.0); mask_nans false, run stops on NaN; cloud catch24 results (0.5.0) rerun | [decisions/evaluation.md](decisions/evaluation.md) |
+| D91 | 2026-10-17 | `studies/` holds studies and paper material; method-independent diagnostics in `harness/diagnostics.py`; first study `studies/tfc_ablation/` (first recorded as D71, renumbered) | [decisions/repo.md](decisions/repo.md) |
+| D92 | 2026-10-17 | TF-C study `studies/tfc_ablation/`: examination of collapse and ablation by building blocks; own training loop; stages open (first recorded as D72, renumbered; superseded by D95) | [decisions/training.md](decisions/training.md) |
+| D93 | 2026-10-17 | Collapse diagnostics (effective rank, spectrum, std, cosine similarity, SIGReg statistic) every epoch to `collapse.csv`; settings and threshold in D94 (first recorded as D73, renumbered) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D94 | 2026-10-17 | Collapse diagnostics settings (all representations, alignment, 1,024 fixed SIGReg slices); dead dimension = std < 1 % of the largest; FordA validation run: seed 0, all training windows (first recorded as D74, renumbered) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D95 | 2026-10-20 | TF-C study (combines D71, D72, D92): ablation of the time–frequency consistency idea in two parts, collapse and building blocks; standalone in `studies/tfc_ablation/`; ablation on FordA in-domain first; collapse also on FD-A (reproduction record) and FordA; Herning later, unfiltered first | [decisions/training.md](decisions/training.md) |
 
 <!--
 Entry template:
