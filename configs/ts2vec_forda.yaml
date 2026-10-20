@@ -21,4 +21,5 @@ ts2vec:  # official defaults (D28)
 evaluation:  # D26
   label_fractions: [0.01, 0.1, 1.0]
   probes: [svm_ts2vec, logreg]
+  reproduction_probe: svm_ts2vec  # the probe compared with the published accuracy (was fixed in scripts/evaluate.py)
   published_accuracy: 0.936  # TS2Vec paper, FordA, batch size 8

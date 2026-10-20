@@ -10,3 +10,10 @@
 [submodule "external/tsjepa"]
 	path = external/tsjepa
 	url = https://github.com/Sennadir/TS_JEPA
+[submodule "external/patchtst"]
+	path = external/patchtst
+	url = https://github.com/yuqinie98/PatchTST
+[submodule "external/minirocket"]
+	path = external/minirocket
+	url = https://github.com/angus924/minirocket
+	ignore = untracked

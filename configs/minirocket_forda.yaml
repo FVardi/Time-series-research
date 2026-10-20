@@ -1,0 +1,19 @@
+# Baseline (D75 e, D76 item 4, D81): MiniRocket, official code and settings.
+name: minirocket_forda
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: minirocket
+seeds: [0, 1, 2]  # the SSL runs' seeds (D78); here the seed also fixes MiniRocket's random choices (D81)
+device: cpu  # MiniRocket is CPU code (numba) (D79)
+
+minirocket:  # official defaults of fit() in code/minirocket.py (D76)
+  num_features: 10000  # 84 kernels x 119 = 9,996 features in practice
+  max_dilations_per_kernel: 32
+
+evaluation:  # D26, D40, D81
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [ridge_minirocket, svm_ts2vec, logreg]
+  reproduction_probe: ridge_minirocket  # MiniRocket's own probe
+  published_accuracy: 0.950  # official results, accuracy_ucr109_resamples.csv, FordA, resample 0 (taken to be the original split, D81)

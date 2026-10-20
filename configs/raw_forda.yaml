@@ -1,0 +1,16 @@
+# Baseline (D75 b, D76 item 1): the raw samples, probed directly. Every setting is written out.
+name: raw_forda
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: raw
+seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+device: cpu  # numpy only (D79: each method on the device it would be used on)
+
+raw: {}  # nothing to set
+
+evaluation:  # D26, D40, D83
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [floor, svm_ts2vec]  # floor here only (D83); no logreg: series not phase-aligned, linear on raw samples is at chance (D89)
+  published_accuracy: null  # nothing published to reproduce

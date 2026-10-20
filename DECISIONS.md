@@ -76,6 +76,26 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [decisions/repo.md](decisions/repo.md) |
 | D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [decisions/training.md](decisions/training.md) |
 | D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open | [decisions/evaluation.md](decisions/evaluation.md) |
+| D71 | 2026-10-17 | TF-C study as an ablation of the time–frequency consistency idea; separate from the baseline list; standalone runs for now | [decisions/training.md](decisions/training.md) |
+| D72 | 2026-10-17 | TF-C ablation first on simple datasets: FordA, in-domain; Herning later, unfiltered first | [decisions/training.md](decisions/training.md) |
+| D73 | 2026-10-19 | PatchTST (self-supervised) wrapped from the official code (204c21e); official Learner and callbacks; any number of channels | [decisions/training.md](decisions/training.md) |
+| D74 | 2026-10-19 | PatchTST settings: patch 12/stride 12, 100 epochs, official lr finder, 12.5 % validation hold-out, d_ff 256, default size, last-patch representation (item 7 superseded by D87) | [decisions/training.md](decisions/training.md) |
+| D75 | 2026-10-16 | Baselines: floor, raw samples, \|FFT\|, MSSP statistics, MiniRocket; untrained encoders as control; supervised-from-scratch deferred (first recorded as D69, renumbered; item d partly superseded by D85) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D76 | 2026-10-16 | Baseline inputs: raw as recorded; one-sided linear \|FFT\|; MSSP statistics (broadband only without physical sampling rate); MiniRocket official code and settings (item 3 partly superseded by D85) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D77 | 2026-10-16 | Baselines as methods without training, through the same pretrain/evaluate scripts | [decisions/evaluation.md](decisions/evaluation.md) |
+| D78 | 2026-10-16 | Baselines use the SSL runs' seeds; differences reported paired per seed | [decisions/evaluation.md](decisions/evaluation.md) |
+| D79 | 2026-10-16 | Speed: wall-clock per stage (fit, encode, probe), device as used, hardware recorded; TS2Vec/T-Loss FordA rerun with timing | [decisions/evaluation.md](decisions/evaluation.md) |
+| D80 | 2026-10-16 | Reporting: paired difference to the best baseline per budget, label-efficiency figure, time columns, new R entry | [decisions/evaluation.md](decisions/evaluation.md) |
+| D81 | 2026-10-19 | MiniRocket: own ridge probe via scikit-learn's normalize replacement; target 0.950 (FordA); numba seeded from NumPy; compile time measured at import | [decisions/evaluation.md](decisions/evaluation.md) |
+| D82 | 2026-10-19 | MSSP statistics from the MSSP code copied unchanged (antropy); fs = 1 on FordA; both probes, SVM scale caveat (FordA part superseded by D85) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D83 | 2026-10-19 | Floor as a probe (most frequent class), run with the raw-samples baseline; regression floor with the ridge probe | [decisions/evaluation.md](decisions/evaluation.md) |
+| D84 | 2026-10-19 | Baselines on FordA first, Herning after Q1/Q2, Paderborn once converted; none on FD-B; untrained-encoder control later | [decisions/evaluation.md](decisions/evaluation.md) |
+| D85 | 2026-10-19 | catch24 (pycatch22, per channel) as the generic feature baseline on all datasets; MSSP band statistics kept on Herning only | [decisions/evaluation.md](decisions/evaluation.md) |
+| D86 | 2026-10-19 | PatchTST pooling diagnostic: saved FordA models re-encoded with mean and flatten pooling, same probes; reported as diagnostic, not as the PatchTST result | [decisions/evaluation.md](decisions/evaluation.md) |
+| D87 | 2026-10-19 | PatchTST representation: mean over patch vectors (supersedes D74 item 7); the strongest version is the baseline; FordA result = run 20261019_154248_patchtst_forda_mean | [decisions/training.md](decisions/training.md) |
+| D88 | 2026-10-20 | No training-setting tuning on FordA; tuning reserved for harder datasets, chosen on the unlabelled pretraining validation loss; which methods it applies to is open | [decisions/training.md](decisions/training.md) |
+| D89 | 2026-10-19 | Raw-samples baseline: floor and SVM probes only; logistic cell not run (series not phase-aligned); raw run only where series are short enough (first recorded as D87, renumbered) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D90 | 2026-10-20 | catch24 with pycatch22==1.0.2 (features match hctsa v3.0.0); mask_nans false, run stops on NaN; cloud catch24 results (0.5.0) rerun | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

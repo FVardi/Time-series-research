@@ -1,0 +1,18 @@
+# Baseline (D75 d as changed by D85, D90): catch24 features (catch22 + mean and SD), pycatch22 1.0.2, probed directly.
+name: catch22_forda
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: catch22
+seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+device: cpu  # pycatch22 is CPU code (D79)
+
+catch22:
+  catch24: true  # D85: add mean and SD (on FordA constant, 0 and 1, as the archive z-normalised every series)
+  mask_nans: false  # D90: a feature that cannot be estimated gives NaN and the run stops (no silent fixed value)
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  published_accuracy: null  # nothing published to reproduce with these probes

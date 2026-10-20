@@ -4,13 +4,18 @@ version = "0.1.0"
 description = "Harness for self-supervised learning on time series (bearing condition monitoring)"
 requires-python = ">=3.12"  # D14
 dependencies = [
+    "antropy",  # Hjorth parameters in the MSSP statistics (harness/methods/mssp_features.py, D82)
     "h5py",
+    "numba",  # MiniRocket (external/minirocket, D81)
     "numpy",
+    "pycatch22==1.0.2",  # catch24 baseline (D85, D90); exact version: v1.0 changed the feature values
     "pandas",
     "pyarrow",  # Parquet files for the metadata tables (D3)
     "pyyaml",  # config files (D16)
     "scikit-learn",  # probes (D15)
+    "scipy",  # band filter in the MSSP statistics (harness/methods/mssp_features.py)
     "torch",  # D15
+    "tqdm",  # imported by the official PatchTST Learner (external/patchtst)
 ]
 
 [dependency-groups]

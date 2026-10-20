@@ -1,0 +1,16 @@
+# Baseline (D75 c, D76 item 2): one-sided linear |FFT| magnitude spectrum, probed directly.
+name: fft_forda
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: fft
+seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+device: cpu  # numpy only (D79)
+
+fft: {}  # nothing to set
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  published_accuracy: null  # nothing published to reproduce

@@ -44,7 +44,6 @@ RUNS = {
 }
 # Run folders with no results (started and stopped before writing anything but the config).
 EMPTY_RUNS = {
-    "R6": "runs/20261008_143011_tfc_fd",
     "R10": "runs/20261009_085150_band_check_herning",
 }
 

@@ -1,15 +1,18 @@
 """Probes and metrics on frozen representations (D26).
 
-Two probes:
-  svm_ts2vec : TS2Vec's own SVM protocol, run with the official code (reproduction check)
-  logreg     : the harness probe, logistic regression with C chosen by cross-validation
+Probes:
+  svm_ts2vec       : TS2Vec's own SVM protocol, run with the official code (reproduction check)
+  logreg           : the harness probe, logistic regression with C chosen by cross-validation
+  ridge_minirocket : MiniRocket's own ridge classifier (reproduction check for MiniRocket, D81)
+  floor            : the most frequent training class, ignoring the features (D83)
 """
 
 import importlib.util
 import os
 
 import numpy as np
-from sklearn.linear_model import LogisticRegression
+from sklearn.dummy import DummyClassifier
+from sklearn.linear_model import LogisticRegression, RidgeClassifierCV
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import make_pipeline
@@ -53,7 +56,25 @@ def logreg(Z, y):
     return GridSearchCV(pipe, grid, cv=5).fit(Z, y).best_estimator_
 
 
-PROBES = {"svm_ts2vec": svm_ts2vec, "logreg": logreg}
+def ridge_minirocket(Z, y):
+    """MiniRocket's own probe (D81), as in its official README:
+    RidgeClassifierCV(alphas=np.logspace(-3, 3, 10), normalize=True).
+
+    scikit-learn has removed 'normalize'. Its documented replacement gives the same model:
+    standardise the features (training statistics) and multiply every alpha by the number
+    of training series. (normalize=True divided each centred feature by its L2 norm, which is
+    sqrt(n) times its standard deviation; tests/test_baselines.py checks the equivalence.)
+    """
+    alphas = np.logspace(-3, 3, 10) * len(y)
+    return make_pipeline(StandardScaler(), RidgeClassifierCV(alphas=alphas)).fit(Z, y)
+
+
+def floor(Z, y):
+    """The floor (D75 a, D83): always predicts the most frequent class in the (labelled) training data."""
+    return DummyClassifier(strategy="most_frequent").fit(Z, y)
+
+
+PROBES = {"svm_ts2vec": svm_ts2vec, "logreg": logreg, "ridge_minirocket": ridge_minirocket, "floor": floor}
 
 
 def scores(clf, Z, y):
