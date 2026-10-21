@@ -5,7 +5,7 @@ runs:  # stage -> run folder of ablation.py; add D and E when they have run
   A: runs/20261020_135846_ablation_forda_A
   B: runs/20261020_140639_ablation_forda_B
   C: runs/20261020_141430_ablation_forda_C
-  # D: runs/<date_time>_ablation_forda_D
+  D: runs/20261021_104231_ablation_forda_D
   # E: runs/<date_time>_ablation_forda_E
 
 references:  # other methods on FordA (results.csv), grey reference lines in the probe figure; same probes (D26)
