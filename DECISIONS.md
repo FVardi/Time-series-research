@@ -104,6 +104,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D96 | 2026-10-20 | TF-C study plan: official TF-C measured as is (flaws documented, not fixed); our TF-C as reference; ablation stages A–E (L_T; L_F; both; + S_TF; + L_C); FordA first, then D70 datasets; h for A–C, h and z for D–E; 1 seed first, then up to 3 | [decisions/training.md](decisions/training.md) |
 | D97 | 2026-10-20 | Ablation stage details: D weighted like E; C probed on h_T, h_F, [h_T; h_F]; one branch only in A and B; λ = 0.5 pending check of the paper; implementation in `studies/tfc_ablation/ablation.py` | [decisions/training.md](decisions/training.md) |
 | D98 | 2026-10-20 | Results document: current results only, by topic, no entry numbers; generated run index of every folder in `runs/`; superseded results leave the text (supersedes D63) | [decisions/repo.md](decisions/repo.md) |
+| D99 | 2026-10-20 | Runs meant for the report start from a committed tree; creating a run folder warns when there are uncommitted changes (run still starts) | [decisions/repo.md](decisions/repo.md) |
 
 <!--
 Entry template:
