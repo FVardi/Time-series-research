@@ -9,6 +9,13 @@ Stages, all built from our TF-C (harness/methods/tfc.py, D41, D42):
     C  both branches, uncoupled    L_T + L_F
     D  both, plain alignment       λ(L_T + L_F) + (1 − λ) S_TF        (λ as in E, D97)
     E  full TF-C                   λ(L_T + L_F) + (1 − λ) L_C          (exactly tfc.pretrain)
+Variants of D and E (D101), to find what in L_C causes the collapse of z:
+    F  E without the pair terms     λ(L_T + L_F) + 3(1 − λ) S_TF      (S_TF with the weight it has in E)
+    G  hinged L_C                   λ(L_T + L_F) + (1 − λ) Σ max(0, S_TF − S_pair + δ)
+    H  augmented pairs as positives λ(L_T + L_F) + (1 − λ) (S_TF + S_pair,1 + S_pair,2 + S_pair,3) / 4
+S_pair,1..3 are the NT-Xent terms of L_C: (z_T, z̃_F), (z̃_T, z_F), (z̃_T, z̃_F). F, G and H are our
+constructions (not in the paper or the official code). With both branches, all of S_TF, the three
+S_pair and L_C are logged in every stage (C-H), whether or not they are trained.
 In A and B only the one branch is built and trained (D97). In C the projectors exist but
 receive no gradient, so they keep their initial weights.
 
@@ -39,14 +46,14 @@ from harness.data import canonical
 from harness.methods import tfc
 from studies.tfc_ablation.collapse import Monitor, check_diagnostics, diagnostic_rows, represent
 
-# Representations each stage produces (D96: A-C are evaluated on h, D-E on h and z).
+# Representations each stage produces (D96: A-C are evaluated on h, D-E on h and z; D101: F-H as D-E).
+BOTH = {"h_t", "h_f", "h", "z_t", "z_f", "z"}
 AVAILABLE = {"A": {"h_t", "z_t"}, "B": {"h_f", "z_f"},
-             "C": {"h_t", "h_f", "h", "z_t", "z_f", "z"}, "D": {"h_t", "h_f", "h", "z_t", "z_f", "z"},
-             "E": {"h_t", "h_f", "h", "z_t", "z_f", "z"}}
+             "C": BOTH, "D": BOTH, "E": BOTH, "F": BOTH, "G": BOTH, "H": BOTH}
 
 
 def build_model(stage, length, channels, e):
-    """A: time branch only; B: frequency branch only; C-E: the full TF-C model (both branches)."""
+    """A: time branch only; B: frequency branch only; C-H: the full TF-C model (both branches)."""
     if stage == "A":
         return nn.ModuleDict({"time": tfc.Branch(length, channels, e)})
     if stage == "B":
@@ -74,15 +81,26 @@ def stage_loss(stage, model, x, s):
     (h_t, z_t, h_f, z_f), (h_ta, z_ta, h_fa, z_fa) = out, out_aug
     loss_t, loss_f = tfc.nt_xent(h_t, h_ta, tau), tfc.nt_xent(h_f, h_fa, tau)
     s_tf = tfc.nt_xent(z_t, z_f, tau)
+    # The three cross-domain pairs with augmented views, as in L_C: S_pair,1..3
+    s_pair = [tfc.nt_xent(a, b, tau) for a, b in ((z_t, z_fa), (z_ta, z_f), (z_ta, z_fa))]
+    delta = l["delta"]
     if stage == "C":
         loss = loss_t + loss_f
     elif stage == "D":
         loss = lam * (loss_t + loss_f) + (1 - lam) * s_tf
-    else:  # E: the full TF-C loss, computed by the harness function itself
+    elif stage == "E":  # the full TF-C loss, computed by the harness function itself
         loss = tfc.tfc_loss(out, out_aug, l)
-    with torch.no_grad():  # L_C for the log, in every stage with both branches
-        loss_c = sum(s_tf - tfc.nt_xent(a, b, tau) + l["delta"] for a, b in ((z_t, z_fa), (z_ta, z_f), (z_ta, z_fa)))
-    return loss, {"loss_t": loss_t.item(), "loss_f": loss_f.item(), "s_tf": s_tf.item(), "loss_c": float(loss_c)}
+    elif stage == "F":  # E without the S_pair terms: L_C = 3 S_TF - sum(S_pair) + 3 delta, so S_TF has weight 3(1 - lam) in E
+        loss = lam * (loss_t + loss_f) + 3 * (1 - lam) * s_tf
+    elif stage == "G":  # L_C with a hinge on each of its three terms
+        loss = lam * (loss_t + loss_f) + (1 - lam) * sum(torch.clamp(s_tf - p + delta, min=0) for p in s_pair)
+    elif stage == "H":  # the augmented cross-domain pairs as further positives, mean of the four alignment terms
+        loss = lam * (loss_t + loss_f) + (1 - lam) * (s_tf + sum(s_pair)) / 4
+    else:
+        raise ValueError(f"unknown stage {stage}")
+    loss_c = sum(s_tf - p + delta for p in s_pair)  # L_C for the log, in every stage with both branches
+    return loss, {"loss_t": loss_t.item(), "loss_f": loss_f.item(), "s_tf": s_tf.item(), "loss_c": loss_c.item(),
+                  **{f"s_pair_{i}": p.item() for i, p in enumerate(s_pair, 1)}}
 
 
 def pretrain(stage, X, X_diag, s, d, device):

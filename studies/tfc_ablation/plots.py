@@ -22,18 +22,24 @@ import yaml
 # "one branch alone". E, the full TF-C and the reference point, is drawn in ink.
 # Blue, aqua and yellow pass the palette check for all pairs; every line is also
 # labelled directly at its end, so identity never rests on colour alone.
+# The variants F-H (D101) take the colour of the stage they modify and a line style:
+# F (S_TF only, with E's weight) and H (augmented pairs as positives) are variants of D,
+# yellow dashed and dotted; G (hinged L_C) is a variant of E, ink dashed.
 # ---------------------------------------------------------------------------
 BLUE, ORANGE, AQUA, YELLOW = "#2a78d6", "#eb6834", "#1baf7a", "#eda100"
 INK, MUTED, GRID = "#0b0b0b", "#8a8984", "#e4e3df"
-STAGES = {  # stage -> (colour, legend text)
-    "A": (BLUE, "A, B  one branch alone (A: time, L_T; B: frequency, L_F)"),
-    "B": (BLUE, None),  # shares the legend entry of A
-    "C": (AQUA, "C  both branches, L_T + L_F"),
-    "D": (YELLOW, "D  λ(L_T + L_F) + (1 − λ) S_TF"),
-    "E": (INK, "E  full TF-C, λ(L_T + L_F) + (1 − λ) L_C"),
+STAGES = {  # stage -> (colour, line style, legend text)
+    "A": (BLUE, "-", "A, B  one branch alone (A: time, L_T; B: frequency, L_F)"),
+    "B": (BLUE, "-", None),  # shares the legend entry of A
+    "C": (AQUA, "-", "C  both branches, L_T + L_F"),
+    "D": (YELLOW, "-", "D  λ(L_T + L_F) + (1 − λ) S_TF"),
+    "E": (INK, "-", "E  full TF-C, λ(L_T + L_F) + (1 − λ) L_C"),
+    "F": (YELLOW, "--", "F  λ(L_T + L_F) + 3(1 − λ) S_TF (E without pair terms)"),
+    "G": (INK, "--", "G  hinged L_C: Σ max(0, S_TF − S_pair + δ)"),
+    "H": (YELLOW, ":", "H  pairs as positives: (S_TF + ΣS_pair) / 4"),
 }
-STAGE_TEXT = {"A": "A  time branch alone, L_T", "B": "B  frequency branch alone, L_F",
-              "C": STAGES["C"][1], "D": STAGES["D"][1], "E": STAGES["E"][1]}  # titles of per-stage figures
+STAGE_TEXT = {st: STAGES[st][2] for st in STAGES}  # titles of per-stage figures
+STAGE_TEXT.update({"A": "A  time branch alone, L_T", "B": "B  frequency branch alone, L_F"})
 CLASS_COLOURS = (BLUE, ORANGE)  # PCA scatter: the two FordA classes
 
 # Representations in a fixed grid position, so the same panel means the same thing in every figure.
@@ -96,14 +102,14 @@ def stage_legend(fig, stages, y=1.0):
     """One legend for the whole figure, with an entry for each stage that appears."""
     handles, seen = [], set()
     for st in stages:
-        colour, text = STAGES[st]
+        colour, ls, text = STAGES[st]
         if st == "B" and "A" in stages:
             continue  # A and B share one entry
         if text is None:
             text = "B  frequency branch alone, L_F"
         if text not in seen:
             seen.add(text)
-            handles.append(plt.Line2D([], [], color=colour, linewidth=1.5, label=text))
+            handles.append(plt.Line2D([], [], color=colour, linestyle=ls, linewidth=1.5, label=text))
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, y), ncol=2, fontsize=6.5, frameon=False)
 
 
@@ -148,8 +154,10 @@ def over_seeds(df, x, y):
     return g.mean(), g.min(), g.max()
 
 
-def draw_line(ax, x, mean, lo, hi, colour, n_seeds, **kw):
-    ax.plot(x, mean, color=colour, linewidth=1.3, **kw)
+def draw_line(ax, x, mean, lo, hi, st, n_seeds, **kw):
+    """Line of stage st in its colour and line style; band from the smallest to the largest seed."""
+    colour, ls, _ = STAGES[st]
+    ax.plot(x, mean, color=colour, linestyle=ls, linewidth=1.3, **kw)
     if n_seeds > 1:
         ax.fill_between(x, lo, hi, color=colour, alpha=0.15, linewidth=0)
 
@@ -163,17 +171,38 @@ def grid(n_panels, ncols=3, height=2.0):
 # ---------------------------------------------------------------------------
 # Figures
 # ---------------------------------------------------------------------------
+def nt_xent_bounds(runs):
+    """NT-Xent at chance (all 2B - 1 candidates alike) and its maximum (partner opposite, all negatives aligned)."""
+    B = runs_batch_size(runs)
+    tau = {r["cfg"]["tfc"]["loss"]["temperature"] for r in runs.values()}
+    if len(tau) != 1:
+        raise ValueError(f"stages use different temperatures {tau}")
+    tau = tau.pop()
+    return np.log(2 * B - 1), np.log(1 + (2 * B - 2) * np.exp(2 / tau))
+
+
+def with_mean_pair(loss, delta):
+    """Adds the mean of the three S_pair terms, derived from the log: L_C = 3 S_TF - sum(S_pair) + 3 delta.
+    Available for every run that logged L_C, also those from before the terms were logged separately."""
+    if "loss_c" not in loss.columns:
+        return loss
+    return loss.assign(s_pair_mean=(3 * loss.s_tf + 3 * delta - loss.loss_c) / 3)
+
+
 def loss_figure(runs):
-    """F1: each loss part over epochs, stages overlaid."""
-    fig, axes = grid(4, ncols=2, height=2.1)
-    chance = np.log(2 * runs_batch_size(runs) - 1)  # NT-Xent when all 2B - 1 candidates look alike
-    for ax, (part, title) in zip(axes, LOSS_PARTS.items()):
+    """F1: each loss part over epochs, stages overlaid; last panel: mean S_pair derived from L_C."""
+    parts = {**LOSS_PARTS, "s_pair_mean": "mean of the three S_pair (derived from L_C)"}
+    fig, axes = grid(len(parts), ncols=2, height=2.1)
+    axes[-1].axis("off")  # 5 panels in a 3 x 2 grid
+    chance, maximum = nt_xent_bounds(runs)
+    for ax, (part, title) in zip(axes, parts.items()):
         labels = []
         for st, r in runs.items():
-            if part not in r["loss"].columns:
+            loss = with_mean_pair(r["loss"], r["cfg"]["tfc"]["loss"]["delta"])
+            if part not in loss.columns:
                 continue
-            m, lo, hi = over_seeds(r["loss"], "epoch", part)
-            draw_line(ax, m.index, m, lo, hi, STAGES[st][0], len(r["seeds"]))
+            m, lo, hi = over_seeds(loss, "epoch", part)
+            draw_line(ax, m.index, m, lo, hi, st, len(r["seeds"]))
             labels.append((m.index[-1], m.iloc[-1], st))
         if part == "loss_c":
             delta = next(iter(runs.values()))["cfg"]["tfc"]["loss"]["delta"]
@@ -184,6 +213,10 @@ def loss_figure(runs):
             ax.axhline(chance, color=MUTED, linestyle=":", linewidth=1)
             ax.text(0.01, chance, f" ln {2 * runs_batch_size(runs) - 1} (no discrimination)",
                     transform=ax.get_yaxis_transform(), fontsize=6, color=MUTED, va="bottom")
+        if part == "s_pair_mean":
+            ax.axhline(maximum, color=MUTED, linestyle=":", linewidth=1)
+            ax.text(0.01, maximum, f" maximum {maximum:.1f}", transform=ax.get_yaxis_transform(), fontsize=6,
+                    color=MUTED, va="top")
         ax.set_title(title, fontsize=8, color=INK, loc="left")
         ax.set_xlabel("Epoch", fontsize=7)
         style(ax)
@@ -200,6 +233,34 @@ def runs_batch_size(runs):
     return sizes.pop()
 
 
+def pair_loss_figure(runs):
+    """The three S_pair terms of L_C separately, for runs that logged them (D101); stages overlaid."""
+    pairs = {"s_pair_1": "S_pair,1: z_T vs augmented z_F", "s_pair_2": "S_pair,2: augmented z_T vs z_F",
+             "s_pair_3": "S_pair,3: augmented z_T vs augmented z_F"}
+    logged = {st: r for st, r in runs.items() if "s_pair_1" in r["loss"].columns}
+    if not logged:
+        print("no run logged the S_pair terms separately (runs made before D101): figure skipped")
+        return
+    chance, maximum = nt_xent_bounds(runs)
+    fig, axes = grid(3, ncols=3, height=2.2)
+    for ax, (part, title) in zip(axes, pairs.items()):
+        labels = []
+        for st, r in logged.items():
+            m, lo, hi = over_seeds(r["loss"], "epoch", part)
+            draw_line(ax, m.index, m, lo, hi, st, len(r["seeds"]))
+            labels.append((m.index[-1], m.iloc[-1], st))
+        for y, text, va in ((chance, f" ln {2 * runs_batch_size(runs) - 1}", "bottom"), (maximum, " maximum", "top")):
+            ax.axhline(y, color=MUTED, linestyle=":", linewidth=1)
+            ax.text(0.01, y, text, transform=ax.get_yaxis_transform(), fontsize=6, color=MUTED, va=va)
+        ax.set_title(title, fontsize=7.5, color=INK, loc="left")
+        ax.set_xlabel("Epoch", fontsize=7)
+        style(ax)
+        end_labels(ax, labels)
+    stage_legend(fig, list(logged))
+    fig.tight_layout(w_pad=2.5)
+    show(fig)
+
+
 def measure_figure(runs, column, ylabel, log=False, note=None):
     """F2, F4, F5, F6: one collapse measure over epochs, one panel per representation, stages overlaid."""
     fig, axes = grid(len(REPS))
@@ -210,7 +271,7 @@ def measure_figure(runs, column, ylabel, log=False, note=None):
             if c.empty:
                 continue
             m, lo, hi = over_seeds(c, "epoch", column)
-            draw_line(ax, m.index, m, lo, hi, STAGES[st][0], len(r["seeds"]))
+            draw_line(ax, m.index, m, lo, hi, st, len(r["seeds"]))
             labels.append((m.index[-1], m.iloc[-1], st))
         if not labels:
             ax.text(0.5, 0.5, "not measured\nin these stages", ha="center", va="center", fontsize=7,
@@ -246,8 +307,8 @@ def trajectory_figure(runs):
             if c.empty:
                 continue
             g = c.groupby("epoch")[["mean_cosine", "alignment"]].mean()  # mean over seeds
-            colour = STAGES[st][0]
-            ax.plot(g.mean_cosine, g.alignment, color=colour, linewidth=1.1)
+            colour, ls, _ = STAGES[st]
+            ax.plot(g.mean_cosine, g.alignment, color=colour, linestyle=ls, linewidth=1.1)
             ax.plot(g.mean_cosine.iloc[0], g.alignment.iloc[0], "o", color=colour, markersize=4,
                     markerfacecolor="white")
             ax.plot(g.mean_cosine.iloc[-1], g.alignment.iloc[-1], "s", color=colour, markersize=4)
@@ -318,7 +379,7 @@ def final_spectrum_figure(runs):
             ev = np.sort(sp[sp.epoch == sp.epoch.max()].eigenvalue.to_numpy())[::-1]
             cum = np.cumsum(ev) / ev.sum()
             k = np.arange(1, len(ev) + 1)
-            ax.plot(k, cum, color=STAGES[st][0], linewidth=1.3)
+            ax.plot(k, cum, color=STAGES[st][0], linestyle=STAGES[st][1], linewidth=1.3)
             labels.append((k[9], cum[9], st))  # label at k = 10, where the curves differ most visibly
         if not labels:
             ax.axis("off")
@@ -367,7 +428,7 @@ def probe_figure(runs, references):
                     continue
                 m, lo, hi = over_seeds(q, "label_fraction", "accuracy")
                 x = np.log10(m.index * 100)
-                draw_line(ax, x, m, lo, hi, STAGES[st][0], q.seed.nunique(), marker="o", markersize=3)
+                draw_line(ax, x, m, lo, hi, st, q.seed.nunique(), marker="o", markersize=3)
                 labels.append((x[0], m.iloc[0], st))
             ax.set_xticks([0, 1, 2], ["1 %", "10 %", "100 %"])
             ax.set_xlim(-0.35, 2.45)

@@ -131,14 +131,17 @@ log (e.g.\ into \texttt{runs/}) so that this entry can cite one?}
 FordA (UCR archive, used as distributed: D27, D30) is the first benchmark: frozen
 representations, the harness probes (D26), three seeds, label budgets 1\,\%, 10\,\% and
 100\,\% (D29, D40). It validates the harness against published numbers and sets the bar
-the SSL methods have to clear against simple baselines (D75). All runs in this section were
-made on the work computer on 2026-10-20, one after another, with timing (D79). The working
-tree had uncommitted changes when they started (Table~\ref{tab:runs}): the baseline code, committed
-afterwards in \texttt{a5b93a0}.
+the SSL methods have to clear against simple baselines (D75). The TS2Vec, T-Loss, MiniRocket
+and baseline runs were made on the work computer on 2026-10-20, one after another, with timing
+(D79). The working tree had uncommitted changes when they started (Table~\ref{tab:runs}): the
+baseline code, committed afterwards in \texttt{a5b93a0}. TS-JEPA (2026-10-16) and PatchTST
+(2026-10-19; re-encoded with mean pooling in the cloud copy, D86, D87) were run earlier, before
+timing existed and also from uncommitted trees; they are used as they are, and rerunning them
+is deferred (D102).
 
-\entry{forda-repro}{TS2Vec, T-Loss and MiniRocket reproduce their published accuracies}{2026-10-20}
-  {D26, D28, D32, D76, D79, D81}{\run{20261020_144711_ts2vec_forda}, \run{20261020_144932_tloss_forda},
-  \run{20261020_152809_minirocket_forda}}
+\entry{forda-repro}{TS2Vec, T-Loss and MiniRocket reproduce their published accuracies; TS-JEPA lands above its own}{2026-10-21}
+  {D26, D28, D32, D65, D66, D69, D76, D79, D81, D102, D103}{\run{20261020_144711_ts2vec_forda}, \run{20261020_144932_tloss_forda},
+  \run{20261020_152809_minirocket_forda}, \run{20261016_114600_tsjepa_forda}}
 
 \question
 Do the methods, wrapped from their official code with the official settings, reproduce the
@@ -149,28 +152,37 @@ TS2Vec with the official defaults (D28; 600 iterations, 320-dimensional represen
 max-pooled over time); T-Loss with its official settings (D32; 2,000 steps, $K = 10$);
 MiniRocket with the official code and settings (D76, D81; 9,996 features). Each is probed with
 its own protocol and all training labels: the RBF-SVM protocol of TS2Vec (also T-Loss's own),
-and MiniRocket's ridge classifier (D81). Published targets: TS2Vec 0.936 (batch size 8),
-T-Loss 0.928, MiniRocket 0.950 (official results file, resample 0, taken to be the original
-split, D81). Three seeds; TS2Vec and T-Loss on the GPU, MiniRocket on the CPU.
+and MiniRocket's ridge classifier (D81). TS-JEPA from its official code with the official
+masking (D65, D66, D69; 5,000 epochs, learning rate $6 \cdot 10^{-5}$, mean over the 10 patch
+vectors), probed with the SVM, as TS2Vec and T-Loss: the paper's ``small classification head''
+is not specified (D102, D103). Published targets: TS2Vec 0.936 (batch size 8), T-Loss 0.928,
+MiniRocket 0.950 (official results file, resample 0, taken to be the original split, D81),
+TS-JEPA 0.915 (paper, Table~1). Three seeds; TS2Vec, T-Loss and TS-JEPA on the GPU, MiniRocket
+on the CPU.
 
 \result
 TS2Vec \TsvecAcc{} (\TsvecVerdict), T-Loss \TlossAcc{} (\TlossVerdict), MiniRocket
-\MinirocketAcc{} (\MinirocketVerdict); Table~\ref{tab:repro}. Earlier runs of the same
+\MinirocketAcc{} (\MinirocketVerdict), TS-JEPA \TsjepaAcc{} (\TsjepaVerdict, above the
+published accuracy); Table~\ref{tab:repro}. Earlier runs of the same
 TS2Vec and T-Loss configurations (2026-10-08, without timing; run index) gave
 \FordaTsvecEarlier{} and \FordaTlossEarlier: a rerun moves the mean by a few thousandths.
 
 \finding
-All three reproduce, so the wrapped methods and the evaluation pipeline can be trusted on
-FordA.
+TS2Vec, T-Loss and MiniRocket reproduce, so these wrapped methods and the evaluation pipeline
+can be trusted on FordA. TS-JEPA does not reproduce, but it misses upwards: our accuracy is above the
+published one, not below. The paper's protocol differs from ours: its head is unspecified, and its
+TS2Vec number on FordA (0.864) is far below TS2Vec's own (0.936) and ours (D65). So the check
+cannot confirm the wrapping, but gives no sign that it loses accuracy.
 
-\entry{forda-baselines}{SSL methods against training-free baselines: the baselines win except at 1\,\% labels}{2026-10-20}
-  {D75--D80, D83, D85, D89, D90}{\run{20261020_143928_raw_forda}, \run{20261020_144122_fft_forda},
+\entry{forda-baselines}{SSL methods against training-free baselines: only TS-JEPA (masking fixed) keeps up at every budget}{2026-10-21}
+  {D66, D69, D73--D80, D83, D85--D87, D89, D90, D102, D103}{\run{20261020_143928_raw_forda}, \run{20261020_144122_fft_forda},
   \run{20261020_144235_catch22_forda}, \run{20261020_152809_minirocket_forda},
-  \run{20261020_144711_ts2vec_forda}, \run{20261020_144932_tloss_forda}}
+  \run{20261020_144711_ts2vec_forda}, \run{20261020_144932_tloss_forda},
+  \run{20261016_114616_tsjepa_forda_fixed}, \run{20261019_154248_patchtst_forda_mean}}
 
 \question
-Do TS2Vec and T-Loss beat simple baselines on FordA, in accuracy, with few labels, and in
-speed (D75)?
+Do the SSL methods (TS2Vec, T-Loss, TS-JEPA, PatchTST) beat simple baselines on FordA, in
+accuracy, with few labels, and in speed (D75)?
 
 \test
 Baselines (D75): the floor (most frequent class, D83); the raw samples, probed with the SVM
@@ -178,37 +190,53 @@ only (D89); the one-sided linear $|$FFT$|$ spectrum (D76); catch24, i.e.\ catch2
 and SD, from pycatch22 1.0.2 (D85, D90); and MiniRocket (D76, D81). Every baseline goes
 through the same probes, label budgets and seeds (0, 1, 2) as the SSL methods, so at each
 budget all methods are probed on the same labelled series (D78). Comparison: per probe and
-budget, each SSL method's paired difference to the best baseline (D80). Timing: wall-clock
-per stage (D79), median over seeds.
+budget, each SSL method's paired difference to the best baseline (D80). TS-JEPA in its
+masking-fixed version only (D102: the official code takes every series of a batch from the
+first one); PatchTST with the mean over its patch vectors (D87), a choice made after seeing
+FordA test results (D86), which can only make PatchTST stronger. Timing: wall-clock per stage
+(D79), median over seeds; TS-JEPA and PatchTST not timed (D103).
 
 \result
 Accuracies in Table~\ref{tab:forda-accuracy} and Figure~\ref{fig:forda}; paired differences
 in Table~\ref{tab:forda-paired}; times in Table~\ref{tab:forda-timing}.
 \begin{itemize}
-  \item 10\,\% and 100\,\% labels: the best baseline is ahead of both SSL methods with both
+  \item TS-JEPA (masking fixed) is level with the best baseline at 10\,\% and 100\,\% labels
+        (logistic \FordaTsjepaDiffLogTen{} and \FordaTsjepaDiffLogHundred, SVM
+        \FordaTsjepaDiffSvmHundred), except with the SVM at 10\,\%, where it is ahead by
+        \FordaTsjepaDiffSvmTen{} in every seed.
+  \item TS2Vec and T-Loss at 10\,\% and 100\,\% labels: the best baseline is ahead with both
         probes, in every seed. With the logistic probe at 10\,\%, $|$FFT$|$ reaches
         \FordaFftLogTen{} against \FordaTsvecLogTen{} for TS2Vec (paired difference
         \FordaTsvecDiffLogTen; T-Loss \FordaTlossDiffLogTen).
-  \item 1\,\% labels: with the SVM probe, TS2Vec and T-Loss are ahead of $|$FFT$|$ by
-        \FordaTsvecDiffSvmOne{} and \FordaTlossDiffSvmOne, largely from seed~0. With the
-        logistic probe they tie with MiniRocket (\FordaTsvecDiffLogOne{} and
-        \FordaTlossDiffLogOne).
+  \item 1\,\% labels: with the SVM probe, TS2Vec, T-Loss and TS-JEPA are ahead of $|$FFT$|$ by
+        \FordaTsvecDiffSvmOne, \FordaTlossDiffSvmOne{} and \FordaTsjepaDiffSvmOne, largely
+        from seed~0. With the logistic probe TS2Vec and T-Loss tie with MiniRocket
+        (\FordaTsvecDiffLogOne{} and \FordaTlossDiffLogOne); TS-JEPA is ahead by
+        \FordaTsjepaDiffLogOne, again mostly from one seed.
+  \item PatchTST is below the best baseline at every budget and in every seed, by
+        \FordaPatchtstDiffSvmHundred{} (SVM, 100\,\%) to \FordaPatchtstDiffLogOne{}
+        (logistic, 1\,\%).
   \item Speed: per seed, MiniRocket fits in \FordaMinirocketFit{} on the CPU, TS2Vec trains in
         \FordaTsvecFit{} and T-Loss in \FordaTlossFit{} on the GPU. $|$FFT$|$ and catch24 fit
         nothing. The slowest step for MiniRocket is the SVM probe on its 9,996 features.
+        TS-JEPA and PatchTST are not timed.
   \item catch24 is the weakest baseline after the raw samples, and its spread at 1\,\% labels
         is large.
 \end{itemize}
 
 \finding
-On FordA, pretraining pays off only with 1\,\% labels, and there only with the SVM probe and
-not in every seed. Otherwise the training-free baselines are as good or better, at a small
-fraction of the cost. FordA's classes are well separated by the spectrum, so this need not
+On FordA, TS-JEPA with the masking fixed is the only SSL method that keeps up with the
+training-free baselines at every budget. It is ahead only at 1\,\% labels (mostly one seed)
+and with the SVM at 10\,\% (\FordaTsjepaDiffSvmTen). TS2Vec and T-Loss pay off only with
+1\,\% labels and the SVM probe, and not in every seed; PatchTST is well below the baselines
+throughout. Whether TS-JEPA's small margin is worth its training cost is open until it is
+timed; the baselines need no training (MiniRocket fits in \FordaMinirocketFit).
+FordA's classes are well separated by the spectrum, so this need not
 carry over to the rig data; it sets the bar: an SSL method has to beat $|$FFT$|$ and
 MiniRocket, not only the floor.
 
-\openpoint{TS-JEPA and PatchTST have been run on FordA but are not yet in this comparison
-(run index). The untrained-encoder control (D75 f) has not been run. On the GPU the first
+\openpoint{TS-JEPA and PatchTST have no timing; rerunning them with timing is deferred
+(D102). The untrained-encoder control (D75 f) has not been run. On the GPU the first
 seed includes start-up time (TS2Vec: \FordaTsvecFitFirst{} against \FordaTsvecFitRest{} for the
 others); the table reports the median.}
 

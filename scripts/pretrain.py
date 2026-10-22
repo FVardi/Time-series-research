@@ -22,9 +22,9 @@ import torch
 
 from harness import runs
 from harness.data import canonical
-from harness.methods import catch22, fft, minirocket, mssp, patchtst, raw, tloss, ts2vec, tsjepa
+from harness.methods import catch22, fft, minirocket, mssp, patchtst, raw, tloss, ts2vec, tsjepa, tstcc
 
-METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst,
+METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
            "mssp": mssp}  # rig baseline (D49, D85)
 

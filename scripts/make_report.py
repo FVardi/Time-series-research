@@ -46,11 +46,20 @@ RUNS = {
     "band_check": "runs/20261009_085307_band_check_herning",
 }
 
-# FordA: SSL methods and baselines (D75-D80, D85, D89, D90), all run on 2026-10-20 with timing (D79).
+# FordA: SSL methods and baselines (D75-D80, D85, D89, D90). TS2Vec, T-Loss and the baselines were run
+# on 2026-10-20 with timing (D79); TS-JEPA (2026-10-16) and PatchTST (2026-10-19) earlier, without timing
+# (D102, D103). TS-JEPA in its masking-fixed version (D102); PatchTST with mean pooling (D87).
 FORDA_SSL = {
     "TS2Vec": "runs/20261020_144711_ts2vec_forda",
     "T-Loss": "runs/20261020_144932_tloss_forda",
+    "TS-JEPA (masking fixed)": "runs/20261016_114616_tsjepa_forda_fixed",
+    "PatchTST": "runs/20261019_154248_patchtst_forda_mean",
 }
+FORDA_NOT_TIMED = ["TS-JEPA (masking fixed)", "PatchTST"]  # shown as "not timed" in the timing table (D103)
+# Short names of the SSL methods in the \\Forda... numbers quoted in the prose.
+FORDA_KEYS = {"TS2Vec": "Tsvec", "T-Loss": "Tloss", "TS-JEPA (masking fixed)": "Tsjepa", "PatchTST": "Patchtst"}
+# TS-JEPA's reproduction check uses the official-masking run, the paper's code (D103); not in the comparison (D102).
+FORDA_TSJEPA_OFFICIAL = "runs/20261016_114600_tsjepa_forda"
 FORDA_BASELINES = {
     "Raw samples": "runs/20261020_143928_raw_forda",  # also holds the floor probe (D83)
     "|FFT|": "runs/20261020_144122_fft_forda",
@@ -88,11 +97,14 @@ RUN_INDEX = {
     "20261012_210217_vfd_lines_herning": ("Frequency-converter lines in the Herning spectra",
                                           "Examination (QUESTIONS.md, Q3)"),
     "20261014_herning_examination": ("Herning dataset examination", "Examination (eda/herning)"),
-    "20261016_114600_tsjepa_forda": ("TS-JEPA on FordA", "Not written up yet"),
-    "20261016_114616_tsjepa_forda_fixed": ("TS-JEPA (masking fixed) on FordA", "Not written up yet"),
+    "20261016_114600_tsjepa_forda": ("TS-JEPA on FordA (official masking)",
+                                     "In \\S\\ref{forda-repro} only; not in the comparison (D102)"),
+    "20261016_114616_tsjepa_forda_fixed": ("TS-JEPA (masking fixed) on FordA", "In \\S\\ref{forda-baselines}"),
     "20261017_115419_collapse_forda": ("Collapse check on FordA", "Not written up yet"),
-    "20261019_130910_patchtst_forda": ("PatchTST on FordA", "Not written up yet"),
-    "20261019_154248_patchtst_forda_mean": ("PatchTST re-encoded with mean pooling (D86, D87)", "Not written up yet"),
+    "20261019_130910_patchtst_forda": ("PatchTST on FordA (last-patch pooling)",
+                                       "Superseded by 20261019_154248_patchtst_forda_mean (same models, D87)"),
+    "20261019_154248_patchtst_forda_mean": ("PatchTST re-encoded with mean pooling (D86, D87)",
+                                            "In \\S\\ref{forda-baselines}"),
     "20261019_154305_patchtst_forda_flatten": ("PatchTST re-encoded with flatten pooling (D86)", "Not written up yet"),
     "20261020_135846_ablation_forda_A": ("TF-C ablation on FordA, step A", "Not written up yet"),
     "20261020_140639_ablation_forda_B": ("TF-C ablation on FordA, step B", "Not written up yet"),
@@ -117,6 +129,7 @@ US_NYQUIST_HZ = 0.5e6 / 2  # D62: US downsampled by 5
 
 # Colours: light-mode categorical slots 1-6 of the validated reference palette (dataviz), and ink.
 BLUE, ORANGE, AQUA, YELLOW, MAGENTA, GREEN = "#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300"
+VIOLET, BROWN = "#7a5bd1", "#9c6b30"
 INK, MUTED, GRID = "#0b0b0b", "#8a8984", "#e4e3df"
 
 ROOT = "."
@@ -286,7 +299,7 @@ def forda_paired_table(res):
             rows.append(row)
         rows.append("MIDRULE")
     write_table("forda_paired", ["Probe", "Labels", "Best baseline (mean)"] +
-                [f"{m}: mean (per seed)" for m in FORDA_SSL], rows[:-1], "lllcc",
+                [f"{m}: mean (per seed)" for m in FORDA_SSL], rows[:-1], "lll" + "c" * len(FORDA_SSL),
                 "FordA: paired difference in test accuracy, SSL method minus the best baseline at that "
                 "probe and label budget (positive: the SSL method is better). Per seed, the two use the "
                 "same labelled series (D78). The best baseline is chosen by its mean test accuracy, which "
@@ -298,6 +311,9 @@ def forda_timing_table():
     """Wall-clock time per stage (D79): median over seeds, with the range."""
     rows = []
     for m, run in {**FORDA_SSL, **FORDA_BASELINES}.items():
+        if m in FORDA_NOT_TIMED:
+            rows.append([tex(m), "--", "not timed", "--", "--", "--"])
+            continue
         seeds = sorted(d for d in os.listdir(path(run)) if d.startswith("seed_"))
         t = pd.DataFrame([read_json(run, f"{s}/timing.json") for s in seeds])
         hw = read_json(run, "hardware.json")
@@ -318,12 +334,13 @@ def forda_timing_table():
                 f"FordA: wall-clock time per stage (D79), median over 3 seeds. Encoding: training and test "
                 f"series (4,921) per second. Probe fit includes the probe's cross-validation. Hardware: "
                 f"{hw['gpu']} GPU, {hw['cpu_count']}-thread CPU. MiniRocket's code compiles once on import "
-                f"({compile_s:.2f}~s, not included, D81).", "tab:forda-timing")
+                f"({compile_s:.2f}~s, not included, D81). TS-JEPA and PatchTST were run before timing existed "
+                f"(D102, D103).", "tab:forda-timing")
 
 
 def forda_figure(res):
     """Accuracy against label budget, one panel per probe; SSL methods solid, baselines dashed."""
-    colours = dict(zip(list(FORDA_SSL) + list(FORDA_BASELINES), (BLUE, ORANGE, GREEN, AQUA, YELLOW, MAGENTA)))
+    colours = dict(zip(list(FORDA_SSL) + list(FORDA_BASELINES), (BLUE, ORANGE, VIOLET, BROWN, GREEN, AQUA, YELLOW, MAGENTA)))
     floor = res["Raw samples"][res["Raw samples"].probe == "floor"].accuracy.mean()
     fig, axes = plt.subplots(1, 2, figsize=(6.3, 2.7), sharey=True)
     for ax, (p, pname) in zip(axes, PROBE_NAMES.items()):
@@ -344,8 +361,8 @@ def forda_figure(res):
         style(ax)
     axes[0].set_ylabel("Test accuracy", fontsize=7)
     handles, labels = axes[1].get_legend_handles_labels()
-    fig.legend(handles, labels, fontsize=7, frameon=False, loc="lower center", ncol=6, bbox_to_anchor=(0.5, -0.06))
-    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.legend(handles, labels, fontsize=7, frameon=False, loc="lower center", ncol=4, bbox_to_anchor=(0.5, -0.06))
+    fig.tight_layout(rect=(0, 0.1, 1, 1))
     save(fig, "forda_label_efficiency")
 
 
@@ -362,6 +379,7 @@ def forda():
         earlier = read_csv(FORDA_EARLIER[m], "results.csv")
         e = earlier[(earlier.probe == "svm_ts2vec") & (earlier.label_fraction == 1.0)].accuracy
         number(f"Forda{key}Earlier", f3(e.mean()))
+    for m, key in FORDA_KEYS.items():
         for p, pk in (("logreg", "Log"), ("svm_ts2vec", "Svm")):
             for f, fk in zip(FRACTIONS, ("One", "Ten", "Hundred")):
                 d = paired[(m, p, f)]
@@ -387,7 +405,8 @@ def forda():
     # Reproduction checks: each method's own probe with all labels against the published accuracy.
     checks = {}
     for m, run in (("TS2Vec", FORDA_SSL["TS2Vec"]), ("T-Loss", FORDA_SSL["T-Loss"]),
-                   ("MiniRocket", FORDA_BASELINES["MiniRocket"])):
+                   ("MiniRocket", FORDA_BASELINES["MiniRocket"]),
+                   ("TS-JEPA, official masking", FORDA_TSJEPA_OFFICIAL)):
         ev = read_yaml(run)["evaluation"]
         r = read_csv(run, "results.csv")
         acc = r[(r.probe == ev["reproduction_probe"]) & (r.label_fraction == 1.0)].accuracy
@@ -751,6 +770,7 @@ def main():
     # Reproduction checks; the key is also the prefix of the quoted numbers (\TsvecVerdict, ...).
     pub = TFC_PUBLISHED["accuracy"]
     rows = {"Tsvec": checks["TS2Vec"], "Tloss": checks["T-Loss"], "Minirocket": checks["MiniRocket"],
+            "Tsjepa": checks["TS-JEPA, official masking"],
             "TfcFull": ("TF-C, official, full data", "FD", pub, None, "\\ref{tfc-full}"),
             "TfcOurs": ("TF-C, ours", "FD", pub, ours.accuracy, "\\ref{tfc-ours}"),
             "TfcSubset": ("TF-C, official, subset", "FD", pub, subset[subset.protocol == "official"].accuracy,

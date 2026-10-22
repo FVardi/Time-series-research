@@ -18,3 +18,6 @@
 	path = external/minirocket
 	url = https://github.com/angus924/minirocket
 	ignore = untracked
+[submodule "external/tstcc"]
+	path = external/tstcc
+	url = https://github.com/emadeldeen24/TS-TCC

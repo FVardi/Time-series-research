@@ -64,3 +64,48 @@ def test_stage_D_loss_is_alignment_formula():
     expected = (l["lambda"] * (tfc.nt_xent(h_t, h_ta, l["temperature"]) + tfc.nt_xent(h_f, h_fa, l["temperature"]))
                 + (1 - l["lambda"]) * tfc.nt_xent(z_t, z_f, l["temperature"]))
     assert torch.allclose(loss, expected)
+
+
+def parts_and_loss(stage):
+    """The loss of one batch for a stage, and the NT-Xent terms recomputed on the same views."""
+    torch.manual_seed(1)
+    model = ablation.build_model(stage, 128, 1, TFC_SETTINGS["encoder"])
+    x = tfc.to_device(X[:8], "cpu")
+    torch.manual_seed(3)
+    np.random.seed(3)
+    loss, log = ablation.stage_loss(stage, model, x, TFC_SETTINGS)
+    torch.manual_seed(3)
+    np.random.seed(3)
+    (h_t, z_t, h_f, z_f), (h_ta, z_ta, h_fa, z_fa) = tfc.augmented_step(model, x, TFC_SETTINGS)
+    tau = TFC_SETTINGS["loss"]["temperature"]
+    terms = {"l_t": tfc.nt_xent(h_t, h_ta, tau), "l_f": tfc.nt_xent(h_f, h_fa, tau), "s_tf": tfc.nt_xent(z_t, z_f, tau),
+             "s_pair": [tfc.nt_xent(a, b, tau) for a, b in ((z_t, z_fa), (z_ta, z_f), (z_ta, z_fa))]}
+    return loss, log, terms
+
+
+def test_variant_losses_are_their_formulas():
+    """F, G, H (D101) on the same views as tfc.augmented_step."""
+    lam, delta = TFC_SETTINGS["loss"]["lambda"], TFC_SETTINGS["loss"]["delta"]
+    loss, _, t = parts_and_loss("F")
+    assert torch.allclose(loss, lam * (t["l_t"] + t["l_f"]) + 3 * (1 - lam) * t["s_tf"])
+    loss, _, t = parts_and_loss("G")
+    hinged = sum(torch.clamp(t["s_tf"] - p + delta, min=0) for p in t["s_pair"])
+    assert torch.allclose(loss, lam * (t["l_t"] + t["l_f"]) + (1 - lam) * hinged)
+    loss, _, t = parts_and_loss("H")
+    assert torch.allclose(loss, lam * (t["l_t"] + t["l_f"]) + (1 - lam) * (t["s_tf"] + sum(t["s_pair"])) / 4)
+
+
+def test_hinged_L_C_equals_L_C_while_no_hinge_is_active():
+    """At initialisation every term S_TF - S_pair + delta is positive, so G and E give the same loss value."""
+    loss_g, _, t = parts_and_loss("G")
+    loss_e, _, _ = parts_and_loss("E")
+    assert all(t["s_tf"] - p + TFC_SETTINGS["loss"]["delta"] > 0 for p in t["s_pair"])
+    assert torch.allclose(loss_g, loss_e)
+
+
+def test_pair_terms_are_logged_and_add_up_to_L_C():
+    """With both branches the three S_pair terms are logged; L_C = 3 S_TF - sum(S_pair) + 3 delta."""
+    _, log, _ = parts_and_loss("C")
+    assert {"s_pair_1", "s_pair_2", "s_pair_3"} <= set(log)
+    expected = 3 * log["s_tf"] - (log["s_pair_1"] + log["s_pair_2"] + log["s_pair_3"]) + 3 * TFC_SETTINGS["loss"]["delta"]
+    assert abs(log["loss_c"] - expected) < 1e-4

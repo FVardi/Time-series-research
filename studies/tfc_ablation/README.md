@@ -19,7 +19,7 @@ with `harness/diagnostics.py`. Output per seed (`runs/<date_time>_<name>/seed_<k
 
 | file | contents |
 |---|---|
-| `pretrain_loss.csv` | per epoch: total loss and its parts L_T, L_F, L_C and S_TF (means over batches) |
+| `pretrain_loss.csv` | per epoch: total loss and its parts L_T, L_F, L_C and S_TF (means over batches); the ablation also logs S_pair,1..3 (D101) |
 | `collapse.csv` | per epoch and representation: n, d, finite, effective rank (RankMe), mean std, fraction of dead dimensions (std below 1 % of the largest std of that representation), mean norm, mean pairwise cosine, SIGReg statistic, alignment |
 | `spectra.csv` | per epoch and representation: all covariance eigenvalues, k = 1 the largest |
 | `pretrained.pt` | weights after the last epoch |
@@ -47,6 +47,19 @@ diagnostic windows); the run refuses to start until they are set.
 | D | both, aligned | λ(L_T + L_F) + (1 − λ) S_TF | h_T, h_F, h, z |
 | E | full TF-C | λ(L_T + L_F) + (1 − λ) L_C | h_T, h_F, h, z |
 
+Variants of D and E (D101), our constructions (not in the paper or the official code), to find
+what in L_C collapses z. S_pair,1..3 are the three NT-Xent terms of L_C: (z_T, z̃_F), (z̃_T, z_F),
+(z̃_T, z̃_F), with ~ the augmented view; L_C = 3 S_TF − ΣS_pair + 3δ, so E weights S_TF by 3(1 − λ).
+
+| stage | loss | question |
+|---|---|---|
+| F | λ(L_T + L_F) + 3(1 − λ) S_TF | E without the pair terms: are they the cause (S_TF weighted as in E)? |
+| G | λ(L_T + L_F) + (1 − λ) Σ max(0, S_TF − S_pair + δ) | hinged L_C: is the missing hinge the cause, or the pair terms themselves? |
+| H | λ(L_T + L_F) + (1 − λ) (S_TF + ΣS_pair) / 4 | augmented cross-domain pairs as positives instead of negatives |
+
+All three are probed and measured like D and E. In every stage with both branches (C–H),
+`pretrain_loss.csv` also has `s_pair_1`, `s_pair_2`, `s_pair_3` (runs made before D101 lack them).
+
 Per seed: pretraining with the collapse diagnostics after every epoch (same output files as
 `collapse.py`), then frozen probes (D26: `svm_ts2vec` and `logreg`; label budgets 1/10/100 %)
 trained on the training split and scored once on the test split: `probes.csv`, `summary.csv`.
@@ -58,7 +71,8 @@ The probes need the TS2Vec submodule (`external/ts2vec`): `git submodule update 
 ## Figures
 
 Notebook `figures_forda.ipynb` (functions in `plots.py`, settings and run folders in
-`configs/plots_forda.yaml`; add D and E there once they have run):
+`configs/plots_forda.yaml` for stages A–E and `configs/plots_forda_variants.yaml` for D, E and
+the variants F–H; add runs there once they have run):
 
     uv sync --group eda
 

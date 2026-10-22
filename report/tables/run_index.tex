@@ -25,11 +25,11 @@ Run folder (\texttt{runs/}) & What & Status & Commit & Device \\
 \texttt{20261012\_\allowbreak{}205347\_\allowbreak{}spectra\_\allowbreak{}herning} & Herning spectra & Examination (QUESTIONS.md, Q3) & 5dba814$^{*}$ & -- \\
 \texttt{20261012\_\allowbreak{}210217\_\allowbreak{}vfd\_\allowbreak{}lines\_\allowbreak{}herning} & Frequency-converter lines in the Herning spectra & Examination (QUESTIONS.md, Q3) & 5dba814$^{*}$ & -- \\
 \texttt{20261014\_\allowbreak{}herning\_\allowbreak{}examination} & Herning dataset examination & Examination (eda/herning) & -- & -- \\
-\texttt{20261016\_\allowbreak{}114600\_\allowbreak{}tsjepa\_\allowbreak{}forda} & TS-JEPA on FordA & Not written up yet & 5bde87a$^{*}$ & cuda \\
-\texttt{20261016\_\allowbreak{}114616\_\allowbreak{}tsjepa\_\allowbreak{}forda\_\allowbreak{}fixed} & TS-JEPA (masking fixed) on FordA & Not written up yet & 5bde87a$^{*}$ & cuda \\
+\texttt{20261016\_\allowbreak{}114600\_\allowbreak{}tsjepa\_\allowbreak{}forda} & TS-JEPA on FordA (official masking) & In \S\ref{forda-repro} only; not in the comparison (D102) & 5bde87a$^{*}$ & cuda \\
+\texttt{20261016\_\allowbreak{}114616\_\allowbreak{}tsjepa\_\allowbreak{}forda\_\allowbreak{}fixed} & TS-JEPA (masking fixed) on FordA & In \S\ref{forda-baselines} & 5bde87a$^{*}$ & cuda \\
 \texttt{20261017\_\allowbreak{}115419\_\allowbreak{}collapse\_\allowbreak{}forda} & Collapse check on FordA & Not written up yet & 7a69724$^{*}$ & cuda \\
-\texttt{20261019\_\allowbreak{}130910\_\allowbreak{}patchtst\_\allowbreak{}forda} & PatchTST on FordA & Not written up yet & 7a69724$^{*}$ & cuda \\
-\texttt{20261019\_\allowbreak{}154248\_\allowbreak{}patchtst\_\allowbreak{}forda\_\allowbreak{}mean} & PatchTST re-encoded with mean pooling (D86, D87) & Not written up yet & none$^{*}$ & cpu \\
+\texttt{20261019\_\allowbreak{}130910\_\allowbreak{}patchtst\_\allowbreak{}forda} & PatchTST on FordA (last-patch pooling) & Superseded by 20261019\_\allowbreak{}154248\_\allowbreak{}patchtst\_\allowbreak{}forda\_\allowbreak{}mean (same models, D87) & 7a69724$^{*}$ & cuda \\
+\texttt{20261019\_\allowbreak{}154248\_\allowbreak{}patchtst\_\allowbreak{}forda\_\allowbreak{}mean} & PatchTST re-encoded with mean pooling (D86, D87) & In \S\ref{forda-baselines} & none$^{*}$ & cpu \\
 \texttt{20261019\_\allowbreak{}154305\_\allowbreak{}patchtst\_\allowbreak{}forda\_\allowbreak{}flatten} & PatchTST re-encoded with flatten pooling (D86) & Not written up yet & none$^{*}$ & cpu \\
 \texttt{20261020\_\allowbreak{}135846\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}A} & TF-C ablation on FordA, step A & Not written up yet & beee5e8$^{*}$ & cuda \\
 \texttt{20261020\_\allowbreak{}140639\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}B} & TF-C ablation on FordA, step B & Not written up yet & beee5e8$^{*}$ & cuda \\
@@ -41,6 +41,10 @@ Run folder (\texttt{runs/}) & What & Status & Commit & Device \\
 \texttt{20261020\_\allowbreak{}144932\_\allowbreak{}tloss\_\allowbreak{}forda} & T-Loss on FordA, with timing & In \S\ref{forda-repro}, \S\ref{forda-baselines} & beee5e8$^{*}$ & cuda \\
 \texttt{20261020\_\allowbreak{}152809\_\allowbreak{}minirocket\_\allowbreak{}forda} & Baseline: MiniRocket on FordA & In \S\ref{forda-repro}, \S\ref{forda-baselines} & beee5e8$^{*}$ & cpu \\
 \texttt{20261021\_\allowbreak{}104231\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}D} & -- & Not indexed & 40618b6 & cuda \\
+\texttt{20261021\_\allowbreak{}114216\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}E} & -- & Not indexed & f9bc9eb$^{*}$ & cuda \\
+\texttt{20261021\_\allowbreak{}132513\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}F} & -- & Not indexed & 92e3c85$^{*}$ & cuda \\
+\texttt{20261021\_\allowbreak{}134511\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}G} & -- & Not indexed & 92e3c85$^{*}$ & cuda \\
+\texttt{20261021\_\allowbreak{}140653\_\allowbreak{}ablation\_\allowbreak{}forda\_\allowbreak{}H} & -- & Not indexed & 92e3c85$^{*}$ & cuda \\
 \bottomrule
 \end{longtable}
 \end{footnotesize}

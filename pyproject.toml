@@ -5,6 +5,7 @@ description = "Harness for self-supervised learning on time series (bearing cond
 requires-python = ">=3.12"  # D14
 dependencies = [
     "antropy",  # Hjorth parameters in the MSSP statistics (harness/methods/mssp_features.py, D82)
+    "einops",  # imported by the official TS-TCC Transformer (external/tstcc/models/attention.py, D104)
     "h5py",
     "numba",  # MiniRocket (external/minirocket, D81)
     "numpy",
