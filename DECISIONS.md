@@ -114,6 +114,8 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D106 | 2026-10-21 | TS-TCC representation: encoder output max-pooled over time | [decisions/evaluation.md](decisions/evaluation.md) |
 | D107 | 2026-10-21 | TS-TCC official code used as is; five departures from the paper recorded (fixed views, weak view, channel-0 permutation, segment count, one t per batch) | [decisions/training.md](decisions/training.md) |
 | D108 | 2026-10-21 | TS-TCC runs on FordA: seeds 0–2, D26 probes and budgets, timing, reproduction check vs 0.930 | [decisions/evaluation.md](decisions/evaluation.md) |
+| D109 | 2026-10-23 | TF-JEPA, SimMTM and FreRA wrapped from the official code (fda93c1, 169513b, 7236fbf); FordA configs with open placeholders; settings open | [decisions/training.md](decisions/training.md) |
+| D110 | 2026-10-23 | TF-JEPA pretraining views as in the official code (clean inputs in both passes; augmented views unused) | [decisions/training.md](decisions/training.md) |
 
 <!--
 Entry template:
