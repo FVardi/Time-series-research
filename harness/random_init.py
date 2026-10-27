@@ -1,4 +1,4 @@
-"""Random-init baseline (D130): untrained encoders, frozen and probed like the trained ones.
+"""Random-init baseline (D134): untrained encoders, frozen and probed like the trained ones.
 
 The encoder is the one the method's pretrain() builds, returned before any training
 (pretrain(..., train=False)). With the same seed it has the initial weights of the trained run.

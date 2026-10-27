@@ -122,7 +122,7 @@ def pretrain(X, s, device, train=True):
     """Pretrain PatchTST on unlabelled training series X (series, time, channels).
 
     s: the 'patchtst' section of the config; every setting is given explicitly.
-    train: False returns the model as built, untrained (random-init baseline, D130). The validation
+    train: False returns the model as built, untrained (random-init baseline, D134). The validation
            split and the learning-rate finder still run first, so the random numbers drawn before the
            model is built, and hence its initial weights, are the same as in the trained run.
     Returns the model (encoder + pretraining head) and the training loss per epoch.
@@ -172,7 +172,7 @@ def pretrain(X, s, device, train=True):
                                              cbs=callbacks(s, dls.vars, save_dir=tmp if n_valid else None))
             learn.fit_one_cycle(n_epochs=s["epochs"], lr_max=lr, pct_start=s["pct_start"])
             rec = learn.recorder
-        else:  # random-init baseline (D130): the model as built above, no training
+        else:  # random-init baseline (D134): the model as built above, no training
             model = model.to(device)
             rec = {"train_loss": []}
 

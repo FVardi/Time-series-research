@@ -19,9 +19,11 @@ def pretrain(X, s, device, train=True):
 
     X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'ts2vec' section of the config; every setting is given explicitly (D28).
-    train: False returns the model as built, untrained (random-init baseline, D130).
-    Returns the trained model and the loss per epoch.
+    train: False returns the model as built, untrained (random-init baseline, D134).
+    Returns the trained model and the loss per iteration (D143): TS2Vec trains for a fixed number of
+    iterations (n_iters), and its own log holds completed epochs only (1 value for FordA).
     """
+    losses = []  # filled by the official after_iter_callback, which receives (model, loss value) (D143)
     model = TS2Vec(
         input_dims=X.shape[2],
         output_dims=s["repr_dims"],
@@ -32,12 +34,13 @@ def pretrain(X, s, device, train=True):
         batch_size=s["batch_size"],
         max_train_length=s["max_train_length"],
         temporal_unit=s["temporal_unit"],
+        after_iter_callback=lambda _, loss: losses.append(loss),  # only records the value
     )
-    if not train:  # random-init baseline (D130): the model as built above, no training
+    if not train:  # random-init baseline (D134): the model as built above, no training
         return model, []
     # Conversion to 32-bit happens here, at training (D23).
-    loss_log = model.fit(X.astype(np.float32), n_iters=s["n_iters"])
-    return model, loss_log
+    model.fit(X.astype(np.float32), n_iters=s["n_iters"])  # its per-epoch log is not used (D143)
+    return model, losses
 
 
 def save(model, path):

@@ -92,7 +92,7 @@ def pretrain(X, s, device, train=True):
     """Pretrain TS-JEPA on unlabelled training series X (series, time, 1).
 
     s: the 'tsjepa' section of the config; every setting is given explicitly.
-    train: False returns the encoder as built, untrained (random-init baseline, D130).
+    train: False returns the encoder as built, untrained (random-init baseline, D134).
     Returns the online encoder (the one the official code saves and evaluates) and the loss per epoch.
     """
     check_settings(s)
@@ -129,7 +129,7 @@ def pretrain(X, s, device, train=True):
 
     # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
     encoder.n_patches, encoder.pooling, encoder.encode_batch_size = s["n_patches"], s["pooling"], s["encode_batch_size"]
-    if not train:  # random-init baseline (D130): the encoder as built above, no training
+    if not train:  # random-init baseline (D134): the encoder as built above, no training
         return encoder, []
 
     log = []

@@ -92,7 +92,7 @@ def pretrain(X, s, device, train=True):
     """Pretrain TF-JEPA on unlabelled training series X (series, time, 1).
 
     s: the 'tfjepa' section of the config; every setting is given explicitly.
-    train: False returns the model as built, untrained (random-init baseline, D130).
+    train: False returns the model as built, untrained (random-init baseline, D134).
     Returns the model (online and target branches) and the mean training loss per epoch.
     """
     check_settings(s)
@@ -111,7 +111,7 @@ def pretrain(X, s, device, train=True):
 
     # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
     model.representation, model.encode_batch_size = s["representation"], s["encode_batch_size"]
-    if not train:  # random-init baseline (D130): the model as built above, no training
+    if not train:  # random-init baseline (D134): the model as built above, no training
         return model, []
 
     log = []

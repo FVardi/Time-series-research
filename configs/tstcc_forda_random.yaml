@@ -1,5 +1,5 @@
-# Random-init baseline (D130), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
-# Copy of configs/tstcc_forda.yaml except this header, name, random_init and published_accuracy;
+# Random-init baseline (D134), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
+# Copy of configs/tstcc_forda.yaml except this header, name, random_init, probes (no svm_ts2vec, D135) and published_accuracy;
 # tests/test_random_init.py checks that everything else still matches.
 
 # TS-TCC on FordA (D104-D108). Same data, probes and seeds as configs/ts2vec_forda.yaml (D26, D27).
@@ -10,7 +10,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: tstcc
-random_init: as_initialised  # D130
+random_init: as_initialised  # D134
 seeds: [0, 1, 2]  # D108
 device: cuda
 
@@ -42,6 +42,5 @@ tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 3
 
 evaluation:  # D26, D108
   label_fractions: [0.01, 0.1, 1.0]
-  probes: [svm_ts2vec, logreg]
-  reproduction_probe: svm_ts2vec  # the protocol the TS2Vec paper used for its baselines
-  published_accuracy: null  # D130: nothing published for an untrained encoder
+  probes: [logreg]  # D135: no svm_ts2vec (reproduction only, D133; nothing published for an untrained encoder)
+  published_accuracy: null  # D134: nothing published for an untrained encoder

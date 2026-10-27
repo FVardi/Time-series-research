@@ -41,8 +41,8 @@ def pretrain(X, s, device, train=True):
 
     X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'tloss' section of the config; every setting is given explicitly (D32).
-    train: False returns the model as built, untrained (random-init baseline, D130).
-    Returns the trained model and an empty loss log (the official code does not record losses).
+    train: False returns the model as built, untrained (random-init baseline, D134).
+    Returns the trained model and the loss per training step (D143; the official code records none).
     """
     model = CausalCNNEncoderClassifier(
         compared_length=s["compared_length"],  # None = compare full-length series
@@ -62,10 +62,15 @@ def pretrain(X, s, device, train=True):
         cuda=(device == "cuda"),
         gpu=0,
     )
-    if not train:  # random-init baseline (D130): the encoder as built above, no training
+    if not train:  # random-init baseline (D134): the encoder as built above, no training
         return model, []
+    # Loss per step (D143): a forward hook on the official loss module reads the value it returns at
+    # every training step (one batch, one optimiser step). It only reads; training is unchanged.
+    losses = []
+    hook = model.loss.register_forward_hook(lambda module, inputs, loss: losses.append(loss.item()))
     model.fit_encoder(_to_tloss(X))  # no labels: early stopping is off (D32)
-    return model, []
+    hook.remove()
+    return model, losses
 
 
 def encode(model, X):

@@ -131,13 +131,24 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D123 | 2026-10-27 | TF-C (positives) on FordA and every later benchmark dataset, same protocol as the other methods; FordA: pretrain.py + evaluate.py (D26 probes, seeds 0–2, timing) via adapter `tfc_frozen`; probes on z = [z_T; z_F]; FordA settings open in `configs/tfc_forda.yaml` | [decisions/training.md](decisions/training.md) |
 | D124 | 2026-10-27 | TF-C (positives) settings on FordA as in the FordA ablation (paper/code values, D42 scaling; 40 epochs, batch 64) | [decisions/training.md](decisions/training.md) |
 | D125 | 2026-10-27 | CWRU: no healthy class (fault diagnosis only; detection on Paderborn); test bearings = held-out faulty bearings | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
-| D126 | 2026-10-27 | CWRU: normal files used for pretraining (48 kHz; rate matching decided with the pretraining setup) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D126 | 2026-10-27 | CWRU: normal files used for pretraining (48 kHz; rate matching decided with the pretraining setup) (rate matching settled by D136) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D127 | 2026-10-27 | CWRU split: both ends pooled, five fault classes; one size per class and end held out; repeated random draws (count open) (superseded by D128) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
-| D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
-| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class | [decisions/evaluation.md](decisions/evaluation.md) |
+| D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) (sampling rate clarified by D140) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class (reproduction-probe point settled by D133) | [decisions/evaluation.md](decisions/evaluation.md) |
 | D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`) | [decisions/repo.md](decisions/repo.md) |
 | D131 | 2026-10-27 | CWRU input: DE and FE as one two-channel series; base plate not used; MiniRocket open | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D132 | 2026-10-27 | Harness on Python 3.14, the version the environment runs (supersedes the Python version in D14) | [decisions/repo.md](decisions/repo.md) |
+| D133 | 2026-10-27 | logreg is the standard probe (reported everywhere); svm_ts2vec only for reproduction of published numbers; ridge_minirocket only as MiniRocket's FordA reproduction check | [decisions/evaluation.md](decisions/evaluation.md) |
+| D134 | 2026-10-27 | Random-init baseline: each method's untrained encoder (initial weights of the trained run, same seed) probed as the trained one; variants (a) as initialised, (b) batch-norm statistics from the training series; configs `*_random.yaml` / `*_random_bn.yaml`; FordA, CWRU, Paderborn (probes superseded by D135) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D135 | 2026-10-27 | Random-init runs probed with logreg only (no svm_ts2vec, no reproduction_probe); supersedes the probe part of D134 | [decisions/evaluation.md](decisions/evaluation.md) |
+| D136 | 2026-10-27 | CWRU windows: 2,048 samples, no overlap; normal files resampled 48 → 12 kHz (resample_poly) (normalisation and placement: D137) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D137 | 2026-10-27 | CWRU: windows consecutive from file start, last incomplete dropped; each channel standardised with training mean/std (amplitude kept); baselines raw (D76) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D138 | 2026-10-27 | CWRU label budgets as D29 (random windows, stratified by class, per seed); optimism about label diversity noted | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D139 | 2026-10-27 | CWRU conversion: one run per .mat file; per-capture fault and bearing-ID columns; speed as recorded; units unknown; quirks of 99, 277/278, 28 mil files; status final | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D140 | 2026-10-27 | CWRU: experiments use the 12 kHz fault files (48 kHz converted, not used); quirks of 174, 175, 217 | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D141 | 2026-10-27 | CWRU: missing speed replaced by the table speed where a speed is needed, marked as estimated (pipeline step) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D142 | 2026-10-27 | Longer-training check on FordA: TF-JEPA 40, SimMTM 20, TF-C 80 epochs (twice the configs'); judged by probe accuracy | [decisions/training.md](decisions/training.md) |
+| D143 | 2026-10-27 | TS2Vec and T-Loss log the loss per iteration/step (official callback; hook on the loss module); FordA runs repeated | [decisions/training.md](decisions/training.md) |
 
 <!--
 Entry template:

@@ -10,7 +10,7 @@ hardware.json (where the times were measured).
 Only training inputs are used for pretraining; test inputs never are.
 Baselines (raw, fft, catch22, minirocket, mssp) run through the same steps (D77).
 
-Random-init baseline (D130): a config with 'random_init: as_initialised' or
+Random-init baseline (D134): a config with 'random_init: as_initialised' or
 'random_init: bn_from_train' stores the representations of the method's encoder as built,
 without training (see harness/random_init.py). Without the key, the method is pretrained.
 """
@@ -33,7 +33,7 @@ METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patch
            "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
            "mssp": mssp}  # rig baseline (D49, D85)
-# Methods with an encoder to leave untrained (D130); their pretrain() takes train=False.
+# Methods with an encoder to leave untrained (D134); their pretrain() takes train=False.
 RANDOM_INIT_METHODS = ("ts2vec", "tloss", "tsjepa", "patchtst", "tstcc", "tfjepa", "simmtm", "frera", "tfc")
 
 
@@ -81,7 +81,7 @@ def hardware(device):
 def main(config_path):
     cfg = runs.load_config(config_path)
     method = METHODS[cfg["method"]]
-    variant = cfg.get("random_init")  # D130; absent = pretrain as usual
+    variant = cfg.get("random_init")  # D134; absent = pretrain as usual
     if variant is not None and (variant not in random_init.VARIANTS or cfg["method"] not in RANDOM_INIT_METHODS):
         raise ValueError(f"random_init must be one of {random_init.VARIANTS}, for one of {RANDOM_INIT_METHODS}")
     if hasattr(method, "check_settings"):  # stop before any work if a setting is still a placeholder
@@ -113,7 +113,7 @@ def main(config_path):
         t0 = clock(cfg["device"])
         if variant is None:
             model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
-        else:  # D130: the encoder as built, untrained; (b) also sets the batch-norm statistics from X_train
+        else:  # D134: the encoder as built, untrained; (b) also sets the batch-norm statistics from X_train
             model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"], train=False)
             n_bn = random_init.recompute_batchnorm(model, method.encode, X_train) if variant == "bn_from_train" else 0
             print(f"  random_init {variant}: untrained encoder, {n_bn} batch-norm layers set from the training series")

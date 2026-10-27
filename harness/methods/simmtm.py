@@ -126,7 +126,7 @@ def pretrain(X, s, device, train=True):
 
     X: array (n_series, n_samples, 1), training inputs only.
     s: the 'simmtm' section of the config; every setting is given explicitly.
-    train: False returns the model as built, untrained (random-init baseline, D130).
+    train: False returns the model as built, untrained (random-init baseline, D134).
     The seeds are set before this call (scripts/pretrain.py); main.py's cuDNN settings are repeated here.
     Returns the model and the mean training loss per epoch.
     """
@@ -152,7 +152,7 @@ def pretrain(X, s, device, train=True):
                                  weight_decay=s["adam"]["weight_decay"])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=s["main_args"]["pretrain_epoch"])
     model.encode_batch_size = s["encode_batch_size"]  # kept with the model for encode()
-    if not train:  # random-init baseline (D130): the model as built above, no training
+    if not train:  # random-init baseline (D134): the model as built above, no training
         return model, []
 
     log = []

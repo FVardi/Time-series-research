@@ -1,5 +1,5 @@
-# Random-init baseline (D130), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
-# Copy of configs/tsjepa_forda_fixed.yaml except this header, name, random_init and published_accuracy;
+# Random-init baseline (D134), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
+# Copy of configs/tsjepa_forda_fixed.yaml except this header, name, random_init, probes (no svm_ts2vec, D135) and published_accuracy;
 # tests/test_random_init.py checks that everything else still matches.
 
 # TS-JEPA on FordA, official code with the masking bug fixed (D66). Identical to configs/tsjepa_forda.yaml except name and masking. Same data, probes, label budgets and seeds as
@@ -13,7 +13,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: tsjepa
-random_init: as_initialised  # D130
+random_init: as_initialised  # D134
 seeds: [0, 1, 2]  # D26 (the paper reports 10 runs)
 device: cuda
 
@@ -47,6 +47,5 @@ tsjepa:
 
 evaluation:  # D26, D40
   label_fractions: [0.01, 0.1, 1.0]
-  probes: [svm_ts2vec, logreg]
-  reproduction_probe: svm_ts2vec  # the probe compared with the published accuracy (was fixed in scripts/evaluate.py)
-  published_accuracy: null  # D130: nothing published for an untrained encoder
+  probes: [logreg]  # D135: no svm_ts2vec (reproduction only, D133; nothing published for an untrained encoder)
+  published_accuracy: null  # D134: nothing published for an untrained encoder

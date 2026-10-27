@@ -14,18 +14,18 @@ supervisor in `QUESTIONS.md`. Last updated: 2026-10-27.
 | TS-JEPA (masking fixed) | done, not timed (D102) | `runs/20261016_114616_tsjepa_forda_fixed` | check on the official-masking run (D103) |
 | PatchTST | done | `runs/20261019_154305_patchtst_forda_flatten` (also `_mean`) | nothing published |
 | TF-C (positives, D122–D124) | done (2026-10-27) | `runs/20261027_144405_tfc_forda` | nothing published |
-| TF-JEPA (single pass, D113) | **to run** (2026-10-27); config complete (D114) | — | — |
-| SimMTM | **to run** (2026-10-27); config complete (D111) | — | — |
-| FreRA | **to run** (2026-10-27); config complete (D112) | — | — |
+| TF-JEPA (single pass, D113) | done (2026-10-27) | `runs/20261027_153543_tfjepa_forda` | nothing published |
+| SimMTM | done (2026-10-27) | `runs/20261027_153657_simmtm_forda` | nothing published |
+| FreRA | pretrained; **evaluation running** (2026-10-27) | `runs/20261027_153909_frera_forda` | open: FordA value in the paper's Table 8 not yet read (paper protocol: best test accuracy) |
 | raw, FFT, catch22, MiniRocket | done | `runs/20261020_14*_{raw,fft,catch22}_forda`, `runs/20261020_152809_minirocket_forda` | — |
 
 Run: `uv run python scripts/pretrain.py configs/<method>_forda.yaml`, then the `evaluate.py` command it prints.
 
 ## 2. Methods: planned or in progress
 
-- **Random-init frozen encoders** (probes on untrained encoders, to see how much pretraining helps): in progress.
-  Configs `configs/*_forda_random.yaml` and `*_random_bn.yaml` exist; no decision recorded yet.
-  So far only TF-C on FD has such results (`scripts/probe_tfc.py`).
+- **Random-init frozen encoders** (D134; probes on untrained encoders, to see how much pretraining helps):
+  implemented; FordA configs ready, **to run**: 9 × `configs/*_random.yaml` (a) and 6 × `*_random_bn.yaml` (b).
+  CWRU/Paderborn copies follow when those trained configs exist (D134). Earlier: TF-C on FD (`scripts/probe_tfc.py`).
 - **CA-TCC**: deferred together with pseudo-labelling (D104).
 - **Further methods**: to be chosen.
 - *(Optional)* frozen probes on the TF-C (positives) FD-A → FD-B encoders (`runs/20261027_141808_tfc_positives_fd`;
@@ -48,8 +48,11 @@ Standing rule (D123): every new benchmark dataset gets a TF-C (positives) config
 
 ## 4. Loose ends
 
+- **Probe speed**: `logreg` in `harness/evaluate.py` runs its grid search in one process; slow on large representations (SimMTM 2,944, FreRA 8,320 dimensions). `n_jobs=-1` would parallelise it without changing results.
+- **HANDOFF.md**: superseded by this file (D130); to be removed with `git rm HANDOFF.md`.
 - **Commit and submodules**: much of `runs/` was made from uncommitted trees (D99); `external/frera`, `external/simmtm`, `external/tfjepa` were added as submodules on 2026-10-27 and need committing.
-- **Loss logs**: TS2Vec runs hold 1 value (the official code logs completed epochs only; 600 iterations ≈ 1.3 epochs), T-Loss none (the official code records none). Fixable in the adapters (TS2Vec: `after_iter_callback`; T-Loss: loop in the adapter); the runs would need rerunning.
+- **Loss logs**: TS2Vec and T-Loss now log the loss per iteration/step (D143); their FordA runs are **to rerun**.
+  Longer-training check (D142): `tfjepa_forda_40ep`, `simmtm_forda_20ep`, `tfc_forda_80ep` **to run**.
 - **`tfc.scores`**: AUROC fails on binary tasks (two-column probabilities), so TF-C fine-tuning (`scripts/tfc_ours.py`) cannot run on two-class datasets.
 - **TF-C study**: ablation stages have seed 0 only (D96: up to 3); `collapse_fd.yaml` has two placeholders (seeds, diagnostic windows); collapse examination of the official TF-C code; optional longer-training check (the TF-C (positives) loss is still falling at epoch 40 on FordA).
 - **TS-JEPA**: rerun with timing (D102).

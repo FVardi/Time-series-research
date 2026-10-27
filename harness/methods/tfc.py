@@ -264,14 +264,14 @@ def augmented_step(model, x, s):
 def pretrain(X, s, device, train=True):
     """Pretrain on unlabelled windows X (series, time, channels). Returns the model and the loss per epoch.
 
-    train: False returns the model as built, untrained (random-init baseline, D130).
+    train: False returns the model as built, untrained (random-init baseline, D134).
     """
     check_settings(s)
     x_all = to_device(X, device)
     model = TFC(x_all.shape[2], x_all.shape[1], s["encoder"]).to(device)
     p = s["pretrain"]
     opt = adam(model.parameters(), p)
-    if not train:  # random-init baseline (D130): the model as built above, no training
+    if not train:  # random-init baseline (D134): the model as built above, no training
         return model, pd.DataFrame(columns=["epoch", "loss"])
     log = []
     for epoch in range(1, p["epochs"] + 1):

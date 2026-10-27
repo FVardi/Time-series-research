@@ -12,7 +12,7 @@ check_settings = tfc.check_settings  # pretrain.py stops before any work if a se
 
 def pretrain(X, s, device, train=True):
     """tfc.pretrain; returns the model (with what encode needs) and the loss per epoch as a list.
-    train: False returns the model as built, untrained (random-init baseline, D130)."""
+    train: False returns the model as built, untrained (random-init baseline, D134)."""
     model, log = tfc.pretrain(X, s, device, train)
     return {"tfc": model, "chunk": s["eval_chunk"], "device": device}, log["loss"].tolist()
 

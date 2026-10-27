@@ -1,4 +1,4 @@
-"""Checks of the random-init baseline (D130): configs, batch-norm statistics, untrained TF-C."""
+"""Checks of the random-init baseline (D134): configs, batch-norm statistics, untrained TF-C."""
 
 import glob
 import os
@@ -22,7 +22,8 @@ def load(path):
 
 def test_random_init_configs_match_trained():
     """Each configs/<base>_random.yaml / _random_bn.yaml equals configs/<base>.yaml apart from
-    name, random_init and published_accuracy, so the untrained encoder is the trained run's encoder."""
+    name, random_init, published_accuracy and the probes (the trained probes without svm_ts2vec, D135;
+    no reproduction_probe), so the untrained encoder is the trained run's encoder."""
     paths = sorted(glob.glob(os.path.join(CONFIGS, "*_random.yaml")) + glob.glob(os.path.join(CONFIGS, "*_random_bn.yaml")))
     assert paths
     for path in paths:
@@ -35,8 +36,11 @@ def test_random_init_configs_match_trained():
         assert set(r) == set(t) | {"random_init"}, path
         for key in t:
             if key == "evaluation":
-                drop = lambda ev: {k: v for k, v in ev.items() if k != "published_accuracy"}
+                differ = ("published_accuracy", "probes", "reproduction_probe")
+                drop = lambda ev: {k: v for k, v in ev.items() if k not in differ}
                 assert drop(r[key]) == drop(t[key]), path
+                assert r[key]["probes"] == [p for p in t[key]["probes"] if p != "svm_ts2vec"], path
+                assert "reproduction_probe" not in r[key], path
             elif key != "name":
                 assert r[key] == t[key], f"{path}: {key}"
 
@@ -58,7 +62,7 @@ def toy_encode(model, X):
 def test_batchnorm_statistics_are_those_of_the_layer_inputs():
     """After recompute_batchnorm, each layer stores the mean and population variance of its own input,
     where the second layer's input is computed with the first layer's new statistics."""
-    X = 3.0 + 2.0 * np.random.default_rng(0).standard_normal((50, 2, 20))
+    X = (3.0 + 2.0 * np.random.default_rng(0).standard_normal((50, 2, 20))).astype(np.float32)
     model = toy_model()
     assert random_init.recompute_batchnorm(model, toy_encode, X) == 2
     model.eval()

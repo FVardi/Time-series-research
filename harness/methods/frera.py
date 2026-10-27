@@ -129,7 +129,7 @@ def pretrain(X, s, device, train=True):
     X: array (n_series, n_samples, n_channels), training inputs only. The official UCR loader
     gives (series, time, channels) float32 tensors, shuffled, full batches only.
     s: the 'frera' section of the config; every setting is given explicitly.
-    train: False returns the model as built, untrained (random-init baseline, D130).
+    train: False returns the model as built, untrained (random-init baseline, D134).
     Returns {'model', 'aug'} and the mean training loss per epoch.
     """
     check_settings(s)
@@ -149,7 +149,7 @@ def pretrain(X, s, device, train=True):
     f_optimizer = torch.optim.AdamW(aug_f.parameters(), lr=s["f_lr"], betas=tuple(f["betas"]), eps=f["eps"],
                                     weight_decay=f["weight_decay"])
     out = {"model": model, "aug": aug_f, "encode_batch_size": s["encode_batch_size"]}  # trained in place below
-    if not train:  # random-init baseline (D130): the models as built above, no training
+    if not train:  # random-init baseline (D134): the models as built above, no training
         return out, []
 
     # The arguments train() and adjust_learning_rate() read.
