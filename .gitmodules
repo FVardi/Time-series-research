@@ -21,3 +21,12 @@
 [submodule "external/tstcc"]
 	path = external/tstcc
 	url = https://github.com/emadeldeen24/TS-TCC
+[submodule "external/tfjepa"]
+	path = external/tfjepa
+	url = https://github.com/jchaykow/tf-jepa
+[submodule "external/simmtm"]
+	path = external/simmtm
+	url = https://github.com/thuml/SimMTM
+[submodule "external/frera"]
+	path = external/frera
+	url = https://github.com/Tian0426/FreRA
