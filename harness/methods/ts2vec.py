@@ -14,11 +14,12 @@ from harness.methods.external import import_official
 TS2Vec = import_official("ts2vec", "ts2vec", local_names=("ts2vec", "models", "utils")).TS2Vec
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Train TS2Vec without labels.
 
     X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'ts2vec' section of the config; every setting is given explicitly (D28).
+    train: False returns the model as built, untrained (random-init baseline, D130).
     Returns the trained model and the loss per epoch.
     """
     model = TS2Vec(
@@ -32,6 +33,8 @@ def pretrain(X, s, device):
         max_train_length=s["max_train_length"],
         temporal_unit=s["temporal_unit"],
     )
+    if not train:  # random-init baseline (D130): the model as built above, no training
+        return model, []
     # Conversion to 32-bit happens here, at training (D23).
     loss_log = model.fit(X.astype(np.float32), n_iters=s["n_iters"])
     return model, loss_log

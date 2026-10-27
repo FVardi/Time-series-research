@@ -1,4 +1,4 @@
-"""TF-C, our implementation (D35 step 3, D36, D41).
+"""TF-C, our implementation (D35 step 3, D36, D41, D122).
 
 Follows the TF-C paper (Zhang et al., 2022, arXiv 2206.08496) and fixes the problems
 found in the official code (decisions/training.md, D36 and D41). In short:
@@ -6,12 +6,15 @@ found in the official code (decisions/training.md, D36 and D41). In short:
     x  ──► time branch:      G_T (CNN) ─► h_T ─► R_T (projector) ─► z_T
     |FFT(x)| ─► frequency branch: G_F (CNN) ─► h_F ─► R_F (projector) ─► z_F
 
-Pretraining loss (paper, eq. 1-3):  λ (L_T + L_F) + (1 − λ) L_C
+Pretraining loss:  λ (L_T + L_F) + (1 − λ) C, with the consistency term C chosen by
+the setting loss.variant (D122):
     L_T = NT-Xent(h_T, h̃_T)      time view vs its augmented version
     L_F = NT-Xent(h_F, h̃_F)      frequency view vs its augmented version
-    L_C = Σ_pairs (S_TF − S_pair + δ), S = NT-Xent between projected embeddings,
-          pairs: (z_T, z̃_F), (z̃_T, z_F), (z̃_T, z̃_F)
-Fine-tuning: cross-entropy of a small classifier on [z_T; z_F] + the same loss,
+    S_TF = NT-Xent(z_T, z_F); S_pair = NT-Xent of each pair (z_T, z̃_F), (z̃_T, z_F), (z̃_T, z̃_F)
+    "paper":     C = L_C = Σ_pairs (S_TF − S_pair + δ)    (paper, eq. 1-3)
+    "positives": C = (S_TF + Σ_pairs S_pair) / 4         (augmented pairs as positives instead
+                 of negatives; ablation stage H, D101; our construction, used for the benchmarks)
+Fine-tuning: cross-entropy of a small classifier on [z_T; z_F] + the same loss (same variant),
 encoder and classifier trained together. Representation for probes: [z_T; z_F].
 
 Every setting comes from the config (section 'tfc'); nothing has a default here.
@@ -208,18 +211,27 @@ def nt_xent(a, b, tau):
 
 
 def tfc_loss(out, out_aug, l):
-    """Pretraining loss λ(L_T + L_F) + (1 − λ)L_C (paper, eq. 1-3; D41 item 4).
+    """Pretraining loss λ(L_T + L_F) + (1 − λ)C; the consistency term C depends on l["variant"] (D122):
+      "paper":     C = L_C = Σ_pairs (S_TF − S_pair + δ)  (paper, eq. 1-3; D41 item 4)
+      "positives": C = (S_TF + Σ_pairs S_pair) / 4: the augmented cross-domain pairs are further
+                   positives, not negatives (ablation stage H, D101). δ is not used.
 
     out, out_aug: (h_t, z_t, h_f, z_f) for the original and the augmented views.
     """
     h_t, z_t, h_f, z_f = out
     h_ta, z_ta, h_fa, z_fa = out_aug
-    tau, lam, delta = l["temperature"], l["lambda"], l["delta"]
+    tau, lam = l["temperature"], l["lambda"]
     loss_t = nt_xent(h_t, h_ta, tau)
     loss_f = nt_xent(h_f, h_fa, tau)
     s_tf = nt_xent(z_t, z_f, tau)
-    loss_c = sum(s_tf - nt_xent(p, q, tau) + delta for p, q in ((z_t, z_fa), (z_ta, z_f), (z_ta, z_fa)))
-    return lam * (loss_t + loss_f) + (1 - lam) * loss_c
+    s_pair = [nt_xent(p, q, tau) for p, q in ((z_t, z_fa), (z_ta, z_f), (z_ta, z_fa))]
+    if l["variant"] == "paper":
+        consistency = sum(s_tf - p + l["delta"] for p in s_pair)
+    elif l["variant"] == "positives":
+        consistency = (s_tf + sum(s_pair)) / 4
+    else:
+        raise ValueError(f"unknown tfc.loss.variant {l['variant']!r} (D122: 'paper' or 'positives')")
+    return lam * (loss_t + loss_f) + (1 - lam) * consistency
 
 
 # ----------------------------------------------------------------------------- training
@@ -249,13 +261,18 @@ def augmented_step(model, x, s):
     return out, out_aug
 
 
-def pretrain(X, s, device):
-    """Pretrain on unlabelled windows X (series, time, channels). Returns the model and the loss per epoch."""
+def pretrain(X, s, device, train=True):
+    """Pretrain on unlabelled windows X (series, time, channels). Returns the model and the loss per epoch.
+
+    train: False returns the model as built, untrained (random-init baseline, D130).
+    """
     check_settings(s)
     x_all = to_device(X, device)
     model = TFC(x_all.shape[2], x_all.shape[1], s["encoder"]).to(device)
     p = s["pretrain"]
     opt = adam(model.parameters(), p)
+    if not train:  # random-init baseline (D130): the model as built above, no training
+        return model, pd.DataFrame(columns=["epoch", "loss"])
     log = []
     for epoch in range(1, p["epochs"] + 1):
         model.train()

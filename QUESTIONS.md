@@ -111,4 +111,4 @@ FD-A/FD-B are kept only for the TF-C reproduction.
 **Claude's suggestion.** Add FordB (cheap); include CWRU only if comparability with the
 literature matters for the Part 1 report.
 
-**Status.** Open — user to discuss with supervisor.
+**Status.** CWRU part settled by D115 (2026-10-23): CWRU added. FordB still open — user to discuss with supervisor.

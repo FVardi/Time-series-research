@@ -56,7 +56,7 @@ simmtm:
   changed:  # SleepEEG values changed for FordA; the SleepEEG value in the comment
     TSlength_aligned: 500  # 178; FordA series length (the decoder outputs this many samples)
     CNNoutput_channel: 23  # 10; encoder output length for 500 samples (checked by the adapter)
-    batch_size: null  # OPEN. code (SleepEEG config): 32; paper Table 10 (classification pretraining): 128
+    batch_size: 128  # D111: paper Table 10 (classification pretraining); code (SleepEEG config): 32
   encode_batch_size: 256  # series per forward pass when encoding; does not change results
 
 evaluation:  # D26, D40

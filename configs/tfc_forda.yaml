@@ -1,0 +1,48 @@
+# TF-C, our implementation (D41) with the benchmark loss (D122), on FordA in the harness's
+# frozen-probe pipeline (D123): scripts/pretrain.py + scripts/evaluate.py, same data, probes and
+# seeds as configs/ts2vec_forda.yaml (D26, D27). Representation [z_T; z_F] (D123).
+# TF-C settings as in the FordA ablation (= configs/tfc_fd.yaml), D124; source of each value in its comment.
+name: tfc_forda
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: tfc
+seeds: [0, 1, 2]  # D26: 3 seeds
+device: cuda
+
+tfc:
+  encoder:  # both branches; on 500 samples each encoder ends at 128 x 10 (h = 1,280 per branch)
+    channels: [32, 64, 128]  # paper (as the ablation, D124)
+    kernel_size: 8  # paper (as the ablation, D124); official FD_A config 32
+    strides: [8, 1, 1]  # paper (as the ablation, D124)
+    padding: 4  # not in paper; 2022 code, kernel_size // 2 (as the ablation, D124)
+    pool_padding: 1  # not in paper; 2022 code (as the ablation, D124)
+    conv_bias: false  # not in paper; 2022 code (as the ablation, D124)
+    dropout_block1: 0.35  # not in paper; 2022 code, after the first block only (as the ablation, D124)
+    projector: [256, 128]  # paper (as the ablation, D124)
+  loss:
+    variant: positives  # D122
+    temperature: 0.2  # paper (as the ablation, D124)
+    lambda: 0.5  # paper (as the ablation, D124)
+  freq_aug:
+    n_components: 1  # paper, E (as the ablation, D124)
+    alpha: 0.5  # paper (as the ablation, D124)
+  time_aug:  # D42: one of three per window
+    jitter_sigma: 0.1  # official FD_A config jitter_ratio (as the ablation, D124)
+    scaling_mean: 1.0  # our choice, D42 (as the ablation, D124)
+    scaling_sigma: 0.1  # our choice, D42 (as the ablation, D124)
+    max_segments: 5  # official code, max_seg (as the ablation, D124)
+  pretrain:
+    epochs: 40  # paper (as the ablation, D124)
+    batch_size: 64  # paper (as the ablation, D124); FordA: 56 steps per epoch
+    drop_last: true  # code (as the ablation, D124)
+    lr: 0.0003  # paper (as the ablation, D124)
+    betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
+    weight_decay: 0.0005  # paper (as the ablation, D124)
+  eval_chunk: 512  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  published_accuracy: null  # none: no published TF-C result on FordA

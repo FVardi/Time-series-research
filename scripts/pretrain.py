@@ -9,6 +9,10 @@ wall-clock time of each stage (timing.json, D79). The run folder also gets
 hardware.json (where the times were measured).
 Only training inputs are used for pretraining; test inputs never are.
 Baselines (raw, fft, catch22, minirocket, mssp) run through the same steps (D77).
+
+Random-init baseline (D130): a config with 'random_init: as_initialised' or
+'random_init: bn_from_train' stores the representations of the method's encoder as built,
+without training (see harness/random_init.py). Without the key, the method is pretrained.
 """
 
 import os
@@ -20,15 +24,17 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import runs
+from harness import random_init, runs
 from harness.data import canonical
-from harness.methods import (catch22, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfjepa, tloss, ts2vec,
-                             tsjepa, tstcc)
+from harness.methods import (catch22, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfc_frozen, tfjepa, tloss,
+                             ts2vec, tsjepa, tstcc)
 
 METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
-           "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera,
+           "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
            "mssp": mssp}  # rig baseline (D49, D85)
+# Methods with an encoder to leave untrained (D130); their pretrain() takes train=False.
+RANDOM_INIT_METHODS = ("ts2vec", "tloss", "tsjepa", "patchtst", "tstcc", "tfjepa", "simmtm", "frera", "tfc")
 
 
 def load_split(cfg, meta, split):
@@ -75,6 +81,9 @@ def hardware(device):
 def main(config_path):
     cfg = runs.load_config(config_path)
     method = METHODS[cfg["method"]]
+    variant = cfg.get("random_init")  # D130; absent = pretrain as usual
+    if variant is not None and (variant not in random_init.VARIANTS or cfg["method"] not in RANDOM_INIT_METHODS):
+        raise ValueError(f"random_init must be one of {random_init.VARIANTS}, for one of {RANDOM_INIT_METHODS}")
     if hasattr(method, "check_settings"):  # stop before any work if a setting is still a placeholder
         method.check_settings(cfg[cfg["method"]])
     folder = runs.new_run_dir(config_path, cfg)
@@ -102,7 +111,12 @@ def main(config_path):
         os.makedirs(out)
         runs.set_seed(seed)
         t0 = clock(cfg["device"])
-        model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
+        if variant is None:
+            model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
+        else:  # D130: the encoder as built, untrained; (b) also sets the batch-norm statistics from X_train
+            model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"], train=False)
+            n_bn = random_init.recompute_batchnorm(model, method.encode, X_train) if variant == "bn_from_train" else 0
+            print(f"  random_init {variant}: untrained encoder, {n_bn} batch-norm layers set from the training series")
         t1 = clock(cfg["device"])
         Z_train = method.encode(model, X_train)
         t2 = clock(cfg["device"])
@@ -112,7 +126,7 @@ def main(config_path):
         np.save(os.path.join(out, "Z_train.npy"), Z_train)
         np.save(os.path.join(out, "Z_test.npy"), Z_test)
         runs.save_json(os.path.join(out, "timing.json"), {
-            "pretrain_s": t1 - t0,  # fitting or pretraining
+            "pretrain_s": t1 - t0,  # fitting or pretraining (random_init: building, plus the batch-norm pass in (b))
             "encode_train_s": t2 - t1,
             "encode_test_s": t3 - t2,
             "encode_series_per_s": (len(X_train) + len(X_test)) / (t3 - t1),

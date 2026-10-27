@@ -19,7 +19,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D11 | 2026-10-03 | One repository; studies in `studies/`; one-way imports | [decisions/repo.md](decisions/repo.md) |
 | D12 | 2026-10-03 | κ computed as in the MSSP paper | [decisions/datasets/herning.md](decisions/datasets/herning.md) |
 | D13 | 2026-10-06 | Tests chosen per question and dataset; full grid within a study; built incrementally | [decisions/evaluation.md](decisions/evaluation.md) |
-| D14 | 2026-10-06 | Python environments with uv; Python 3.12 | [decisions/repo.md](decisions/repo.md) |
+| D14 | 2026-10-06 | Python environments with uv; Python 3.12 (Python version superseded by D132) | [decisions/repo.md](decisions/repo.md) |
 | D15 | 2026-10-06 | Plain PyTorch; scikit-learn for probes and simple baselines | [decisions/training.md](decisions/training.md) |
 | D16 | 2026-10-06 | One plain YAML config file per experiment | [decisions/repo.md](decisions/repo.md) |
 | D17 | 2026-10-06 | Run results as plain files | [decisions/repo.md](decisions/repo.md) |
@@ -75,7 +75,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D67 | 2026-10-14 | TS-JEPA learning rate: search 1e-3..1e-6, fixed variant, 80/20 split of FordA train, logistic-regression probe, seed 0 | [decisions/training.md](decisions/training.md) |
 | D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [decisions/repo.md](decisions/repo.md) |
 | D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [decisions/training.md](decisions/training.md) |
-| D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open | [decisions/evaluation.md](decisions/evaluation.md) |
+| D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open (CWRU settled by D115) | [decisions/evaluation.md](decisions/evaluation.md) |
 | D71 | 2026-10-17 | TF-C study as an ablation of the time–frequency consistency idea; separate from the baseline list; standalone runs for now (superseded by D95) | [decisions/training.md](decisions/training.md) |
 | D72 | 2026-10-17 | TF-C ablation first on simple datasets: FordA, in-domain; Herning later, unfiltered first (superseded by D95) | [decisions/training.md](decisions/training.md) |
 | D73 | 2026-10-19 | PatchTST (self-supervised) wrapped from the official code (204c21e); official Learner and callbacks; any number of channels | [decisions/training.md](decisions/training.md) |
@@ -115,7 +115,29 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D107 | 2026-10-21 | TS-TCC official code used as is; five departures from the paper recorded (fixed views, weak view, channel-0 permutation, segment count, one t per batch) | [decisions/training.md](decisions/training.md) |
 | D108 | 2026-10-21 | TS-TCC runs on FordA: seeds 0–2, D26 probes and budgets, timing, reproduction check vs 0.930 | [decisions/evaluation.md](decisions/evaluation.md) |
 | D109 | 2026-10-23 | TF-JEPA, SimMTM and FreRA wrapped from the official code (fda93c1, 169513b, 7236fbf); FordA configs with open placeholders; settings open | [decisions/training.md](decisions/training.md) |
-| D110 | 2026-10-23 | TF-JEPA pretraining views as in the official code (clean inputs in both passes; augmented views unused) | [decisions/training.md](decisions/training.md) |
+| D110 | 2026-10-23 | TF-JEPA pretraining views as in the official code (clean inputs in both passes; augmented views unused) (superseded by D113) | [decisions/training.md](decisions/training.md) |
+| D111 | 2026-10-26 | SimMTM batch size 128 on FordA (paper Table 10; code 32); loss curve to be checked at epoch 10 | [decisions/training.md](decisions/training.md) |
+| D112 | 2026-10-26 | FreRA l1_weight 0.1, the script's default (as D69); README 0.003 and paper λ recorded as a finding | [decisions/training.md](decisions/training.md) |
+| D113 | 2026-10-26 | TF-JEPA: one pass per step, paper's loss (reported as "TF-JEPA (single pass)"; supersedes D110); drop_last true; probes on [z_time; z_freq] | [decisions/training.md](decisions/training.md) |
+| D114 | 2026-10-26 | TF-JEPA on FordA: batch size 128 (official configs, paper profiling), 20 epochs (README example; default 5) | [decisions/training.md](decisions/training.md) |
+| D115 | 2026-10-23 | CWRU added to the Step 1 datasets (classification); run-to-failure datasets not added; RUL undecided | [decisions/evaluation.md](decisions/evaluation.md) |
+| D116 | 2026-10-27 | CWRU: all files converted; subsets chosen per experiment | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D117 | 2026-10-27 | CWRU: 28 mil faults not used in experiments (NTN bearings, other fault depths) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D118 | 2026-10-27 | CWRU: outer-race positions (@3, @6, @12) kept apart, not merged (storage settled by D120) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D119 | 2026-10-27 | CWRU: 40 mil faults not used in experiments (as D117) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D120 | 2026-10-27 | CWRU: outer-race position stored as the recorded clock hour (3, 6, 12) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D121 | 2026-10-27 | Datasets split by bearing: pretraining never sees recordings of test bearings; D33 check at bearing level | [decisions/evaluation.md](decisions/evaluation.md) |
+| D122 | 2026-10-27 | Our TF-C for the benchmarks uses stage H's loss (augmented cross-domain pairs as positives) in pretraining and fine-tuning; required setting `tfc.loss.variant` (`paper` / `positives`); study configs and `tfc_fd.yaml` keep `paper`; new `configs/tfc_positives_fd.yaml` | [decisions/training.md](decisions/training.md) |
+| D123 | 2026-10-27 | TF-C (positives) on FordA and every later benchmark dataset, same protocol as the other methods; FordA: pretrain.py + evaluate.py (D26 probes, seeds 0–2, timing) via adapter `tfc_frozen`; probes on z = [z_T; z_F]; FordA settings open in `configs/tfc_forda.yaml` | [decisions/training.md](decisions/training.md) |
+| D124 | 2026-10-27 | TF-C (positives) settings on FordA as in the FordA ablation (paper/code values, D42 scaling; 40 epochs, batch 64) | [decisions/training.md](decisions/training.md) |
+| D125 | 2026-10-27 | CWRU: no healthy class (fault diagnosis only; detection on Paderborn); test bearings = held-out faulty bearings | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D126 | 2026-10-27 | CWRU: normal files used for pretraining (48 kHz; rate matching decided with the pretraining setup) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D127 | 2026-10-27 | CWRU split: both ends pooled, five fault classes; one size per class and end held out; repeated random draws (count open) (superseded by D128) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class | [decisions/evaluation.md](decisions/evaluation.md) |
+| D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`) | [decisions/repo.md](decisions/repo.md) |
+| D131 | 2026-10-27 | CWRU input: DE and FE as one two-channel series; base plate not used; MiniRocket open | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
+| D132 | 2026-10-27 | Harness on Python 3.14, the version the environment runs (supersedes the Python version in D14) | [decisions/repo.md](decisions/repo.md) |
 
 <!--
 Entry template:

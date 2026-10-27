@@ -42,7 +42,7 @@ def test_consistency_loss_equals_2022_formula():
     l_tf = d(out[1], out[3])
     loss_c = (1 + l_tf - d(out[1], aug[3])) + (1 + l_tf - d(aug[1], out[3])) + (1 + l_tf - d(aug[1], aug[3]))
     expected = 0.5 * (d(out[0], aug[0]) + d(out[2], aug[2])) + 0.5 * loss_c
-    ours = tfc.tfc_loss(out, aug, {"temperature": 0.2, "lambda": 0.5, "delta": 1.0})
+    ours = tfc.tfc_loss(out, aug, {"variant": "paper", "temperature": 0.2, "lambda": 0.5, "delta": 1.0})
     assert torch.allclose(ours, expected, atol=1e-5)
 
 
@@ -108,3 +108,23 @@ def test_encoder_size_for_fd_windows():
 def test_placeholders_stop_the_run():
     with pytest.raises(ValueError, match="placeholder"):
         tfc.check_settings({"time_aug": {"jitter_sigma": None}})
+
+
+def test_frozen_adapter_is_tfc_pretrain_and_encode():
+    """The pretrain.py adapter (D123) gives exactly tfc.pretrain's weights and losses and tfc.encode's [z_T; z_F]."""
+    from harness.methods import tfc_frozen
+    from tests.test_diagnostics import TFC_SETTINGS
+    s = {**TFC_SETTINGS, "loss": {**TFC_SETTINGS["loss"], "variant": "positives"}}
+    X = np.random.default_rng(0).standard_normal((32, 128, 1))
+    torch.manual_seed(7)
+    np.random.seed(7)
+    ref, ref_log = tfc.pretrain(X, s, "cpu")
+    torch.manual_seed(7)
+    np.random.seed(7)
+    model, log = tfc_frozen.pretrain(X, s, "cpu")
+    for k, v in ref.state_dict().items():
+        assert torch.equal(v, model["tfc"].state_dict()[k]), k
+    assert log == ref_log["loss"].tolist()
+    Z = tfc_frozen.encode(model, X)
+    assert Z.shape == (32, 2 * s["encoder"]["projector"][1])
+    assert np.array_equal(Z, tfc.encode(ref, X, s["eval_chunk"], "cpu"))

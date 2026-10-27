@@ -1,0 +1,47 @@
+# Random-init baseline (D130), variant (b) bn_from_train: the encoder as built, batch-norm statistics from the training series, untrained (no pretraining).
+# Copy of configs/tstcc_forda.yaml except this header, name, random_init and published_accuracy;
+# tests/test_random_init.py checks that everything else still matches.
+
+# TS-TCC on FordA (D104-D108). Same data, probes and seeds as configs/ts2vec_forda.yaml (D26, D27).
+# Every setting is written out; nothing is filled in by the code.
+name: tstcc_forda_random_bn
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: tstcc
+random_init: bn_from_train  # D130
+seeds: [0, 1, 2]  # D108
+device: cuda
+
+tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
+  weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimisers
+  # lambda1 = 1 and lambda2 = 0.7 are hard-coded in the official model_train (not settable here)
+  official_config:  # external/tstcc/config_files/HAR_Configs.py; checked by the adapter, a difference stops the run
+    kernel_size: 8
+    stride: 1
+    dropout: 0.35
+    num_epoch: 40
+    batch_size: 128  # also the TS2Vec paper's batch size for UCR datasets
+    beta1: 0.9
+    beta2: 0.99
+    lr: 0.0003
+    drop_last: true
+    augmentation.jitter_scale_ratio: 1.1  # σ of the weak view's scaling (D107 item 2)
+    augmentation.jitter_ratio: 0.8  # σ of the strong view's jitter
+    augmentation.max_seg: 8  # strong view: 1..7 segments (D107 item 4)
+    TC.hidden_dim: 100
+    TC.timesteps: 6
+    Context_Cont.temperature: 0.2
+    Context_Cont.use_cosine_similarity: true
+  changed:  # HAR values changed for FordA (D105); the HAR value in the comment
+    input_channels: 1  # HAR 9; FordA has one channel
+    final_out_channels: 320  # HAR 128; TS2Vec paper: representation dimension 320 for every baseline
+    features_len: 65  # HAR 18; encoder output length for 500 samples; only sizes the unused classifier layer
+    num_classes: 2  # HAR 6; only sizes the unused classifier layer
+
+evaluation:  # D26, D108
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  reproduction_probe: svm_ts2vec  # the protocol the TS2Vec paper used for its baselines
+  published_accuracy: null  # D130: nothing published for an untrained encoder

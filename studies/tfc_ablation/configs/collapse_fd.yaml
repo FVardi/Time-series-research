@@ -24,6 +24,7 @@ tfc:  # our TF-C (D41, D42), settings as in configs/tfc_fd.yaml; pretraining onl
     dropout_block1: 0.35  # not in paper; 2022 code (dropout after the first block only)
     projector: [256, 128]  # paper
   loss:  # D41 item 4, paper
+    variant: paper  # D122: the paper's L_C, used by tfc.tfc_loss (stage E); the other stages compute their own loss
     temperature: 0.2
     lambda: 0.5
     delta: 1.0

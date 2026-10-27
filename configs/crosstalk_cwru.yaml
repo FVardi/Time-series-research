@@ -1,0 +1,47 @@
+# Diagnostic: cross-talk between the drive-end and fan-end channels of the CWRU 12 kHz fault files
+# (decides whether one channel = one bearing holds; D121 and the CWRU split).
+# Choices below are Claude's, for this check only.
+name: crosstalk_cwru
+source: data/raw/cwru
+fs_hz: 12000          # fault files
+normal_fs_hz: 48000   # normal files 97-100 (eda/cwru/check_normal_fs.py)
+normal_files: {0: 97, 1: 98, 2: 99, 3: 100}   # load (hp): file
+table_rpm: {0: 1797, 1: 1772, 2: 1750, 3: 1730}  # used when a file has no RPM value
+# defect frequencies, multiples of shaft speed (data center, Bearing Information page)
+defect_multiples:
+  DE: {bpfi: 5.4152, bpfo: 3.5848, bsf: 4.7135}  # 6205-2RS JEM SKF
+  FE: {bpfi: 4.9469, bpfo: 3.0530, bsf: 3.9874}  # 6203-2RS JEM SKF
+highpass_hz: 1000     # removes shaft harmonics and mains lines before the envelope
+filter_order: 5       # zero-phase Butterworth (as D50)
+harmonics: [1, 2, 3]
+peak_rel: 0.015       # peak = maximum within +-1.5 % of k * f_defect (speed uncertainty)
+floor_rel: 0.10       # floor = median within +-10 %, peak window excluded
+# 12 kHz fault files (data center tables), files for loads 0, 1, 2, 3 hp; null = not available.
+# 28 and 40 mil not included (D117, D119).
+faults:
+  DE_IR007:    {end: DE, location: inner, size_mil: 7,  files: [105, 106, 107, 108]}
+  DE_B007:     {end: DE, location: ball,  size_mil: 7,  files: [118, 119, 120, 121]}
+  DE_OR007@6:  {end: DE, location: outer, size_mil: 7,  clock: 6,  files: [130, 131, 132, 133]}
+  DE_OR007@3:  {end: DE, location: outer, size_mil: 7,  clock: 3,  files: [144, 145, 146, 147]}
+  DE_OR007@12: {end: DE, location: outer, size_mil: 7,  clock: 12, files: [156, 158, 159, 160]}
+  DE_IR014:    {end: DE, location: inner, size_mil: 14, files: [169, 170, 171, 172]}
+  DE_B014:     {end: DE, location: ball,  size_mil: 14, files: [185, 186, 187, 188]}
+  DE_OR014@6:  {end: DE, location: outer, size_mil: 14, clock: 6,  files: [197, 198, 199, 200]}
+  DE_IR021:    {end: DE, location: inner, size_mil: 21, files: [209, 210, 211, 212]}
+  DE_B021:     {end: DE, location: ball,  size_mil: 21, files: [222, 223, 224, 225]}
+  DE_OR021@6:  {end: DE, location: outer, size_mil: 21, clock: 6,  files: [234, 235, 236, 237]}
+  DE_OR021@3:  {end: DE, location: outer, size_mil: 21, clock: 3,  files: [246, 247, 248, 249]}
+  DE_OR021@12: {end: DE, location: outer, size_mil: 21, clock: 12, files: [258, 259, 260, 261]}
+  FE_IR007:    {end: FE, location: inner, size_mil: 7,  files: [278, 279, 280, 281]}
+  FE_B007:     {end: FE, location: ball,  size_mil: 7,  files: [282, 283, 284, 285]}
+  FE_OR007@6:  {end: FE, location: outer, size_mil: 7,  clock: 6,  files: [294, 295, 296, 297]}
+  FE_OR007@3:  {end: FE, location: outer, size_mil: 7,  clock: 3,  files: [298, 299, 300, 301]}
+  FE_OR007@12: {end: FE, location: outer, size_mil: 7,  clock: 12, files: [302, 305, 306, 307]}
+  FE_IR014:    {end: FE, location: inner, size_mil: 14, files: [274, 275, 276, 277]}
+  FE_B014:     {end: FE, location: ball,  size_mil: 14, files: [286, 287, 288, 289]}
+  FE_OR014@6:  {end: FE, location: outer, size_mil: 14, clock: 6,  files: [313, null, null, null]}
+  FE_OR014@3:  {end: FE, location: outer, size_mil: 14, clock: 3,  files: [310, 309, 311, 312]}
+  FE_IR021:    {end: FE, location: inner, size_mil: 21, files: [270, 271, 272, 273]}
+  FE_B021:     {end: FE, location: ball,  size_mil: 21, files: [290, 291, 292, 293]}
+  FE_OR021@6:  {end: FE, location: outer, size_mil: 21, clock: 6,  files: [315, null, null, null]}
+  FE_OR021@3:  {end: FE, location: outer, size_mil: 21, clock: 3,  files: [null, 316, 317, 318]}

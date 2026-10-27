@@ -25,7 +25,11 @@ The augmented views that Load_Dataset draws are returned but not used. The paper
 pretraining uses jitter (time) and removing/adding 10 % of frequency bins (frequency)
 but not which encoder sees which view. views: augmented uses them as the official
 fine-tuning loss does (finetune_tf_jepa: second pass on the augmented time and
-frequency inputs); this is not in the official pretraining code.
+frequency inputs); this is not in the official pretraining code. views: single drops
+the second pass (D113): one pass on the clean inputs, with the paper's loss
+cos(p_t->f, target_f) + cos(p_f->t, target_t), which is what the official loss gives
+when both passes see the same inputs (up to dropout). Reported under its own name,
+"TF-JEPA (single pass)" (D19).
 
     pretrain(X, settings, device) -> (model, loss per epoch)
     encode(model, X)              -> one vector per series
@@ -84,15 +88,16 @@ def loader(X, s):
                                             drop_last=s["drop_last"], num_workers=0)
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Pretrain TF-JEPA on unlabelled training series X (series, time, 1).
 
     s: the 'tfjepa' section of the config; every setting is given explicitly.
+    train: False returns the model as built, untrained (random-init baseline, D130).
     Returns the model (online and target branches) and the mean training loss per epoch.
     """
     check_settings(s)
-    if s["views"] not in ("official", "augmented"):
-        raise ValueError(f"tfjepa.views must be 'official' or 'augmented', not {s['views']!r}")
+    if s["views"] not in ("official", "augmented", "single"):
+        raise ValueError(f"tfjepa.views must be 'official', 'augmented' or 'single', not {s['views']!r}")
     cfg, train_loader = loader(X, s)
     model = official_model.TF_JEPA(cfg, momentum=s["ema_momentum"]).to(device)
     model.train()
@@ -104,6 +109,11 @@ def pretrain(X, s, device):
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=s["epochs"])
     cos = official_loss.cosine_byol
 
+    # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
+    model.representation, model.encode_batch_size = s["representation"], s["encode_batch_size"]
+    if not train:  # random-init baseline (D130): the model as built above, no training
+        return model, []
+
     log = []
     for epoch in range(1, s["epochs"] + 1):
         losses = []
@@ -111,14 +121,18 @@ def pretrain(X, s, device):
             x_t, x_f = x_t.float().to(device), x_f.float().to(device)
             opt.zero_grad()
             out1 = model(x_t, x_f)
-            if s["views"] == "official":
-                out2 = model(x_t.flip(1), x_f.flip(1))  # official: flips the single channel = same inputs
+            if s["views"] == "single":
+                # One pass (D113): both directions, as the paper's loss.
+                loss = cos(out1["p_time_to_freq"], out1["z_freq_target"]) + cos(out1["p_freq_to_time"], out1["z_time_target"])
             else:
-                out2 = model(x_t_aug.float().to(device), x_f_aug.float().to(device))
-            # Official loss: both directions, both views, halved (symmetric = True in pretrain_tf_jepa).
-            loss = cos(out1["p_time_to_freq"], out1["z_freq_target"]) + cos(out2["p_time_to_freq"], out2["z_freq_target"])
-            loss += cos(out1["p_freq_to_time"], out1["z_time_target"]) + cos(out2["p_freq_to_time"], out2["z_time_target"])
-            loss *= 0.5
+                if s["views"] == "official":
+                    out2 = model(x_t.flip(1), x_f.flip(1))  # official: flips the single channel = same inputs
+                else:
+                    out2 = model(x_t_aug.float().to(device), x_f_aug.float().to(device))
+                # Official loss: both directions, both passes, halved (symmetric = True in pretrain_tf_jepa).
+                loss = cos(out1["p_time_to_freq"], out1["z_freq_target"]) + cos(out2["p_time_to_freq"], out2["z_freq_target"])
+                loss += cos(out1["p_freq_to_time"], out1["z_time_target"]) + cos(out2["p_freq_to_time"], out2["z_time_target"])
+                loss *= 0.5
             loss.backward()
             opt.step()
             model.update_targets()  # EMA of encoders and projectors (official)
@@ -126,9 +140,6 @@ def pretrain(X, s, device):
         log.append(float(np.mean(losses)))
         print(f"  epoch {epoch}: loss {log[-1]:.4f}", flush=True)
         sched.step()
-
-    # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
-    model.representation, model.encode_batch_size = s["representation"], s["encode_batch_size"]
     return model, log
 
 

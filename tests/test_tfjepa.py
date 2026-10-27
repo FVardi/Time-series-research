@@ -21,7 +21,7 @@ def settings(views="official"):
             "representation": "z", "encode_batch_size": 5}
 
 
-@pytest.mark.parametrize("views", ["official", "augmented"])
+@pytest.mark.parametrize("views", ["official", "augmented", "single"])
 def test_pretrain_and_encode(views):
     from harness.methods import tfjepa
     torch.manual_seed(0)

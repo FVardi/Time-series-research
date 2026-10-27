@@ -118,10 +118,13 @@ def callbacks(s, n_vars, save_dir=None):
     return cbs
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Pretrain PatchTST on unlabelled training series X (series, time, channels).
 
     s: the 'patchtst' section of the config; every setting is given explicitly.
+    train: False returns the model as built, untrained (random-init baseline, D130). The validation
+           split and the learning-rate finder still run first, so the random numbers drawn before the
+           model is built, and hence its initial weights, are the same as in the trained run.
     Returns the model (encoder + pretraining head) and the training loss per epoch.
     """
     check_settings(s)
@@ -164,10 +167,14 @@ def pretrain(X, s, device):
         # (cosine) to lr/25/1e4; Adam's beta1 moves the other way between 0.95 and 0.85 (official
         # OneCycleLR callback, fixed in the official code).
         model = build_model(dls.vars, length, s)
-        learn = official.learner.Learner(dls, model, torch.nn.MSELoss(reduction="mean"), lr=lr,
-                                         cbs=callbacks(s, dls.vars, save_dir=tmp if n_valid else None))
-        learn.fit_one_cycle(n_epochs=s["epochs"], lr_max=lr, pct_start=s["pct_start"])
-        rec = learn.recorder
+        if train:
+            learn = official.learner.Learner(dls, model, torch.nn.MSELoss(reduction="mean"), lr=lr,
+                                             cbs=callbacks(s, dls.vars, save_dir=tmp if n_valid else None))
+            learn.fit_one_cycle(n_epochs=s["epochs"], lr_max=lr, pct_start=s["pct_start"])
+            rec = learn.recorder
+        else:  # random-init baseline (D130): the model as built above, no training
+            model = model.to(device)
+            rec = {"train_loss": []}
 
     # Without validation the last epoch is kept; with validation SaveModelCB has loaded the best one.
     valid_loss = [float(v) for v in rec.get("valid_loss", [])]
@@ -175,7 +182,7 @@ def pretrain(X, s, device):
         "lr": lr,
         "train_loss": [float(v) for v in rec["train_loss"]],
         "valid_loss": valid_loss,
-        "epoch_kept": int(np.argmin(valid_loss)) if valid_loss else s["epochs"] - 1,
+        "epoch_kept": (int(np.argmin(valid_loss)) if valid_loss else s["epochs"] - 1) if train else None,
         "validation_rows": valid_idx.tolist(),  # rows of the training series held out for model selection
     }
     model.encode_settings = encode_settings(s)

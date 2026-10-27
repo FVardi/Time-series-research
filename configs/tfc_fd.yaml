@@ -23,6 +23,7 @@ tfc:
   classifier:
     hidden: 64  # paper; sigmoid between the two layers as in the code
   loss:  # D41 item 4, paper
+    variant: paper  # D122: the paper's L_C (the record of the paper's loss)
     temperature: 0.2
     lambda: 0.5
     delta: 1.0

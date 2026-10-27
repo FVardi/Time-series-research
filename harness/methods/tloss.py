@@ -36,11 +36,12 @@ def _to_tloss(X):
     return np.ascontiguousarray(np.transpose(X, (0, 2, 1)), dtype=np.float64)
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Train the T-Loss encoder without labels.
 
     X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'tloss' section of the config; every setting is given explicitly (D32).
+    train: False returns the model as built, untrained (random-init baseline, D130).
     Returns the trained model and an empty loss log (the official code does not record losses).
     """
     model = CausalCNNEncoderClassifier(
@@ -61,6 +62,8 @@ def pretrain(X, s, device):
         cuda=(device == "cuda"),
         gpu=0,
     )
+    if not train:  # random-init baseline (D130): the encoder as built above, no training
+        return model, []
     model.fit_encoder(_to_tloss(X))  # no labels: early stopping is off (D32)
     return model, []
 

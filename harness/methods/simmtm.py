@@ -121,11 +121,12 @@ def build_model(configs, args, device):
     return model
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Self-supervised pretraining as main.py and Trainer() do it.
 
     X: array (n_series, n_samples, 1), training inputs only.
     s: the 'simmtm' section of the config; every setting is given explicitly.
+    train: False returns the model as built, untrained (random-init baseline, D130).
     The seeds are set before this call (scripts/pretrain.py); main.py's cuDNN settings are repeated here.
     Returns the model and the mean training loss per epoch.
     """
@@ -150,6 +151,9 @@ def pretrain(X, s, device):
                                  betas=(configs.beta1, configs.beta2), eps=s["adam"]["eps"],
                                  weight_decay=s["adam"]["weight_decay"])
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=s["main_args"]["pretrain_epoch"])
+    model.encode_batch_size = s["encode_batch_size"]  # kept with the model for encode()
+    if not train:  # random-init baseline (D130): the model as built above, no training
+        return model, []
 
     log = []
     for epoch in range(1, s["main_args"]["pretrain_epoch"] + 1):
@@ -157,7 +161,6 @@ def pretrain(X, s, device):
         log.append(float(loss))
         print(f"  epoch {epoch}: loss {float(loss):.4f} (contrastive {float(loss_cl):.4f}, "
               f"reconstruction {float(loss_rb):.4f})", flush=True)
-    model.encode_batch_size = s["encode_batch_size"]
     return model, log
 
 

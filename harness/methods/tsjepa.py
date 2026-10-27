@@ -88,10 +88,11 @@ def shuffled(n):
     return torch.randperm(n, generator=torch.Generator().manual_seed(seed))
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Pretrain TS-JEPA on unlabelled training series X (series, time, 1).
 
     s: the 'tsjepa' section of the config; every setting is given explicitly.
+    train: False returns the encoder as built, untrained (random-init baseline, D130).
     Returns the online encoder (the one the official code saves and evaluates) and the loss per epoch.
     """
     check_settings(s)
@@ -126,6 +127,11 @@ def pretrain(X, s, device):
     else:
         raise ValueError(f"tsjepa.masking must be 'official' or 'per_sample', not {s['masking']!r}")
 
+    # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
+    encoder.n_patches, encoder.pooling, encoder.encode_batch_size = s["n_patches"], s["pooling"], s["encode_batch_size"]
+    if not train:  # random-init baseline (D130): the encoder as built above, no training
+        return encoder, []
+
     log = []
     for epoch in range(s["epochs"]):
         scheduler.step()  # official order: stepped at the start of each epoch, before any optimiser step
@@ -156,9 +162,6 @@ def pretrain(X, s, device):
         log.append(float(np.mean(losses)))
         if epoch % s["print_every"] == 0:
             print(f"  epoch {epoch}: loss {log[-1]:.4f}", flush=True)
-
-    # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
-    encoder.n_patches, encoder.pooling, encoder.encode_batch_size = s["n_patches"], s["pooling"], s["encode_batch_size"]
     return encoder, log
 
 

@@ -1,0 +1,61 @@
+# Random-init baseline (D130), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
+# Copy of configs/patchtst_forda.yaml except this header, name, random_init and published_accuracy;
+# tests/test_random_init.py checks that everything else still matches.
+
+# PatchTST (self-supervised) on FordA. Same data, probes, label budgets and seeds as
+# configs/ts2vec_forda.yaml (D26, D27, D29, D40). Every setting is written out with its source.
+# Decisions: D73 (wrapped official code), D74 (settings), D87 (pooling).
+# Sources: paper = arXiv 2211.14730v2; script = PatchTST_self_supervised/patchtst_pretrain.py
+# (argument defaults and get_model); class = PatchTST class defaults the script does not override;
+# all at commit 204c21e.
+name: patchtst_forda_random
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: patchtst
+random_init: as_initialised  # D130
+seeds: [0, 1, 2]  # D26
+device: cuda  # must match what the official Learner picks (the GPU if there is one)
+
+patchtst:
+  patch_len: 12  # D74: paper (12 with input length 512, 42 patches), script default. FordA (500 samples):
+                 # 41 patches, the first 8 samples of each series unused (official create_patch)
+  stride: 12  # D74: = patch_len. paper: non-overlapping patches for pretraining ("so observed patches do not
+              # contain information of the masked ones"); script default 12
+  mask_ratio: 0.4  # paper ("40% of the patches are masked with zero values"), script, README
+  revin: true  # script (--revin 1); paper: instance normalisation of every series
+  revin_eps: 1.0e-5  # RevInCB default (script does not set it)
+  batch_size: 64  # script (only source; paper silent)
+  epochs: 100  # D74: paper ("pre-training ... for 100 epochs"); script default 10
+  lr: finder  # D74: what the script does by itself: the official learning-rate finder, then training with its
+              # suggestion (--lr 1e-4 is then unused); paper silent. The value used is saved per seed
+  pct_start: 0.3  # script (fit_one_cycle default): share of the batches with rising learning rate
+  validation_fraction: 0.125  # D74: share of the training series held out (random, no labels) to keep the epoch
+                              # with the lowest validation loss, as the script does (SaveModelCB on valid_loss).
+                              # 0.125 is derived, not stated: the script's generic datasets split time 70/10/20,
+                              # i.e. validation = 1/8 of the non-test data
+  model:
+    n_layers: 3  # paper (default size), script
+    n_heads: 16  # paper (default size), script; D74: default size (the paper's reduced size, 4 heads, is for
+                 # datasets smaller than FordA)
+    d_model: 128  # paper (default size), script; reduced size 16 not used (D74)
+    d_ff: 256  # D74: paper (default size); script 512
+    dropout: 0.2  # paper ("all experiments"), script
+    head_dropout: 0.2  # script (only source); acts on the pretraining head only
+    attn_dropout: 0.0  # class
+    shared_embedding: true  # script: one patch projection for all channels
+    norm: BatchNorm  # class
+    act: relu  # script (class default would be gelu)
+    res_attention: false  # script (class default would be true)
+    pre_norm: false  # class
+    pe: zeros  # class: learned positional encoding, initialised uniformly in [-0.02, 0.02]
+    learn_pe: true  # class
+  pooling: mean  # D87: mean over the patch vectors per channel, channels concatenated (supersedes D74's 'last',
+                 # the official heads' choice: 7-16 points weaker on FordA, D86); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  published_accuracy: null  # D130: nothing published for an untrained encoder

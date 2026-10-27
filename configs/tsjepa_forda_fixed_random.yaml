@@ -1,0 +1,52 @@
+# Random-init baseline (D130), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
+# Copy of configs/tsjepa_forda_fixed.yaml except this header, name, random_init and published_accuracy;
+# tests/test_random_init.py checks that everything else still matches.
+
+# TS-JEPA on FordA, official code with the masking bug fixed (D66). Identical to configs/tsjepa_forda.yaml except name and masking. Same data, probes, label budgets and seeds as
+# configs/ts2vec_forda.yaml (D26, D27, D29, D40). Every setting is written out with its source.
+# 'null' = open placeholder (the paper is silent and the code versions disagree): the run refuses to start.
+# Sources: paper = arXiv 2509.25449; README = command in the repo README; code = config/config_pretrain.py
+# and pretrain.py at commit 830ee5c.
+name: tsjepa_forda_fixed_random
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+method: tsjepa
+random_init: as_initialised  # D130
+seeds: [0, 1, 2]  # D26 (the paper reports 10 runs)
+device: cuda
+
+tsjepa:
+  n_patches: 10  # paper: "we segment each time series into 10 patches" (FordA: 10 x 50 samples)
+  mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
+  masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'
+  batch_size: 32  # paper, README, code
+  epochs: 5000  # D66; paper silent; code 5001 (README evaluates the checkpoint saved at epoch index 5000); 1 epoch = 113 batches on FordA
+  ema_momentum: 0.998  # paper, README, code; raised linearly per epoch (official schedule)
+  ipe_scale: 1.25  # code (only source); sets how far the EMA momentum rises towards 1
+  encoder:
+    embed_dim: 128  # paper, README (code: 384; downstream config: 256)
+    nhead: 2  # paper, README (code: 6; downstream config: 4)
+    num_layers: 1  # D66: README (the only source consistent with the paper's 128 dims / 2 heads); code 3, downstream config 2; paper silent
+    kernel_size: 3  # code (all configs agree); paper only says "1D-CNN" tokenizer
+    embed_bias: true  # code; passed to the tokenizer but not used by it
+  predictor:  # paper: "encoder and predictor share the same architecture: 2 attention heads, embedding dimension 128"
+    embed_dim: 128  # paper, README, code
+    nhead: 2  # paper, README, code
+    num_layers: 1  # README, code, downstream config all 1; paper silent
+  optimizer:
+    lr: 6.0e-5  # D69: the official pretraining config's value (what pretrain.py uses without arguments); no tuning, as TS2Vec/T-Loss (README 1e-7 is from their weather run; paper searched 1e-3..1e-6)
+    lr_end_factor: 0.5  # code: LinearLR from 1.0 to 0.5 x lr over the epochs (code's end_lr 1e-4 is never used)
+    betas: [0.9, 0.999]  # code uses PyTorch's AdamW defaults
+    eps: 1.0e-8  # PyTorch AdamW default (code)
+    weight_decay: 0.01  # PyTorch AdamW default (code)
+  pooling: mean  # D66: mean over the 10 patch vectors (downstream config's pooling: "Mean"); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+  print_every: 10  # epochs between loss prints (code prints every 10)
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  reproduction_probe: svm_ts2vec  # the probe compared with the published accuracy (was fixed in scripts/evaluate.py)
+  published_accuracy: null  # D130: nothing published for an untrained encoder

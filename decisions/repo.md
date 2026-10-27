@@ -17,7 +17,7 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Alternatives considered:** Harness and each study in separate repositories, studies pinning a harness commit (cleaner boundaries, but more overhead for a single researcher). One repository without an import rule (simplest, but study code would depend on harness internals and harness changes could silently alter study results).
 **Rationale:** A single repository is simplest for one researcher. The import rule and recorded commits guard against the real risks: harness changes silently altering earlier results, and entanglement that makes the publication copy hard to extract.
 
-## 2026-10-06 — D14: Python environments with uv; Python 3.12
+## 2026-10-06 — D14: Python environments with uv; Python 3.12 (Python version superseded by D132)
 **Decision:** Environments are managed with uv (`pyproject.toml` plus lock file). The harness uses Python 3.12. Wrapped methods that need older Python or library versions get their own small uv environment.
 **Alternatives considered:** Poetry (mature and widespread, but does not install Python versions itself and its PyTorch package-index setup is fiddly). conda (handles CUDA, but slower and with clumsier lock files). pip + venv (no lock file).
 **Rationale:** Exact reproducible versions, one-command installation of older Python versions for old method repositories, straightforward PyTorch installation, and speed.
@@ -78,3 +78,13 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Decision:** (1) The FordA comparison in the results document (accuracy, paired and timing tables, figure) includes TS-JEPA (masking fixed, D102; run `20261016_114616_tsjepa_forda_fixed`) and PatchTST (mean pooling, D87; run `20261019_154248_patchtst_forda_mean`), from their existing runs. (2) Neither has stage timing (D79); both appear in the timing table as "not timed" rows. (3) TS-JEPA's reproduction check uses the official-masking run (`20261016_114600_tsjepa_forda`, the paper's code) with the SVM probe (as TS2Vec and T-Loss) against the paper's 0.915; that run appears in the reproduction table only, not in the comparison (D102).
 **Alternatives considered:** (2) Leaving both out of the timing table with a note in the caption. (3) The masking-fixed run as the reproduction row; no row, with the explanation in the text only.
 **Rationale:** User's decision (2026-10-21), following Claude's recommendations. The missing timing stays visible in the table. The reproduction check asks whether the wrapping of the paper's code works, which is separate from which variant is compared.
+
+## 2026-10-27 — D130: STATUS.md: living status list at the repository root
+**Decision:** `STATUS.md` at the repository root lists what is done, ready to run and open (benchmark runs per dataset, methods, datasets, loose ends, deferred items) and is updated as things change. Decisions stay in `decisions/`, supervisor questions in `QUESTIONS.md`. It takes over the role of `HANDOFF.md`, which dates from early October and no longer describes the repository (whether to delete it is up to the user).
+**Alternatives considered:** Rewriting `HANDOFF.md`; a section in `README` or `CLAUDE.md`.
+**Rationale:** User's request (2026-10-27).
+
+## 2026-10-27 — D132: Python 3.14 for the harness (supersedes the Python version in D14)
+**Decision:** The harness uses Python 3.14, the version its environment actually runs (`.venv/pyvenv.cfg`: CPython 3.14.3). The rest of D14 (uv, `pyproject.toml` + lock file, separate small environments for methods that need other versions) stands. `pyproject.toml` keeps `requires-python = ">=3.12"`.
+**Alternatives considered:** Pinning 3.12 as D14 said (`uv python pin 3.12`, `uv sync`); the existing runs were made on 3.14, so they would no longer match the environment.
+**Rationale:** User's decision (2026-10-27): no reason to go back; all runs so far on this machine used 3.14.

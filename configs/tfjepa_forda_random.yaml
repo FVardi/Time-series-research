@@ -1,0 +1,54 @@
+# Random-init baseline (D130), variant (a) as_initialised: the encoder as built, untrained (no pretraining).
+# Copy of configs/tfjepa_forda.yaml except this header, name, random_init and published_accuracy;
+# tests/test_random_init.py checks that everything else still matches.
+
+# TF-JEPA on FordA, official code wrapped (harness/methods/tfjepa.py). Same data, probes, label budgets
+# and seeds as configs/ts2vec_forda.yaml (D26, D27, D29, D40). Every setting is written out with its source.
+# 'null' = open placeholder (the sources disagree or are silent): the run refuses to start.
+# Sources: paper = TF-JEPA, ICLR 2026 TSALM workshop (jchaykow.github.io/tf-jepa/paper/TF_JEPA_ICLR2026.pdf);
+# code = github.com/jchaykow/tf-jepa at commit fda93c1 (main.py CLI defaults, src/model.py defaults,
+# src/train.py:pretrain_tf_jepa, src/config_files/*). The code has no FordA config.
+# D113: one pass per step instead of the official two (reported as "TF-JEPA (single pass)", D19).
+name: tfjepa_forda_random
+dataset: forda
+run_id: forda
+channels: [x]  # the official Load_Dataset keeps channel 0 only; the adapter stops on more channels
+data_root: data/canonical
+method: tfjepa
+random_init: as_initialised  # D130
+seeds: [0, 1, 2]  # D26
+device: cuda
+
+tfjepa:
+  views: single  # D113 (supersedes D110): one pass on the clean inputs, the paper's loss.
+               #   code: 'official' (second pass on x.flip(1) = the single channel flipped, i.e. the clean inputs again;
+               #   augmented views computed but unused); paper: jitter + frequency augmentation during pretraining,
+               #   without saying which encoder sees which view. 'augmented' = second pass on the augmented
+               #   inputs, as the official fine-tuning loss does.
+  jitter_ratio: 0.8  # σ of the time-domain jitter. paper 0.8; code configs: HAR 0.8, ECG 0.8, SleepEEG 2, FD-A 0.1.
+                     # With views: official or single it has no effect on the model (the jittered view is drawn but not used).
+                     # Frequency augmentation (remove 10 % / add 10 % of bins, summed) is hard-coded in the code.
+  batch_size: 128  # D114. paper: 128 in its profiling, 16-512 in an ablation (HAR saturates from 64);
+                    # code configs: SleepEEG 128, HAR 128, ECG 128, FD-A 64, Epilepsy 32
+  drop_last: true  # D113. code configs: SleepEEG false; HAR, ECG, FD-A, Epilepsy true; paper silent
+  epochs: 20  # D114: README's example of a longer schedule (--epochs-pre 20); main.py default 5; paper silent
+  ema_momentum: 0.995  # paper (Section 2) and code (TF_JEPA default); paper's ablation: best 0.995-0.9995 by dataset; fixed, no schedule
+  encoder:  # paper: "L-layer 1D Transformer, model dimension d_model" (values not given); code below
+    embed_dim: 128  # projector output size d_z: paper and code
+    nhead: 2  # code (TF_JEPA default)
+    nlayers: 2  # code (TF_JEPA default)
+    ff_mult: 2  # code: feed-forward size = 2 x d_model; d_model = series length (500 for FordA; whole series is one token)
+  optimizer:  # code: hard-coded in pretrain_tf_jepa; paper silent
+    lr: 3.0e-4  # code: main.py --lr default (also lr in every dataset config except ECG)
+    betas: [0.9, 0.99]  # code
+    eps: 1.0e-8  # PyTorch AdamW default (code does not set it)
+    weight_decay: 3.0e-4  # code
+  representation: z  # D113 (paper silent). 'z' = [z_time; z_freq] projector outputs (2 x 128);
+                        # 'z_raw' = z plus the series mean (exactly the official classifier's input);
+                        # 'h' = [h_time; h_freq] encoder outputs before the projectors (2 x 500 for FordA)
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [svm_ts2vec, logreg]
+  published_accuracy: null  # D130: nothing published for an untrained encoder

@@ -81,7 +81,7 @@ def test_measures_nan_when_not_finite():
 TFC_SETTINGS = {
     "encoder": {"channels": [4, 8, 8], "kernel_size": 8, "strides": [8, 1, 1], "padding": 4, "pool_padding": 1,
                 "conv_bias": False, "dropout_block1": 0.35, "projector": [16, 8]},
-    "loss": {"temperature": 0.2, "lambda": 0.5, "delta": 1.0},
+    "loss": {"variant": "paper", "temperature": 0.2, "lambda": 0.5, "delta": 1.0},
     "freq_aug": {"n_components": 1, "alpha": 0.5},
     "time_aug": {"jitter_sigma": 0.1, "scaling_mean": 1.0, "scaling_sigma": 0.1, "max_segments": 5},
     "pretrain": {"epochs": 2, "batch_size": 8, "drop_last": True, "lr": 3e-4, "betas": [0.9, 0.99],

@@ -24,3 +24,6 @@ Contents
 - `herning/check_vfd_lines.py` — frequency-converter line comb test, QUESTIONS.md Q3 (moved from `scripts/`).
   The three scripts are run from the repo root, e.g.
   `uv run python eda/herning/check_bands.py configs/band_check_herning.yaml`.
+- `jim-tec/butter_cannon_eda.ipynb` — interactive examination of the Jim-Tec / Arla butter cannon CSV logs
+  (file table, one file up close, block statistics over all files, RPM, spectra per operating point,
+  spectrogram, envelope spectrum placeholder, open questions).

@@ -27,6 +27,18 @@ def test_stage_E_equals_tfc_pretrain():
         assert torch.equal(v, model.state_dict()[k]), k
 
 
+def test_positives_variant_equals_stage_H():
+    """Our TF-C with loss.variant 'positives' (D122, the benchmark version) is exactly stage H (D101):
+    same weights as the study's stage H with the same seed."""
+    s = {**TFC_SETTINGS, "loss": {**TFC_SETTINGS["loss"], "variant": "positives"}}
+    torch.manual_seed(7)
+    np.random.seed(7)
+    ref, _ = tfc.pretrain(X, s, "cpu")
+    model, _, _ = run_stage("H", ["h_t", "h_f", "h", "z_t", "z_f", "z"])
+    for k, v in ref.state_dict().items():
+        assert torch.equal(v, model.state_dict()[k]), k
+
+
 def test_stages_A_and_B_build_one_branch():
     model_a, log_a, mon_a = run_stage("A", ["h_t"])
     model_b, log_b, _ = run_stage("B", ["h_f"])

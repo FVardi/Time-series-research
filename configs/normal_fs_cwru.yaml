@@ -1,0 +1,17 @@
+# Diagnostic: are the CWRU normal-baseline files (97-100) sampled at 12 or 48 kHz?
+# Choices below are Claude's, for this check only.
+name: normal_fs_cwru
+source: data/raw/cwru
+files:  # file number: approximate speed (rpm) from the data center's table, used if the file has no RPM value
+  97: 1797
+  98: 1772
+  99: 1750
+  100: 1730
+  105: 1797  # control: 12 kHz drive-end fault file
+  106: 1772  # control
+  270: 1797  # control: 12 kHz fan-end fault file
+assumed_fs_hz: 12000
+fractions: [0.25, 0.5, 0.75]  # of the shaft frequency
+welch_nperseg: 131072
+peak_rel: 0.03   # peak = maximum within +-3 % of the frequency
+floor_rel: 0.3   # floor = median within +-30 %

@@ -118,11 +118,12 @@ def check_sizes(configs, model, X):
         raise ValueError(f"features_len is {configs.features_len}, the encoder output has length {length}")
 
 
-def pretrain(X, s, device):
+def pretrain(X, s, device, train=True):
     """Self-supervised training as the official main.py does it (--training_mode self_supervised).
 
     X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'tstcc' section of the config (D105); every setting is given explicitly.
+    train: False returns the model as built, untrained (random-init baseline, D130).
     The seeds are set before this call (scripts/pretrain.py); main.py's other seeding
     lines are repeated here. Returns the model and the mean training loss per epoch.
     """
@@ -148,6 +149,8 @@ def pretrain(X, s, device):
     adam = dict(lr=configs.lr, betas=(configs.beta1, configs.beta2), weight_decay=s["weight_decay"])
     model_optimizer = torch.optim.Adam(model.parameters(), **adam)
     tc_optimizer = torch.optim.Adam(tc.parameters(), **adam)
+    if not train:  # random-init baseline (D130): the models as built above, no training
+        return {"encoder": model, "tc": tc, "batch_size": configs.batch_size}, []
 
     # The training loop of the official Trainer(). In this mode the loss is
     # λ1·(both temporal contrasting losses) + λ2·NT-Xent, with λ1 = 1 and λ2 = 0.7

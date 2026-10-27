@@ -63,7 +63,8 @@ All three are probed and measured like D and E. In every stage with both branche
 Per seed: pretraining with the collapse diagnostics after every epoch (same output files as
 `collapse.py`), then frozen probes (D26: `svm_ts2vec` and `logreg`; label budgets 1/10/100 %)
 trained on the training split and scored once on the test split: `probes.csv`, `summary.csv`.
-Stage E is exactly `tfc.pretrain` (tested in `tests/test_ablation.py`). In C the projectors get no
+Stage E is exactly `tfc.pretrain` with `loss.variant: paper`, and stage H exactly `tfc.pretrain` with
+`loss.variant: positives`, the version used for the benchmarks (D122; both tested in `tests/test_ablation.py`). In C the projectors get no
 gradient (only their BatchNorm running statistics move), so z is not evaluated there.
 
 The probes need the TS2Vec submodule (`external/ts2vec`): `git submodule update --init`.
