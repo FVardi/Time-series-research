@@ -48,7 +48,6 @@ Standing rule (D123): every new benchmark dataset gets a TF-C (positives) config
 
 ## 4. Loose ends
 
-- **Probe speed**: `logreg` in `harness/evaluate.py` runs its grid search in one process; slow on large representations (SimMTM 2,944, FreRA 8,320 dimensions). `n_jobs=-1` would parallelise it without changing results.
 - **HANDOFF.md**: superseded by this file (D130); to be removed with `git rm HANDOFF.md`.
 - **Commit and submodules**: much of `runs/` was made from uncommitted trees (D99); `external/frera`, `external/simmtm`, `external/tfjepa` were added as submodules on 2026-10-27 and need committing.
 - **Loss logs**: TS2Vec and T-Loss now log the loss per iteration/step (D143); FordA runs repeated: `runs/20261027_164037_ts2vec_forda` (600 values), `runs/20261027_164446_tloss_forda` (2,000 values).

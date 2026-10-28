@@ -50,10 +50,11 @@ def logreg(Z, y):
 
     Cross-validation scores with accuracy (sklearn's default for classifiers).
     max_iter is set high so the solver converges; the optimum does not depend on it.
+    n_jobs=-1 runs the folds and C values in parallel on all cores; the result is the same as serial.
     """
     pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=10_000))
     grid = {"logisticregression__C": [10.0**k for k in range(-4, 5)]}
-    return GridSearchCV(pipe, grid, cv=5).fit(Z, y).best_estimator_
+    return GridSearchCV(pipe, grid, cv=5, n_jobs=-1).fit(Z, y).best_estimator_
 
 
 def ridge_minirocket(Z, y):
