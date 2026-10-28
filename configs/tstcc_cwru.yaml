@@ -1,0 +1,49 @@
+# TS-TCC (permutation fixed) on CWRU (D128, D151, D156): FordA settings with the values the input shape forces.
+name: tstcc_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: tstcc
+seeds: [0, 1, 2]
+device: cuda
+
+tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
+  weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimisers
+  # lambda1 = 1 and lambda2 = 0.7 are hard-coded in the official model_train (not settable here)
+  official_config:  # external/tstcc/config_files/HAR_Configs.py; checked by the adapter, a difference stops the run
+    kernel_size: 8
+    stride: 1
+    dropout: 0.35
+    num_epoch: 40
+    batch_size: 128  # also the TS2Vec paper's batch size for UCR datasets
+    beta1: 0.9
+    beta2: 0.99
+    lr: 0.0003
+    drop_last: true
+    augmentation.jitter_scale_ratio: 1.1  # σ of the weak view's scaling (D107 item 2)
+    augmentation.jitter_ratio: 0.8  # σ of the strong view's jitter
+    augmentation.max_seg: 8  # strong view: 1..7 segments (D107 item 4)
+    TC.hidden_dim: 100
+    TC.timesteps: 6
+    Context_Cont.temperature: 0.2
+    Context_Cont.use_cosine_similarity: true
+  changed:  # HAR values changed for the input shape (D105, D156); the HAR value in the comment
+    input_channels: 2  # HAR 9; CWRU: drive end and fan end (D131)
+    final_out_channels: 320  # HAR 128; TS2Vec paper: representation dimension 320 for every baseline
+    features_len: 258  # HAR 18; encoder output length for 2048 samples; only sizes the unused classifier layer
+    num_classes: 5  # HAR 6; only sizes the unused classifier layer
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split

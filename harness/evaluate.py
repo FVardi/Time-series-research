@@ -14,7 +14,7 @@ import numpy as np
 from sklearn.dummy import DummyClassifier
 from sklearn.linear_model import LogisticRegression, RidgeClassifierCV
 from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -50,11 +50,42 @@ def logreg(Z, y):
 
     Cross-validation scores with accuracy (sklearn's default for classifiers).
     max_iter is set high so the solver converges; the optimum does not depend on it.
-    n_jobs=-1 runs the folds and C values in parallel on all cores; the result is the same as serial.
     """
     pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=10_000))
     grid = {"logisticregression__C": [10.0**k for k in range(-4, 5)]}
-    return GridSearchCV(pipe, grid, cv=5, n_jobs=-1).fit(Z, y).best_estimator_
+    return GridSearchCV(pipe, grid, cv=5).fit(Z, y).best_estimator_
+
+
+def grouped_folds(y, groups, seed, n_splits=5, max_draws=100):
+    """Cross-validation folds grouped by 'groups' (e.g. bearing) and stratified by class,
+    shuffled with the run's seed (D129).
+
+    Guard: if a fold's training part lacks a class, the assignment is drawn again with seed
+    seed * 1000 + draw, draw = 1, 2, ... The guard covers only classes whose windows come from
+    at least two groups: a class with a single group (e.g. all labelled windows of one bearing
+    at a small label budget) is necessarily missing from the training part of the fold that
+    holds that group out, and this is accepted (D148).
+    Returns the folds, the draw used (0 = none redrawn) and the classes with a single group.
+    """
+    n_groups = {c: len(set(groups[y == c])) for c in set(y)}
+    single = sorted(c for c, n in n_groups.items() if n == 1)
+    required = {c for c, n in n_groups.items() if n >= 2}
+    for draw in range(max_draws):
+        cv = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=seed * 1000 + draw)
+        folds = list(cv.split(np.zeros(len(y)), y, groups))
+        if all(required <= set(y[train]) for train, _ in folds):
+            return folds, draw, single
+    raise ValueError(f"no fold assignment with every class in every training part after {max_draws} draws")
+
+
+def logreg_grouped(Z, y, groups, seed):
+    """The harness probe (logreg) with C chosen on folds grouped by bearing (D129, D148).
+    Same pipeline and grid as logreg(). Returns the probe, the fold draw used and the
+    classes whose labelled windows all come from one group."""
+    folds, draw, single = grouped_folds(y, groups, seed)
+    pipe = make_pipeline(StandardScaler(), LogisticRegression(max_iter=10_000))
+    grid = {"logisticregression__C": [10.0**k for k in range(-4, 5)]}
+    return GridSearchCV(pipe, grid, cv=folds).fit(Z, y).best_estimator_, draw, single
 
 
 def ridge_minirocket(Z, y):
@@ -82,3 +113,17 @@ def scores(clf, Z, y):
     """Accuracy and macro-F1 on the test data (D26 item 3)."""
     pred = clf.predict(Z)
     return {"accuracy": accuracy_score(y, pred), "macro_f1": f1_score(y, pred, average="macro")}
+
+def per_bearing(clf, Z, y, groups, class_names):
+    """Test accuracy per test bearing (D160), a diagnostic next to scores().
+
+    One row per group (bearing): its class, number of windows, accuracy and the class
+    the probe predicts most often for it."""
+    pred = clf.predict(Z)
+    rows = []
+    for g in sorted(set(groups)):
+        m = groups == g
+        top = np.bincount(pred[m], minlength=len(class_names)).argmax()  # most frequent prediction
+        rows.append({"bearing": g, "class": class_names[y[m][0]], "n_windows": int(m.sum()),
+                     "accuracy": float((pred[m] == y[m]).mean()), "top_prediction": class_names[top]})
+    return rows

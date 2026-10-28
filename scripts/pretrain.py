@@ -8,6 +8,9 @@ the representations of the training and test series, the training loss and the
 wall-clock time of each stage (timing.json, D79). The run folder also gets
 hardware.json (where the times were measured).
 Only training inputs are used for pretraining; test inputs never are.
+A config with a 'split' section (D147, e.g. CWRU) is cut into windows by harness/windows.py:
+pretraining then uses the training windows plus any 'pretrain_only' windows, and the run
+stops if a test capture or test bearing would be used for pretraining (D121).
 Baselines (raw, fft, catch22, minirocket, mssp) run through the same steps (D77).
 
 Random-init baseline (D134): a config with 'random_init: as_initialised' or
@@ -24,7 +27,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import random_init, runs
+from harness import random_init, runs, windows
 from harness.data import canonical
 from harness.methods import (catch22, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfc_frozen, tfjepa, tloss,
                              ts2vec, tsjepa, tstcc)
@@ -62,6 +65,30 @@ def window_table(cfg, split, capture_ids, n_samples):
     })
 
 
+def windowed_inputs(cfg, meta, folder):
+    """Inputs of a config with a 'split' section (D147), cut into windows (harness/windows.py).
+
+    Returns the pretraining inputs ('train' and 'pretrain_only' windows, without labels, D126),
+    the labelled training and test windows with their classes, and the window table (D33).
+    Stops if a test capture or test bearing is in the pretraining data (D121). If the config
+    says so, every window is standardised per channel with the mean and SD of the pretraining
+    windows (D137); the statistics are saved in the run folder.
+    """
+    parts = windows.prepare(cfg, meta)
+    (X_train, t_train), (X_test, t_test), (X_only, t_only) = parts["train"], parts["test"], parts["pretrain_only"]
+    table = pd.concat([t_train, t_test, t_only], ignore_index=True)
+    windows.check_separate(table)
+    X_pre = np.concatenate([X_train, X_only])
+    if cfg["windows"]["standardise"]:
+        stats = windows.standardisation(X_pre)
+        runs.save_json(os.path.join(folder, "standardisation.json"),
+                       {"channels": cfg["channels"], "mean": stats["mean"].tolist(), "std": stats["std"].tolist()})
+        X_pre, X_train, X_test = (windows.standardise(X, stats) for X in (X_pre, X_train, X_test))
+    print(f"windows: {len(X_train)} training, {len(X_test)} test, {len(X_only)} pretraining only "
+          f"({len(X_pre)} for pretraining)", flush=True)
+    return X_pre, X_train, t_train.label.to_numpy(), X_test, t_test.label.to_numpy(), table
+
+
 def clock(device):
     """Wall-clock time in seconds (D79). On a GPU, waits for queued work first, so it is counted."""
     if device.startswith("cuda"):
@@ -92,30 +119,36 @@ def main(config_path):
         runs.save_json(os.path.join(folder, "compile.json"), {"compile_s": method.COMPILE_S})
 
     meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
-    X_train, labels_train, ids_train = load_split(cfg, meta, "train")
-    X_test, labels_test, ids_test = load_split(cfg, meta, "test")
-
-    # Record where every representation comes from, and stop if a test capture
-    # would be used for pretraining (D33). The table is the same for all seeds.
-    windows = pd.concat([window_table(cfg, "train", ids_train, X_train.shape[1]),
-                         window_table(cfg, "test", ids_test, X_test.shape[1])], ignore_index=True)
-    runs.check_no_overlap(windows)
-    windows.to_csv(os.path.join(folder, "windows.csv"), index=False)
+    if "split" in cfg:  # split, windows and standardisation set in the config (D147)
+        X_pre, X_train, labels_train, X_test, labels_test, table = windowed_inputs(cfg, meta, folder)
+    else:  # whole captures with an official split (FordA, FD): unchanged
+        X_train, labels_train, ids_train = load_split(cfg, meta, "train")
+        X_test, labels_test, ids_test = load_split(cfg, meta, "test")
+        X_pre = X_train  # pretraining on the training inputs only
+        # Record where every representation comes from, and stop if a test capture
+        # would be used for pretraining (D33). The table is the same for all seeds.
+        table = pd.concat([window_table(cfg, "train", ids_train, X_train.shape[1]),
+                           window_table(cfg, "test", ids_test, X_test.shape[1])], ignore_index=True)
+        runs.check_no_overlap(table)
+    table.to_csv(os.path.join(folder, "windows.csv"), index=False)
     # Class labels -> 0..K-1, ordered as in the training set (as TS2Vec does).
     classes = np.unique(labels_train)
+    if not set(labels_test) <= set(classes):
+        raise ValueError(f"test classes missing from training: {sorted(set(labels_test) - set(classes))}")
+    runs.save_json(os.path.join(folder, "classes.json"), [str(c) for c in classes])  # class k = classes[k]
     y_train, y_test = np.searchsorted(classes, labels_train), np.searchsorted(classes, labels_test)
 
     for seed in cfg["seeds"]:
-        print(f"seed {seed}: pretraining on {len(X_train)} training series", flush=True)
+        print(f"seed {seed}: pretraining on {len(X_pre)} series", flush=True)
         out = os.path.join(folder, f"seed_{seed}")
         os.makedirs(out)
         runs.set_seed(seed)
         t0 = clock(cfg["device"])
         if variant is None:
-            model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"])
-        else:  # D134: the encoder as built, untrained; (b) also sets the batch-norm statistics from X_train
-            model, loss_log = method.pretrain(X_train, cfg[cfg["method"]], cfg["device"], train=False)
-            n_bn = random_init.recompute_batchnorm(model, method.encode, X_train) if variant == "bn_from_train" else 0
+            model, loss_log = method.pretrain(X_pre, cfg[cfg["method"]], cfg["device"])
+        else:  # D134: the encoder as built, untrained; (b) also sets the batch-norm statistics from the pretraining inputs
+            model, loss_log = method.pretrain(X_pre, cfg[cfg["method"]], cfg["device"], train=False)
+            n_bn = random_init.recompute_batchnorm(model, method.encode, X_pre) if variant == "bn_from_train" else 0
             print(f"  random_init {variant}: untrained encoder, {n_bn} batch-norm layers set from the training series")
         t1 = clock(cfg["device"])
         Z_train = method.encode(model, X_train)

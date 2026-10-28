@@ -112,7 +112,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D104 | 2026-10-21 | TS-TCC wrapped from the official code (15bdfd6) as `external/tstcc`; CA-TCC deferred with pseudo-labelling | [decisions/training.md](decisions/training.md) |
 | D105 | 2026-10-21 | TS-TCC on FordA: TS2Vec paper's setup (HAR config, 320 output channels, batch 128); official config checked by the adapter; target 0.930 | [decisions/training.md](decisions/training.md) |
 | D106 | 2026-10-21 | TS-TCC representation: encoder output max-pooled over time | [decisions/evaluation.md](decisions/evaluation.md) |
-| D107 | 2026-10-21 | TS-TCC official code used as is; five departures from the paper recorded (fixed views, weak view, channel-0 permutation, segment count, one t per batch) | [decisions/training.md](decisions/training.md) |
+| D107 | 2026-10-21 | TS-TCC official code used as is; five departures from the paper recorded (fixed views, weak view, channel-0 permutation, segment count, one t per batch) (item 3 fixed by D156) | [decisions/training.md](decisions/training.md) |
 | D108 | 2026-10-21 | TS-TCC runs on FordA: seeds 0–2, D26 probes and budgets, timing, reproduction check vs 0.930 | [decisions/evaluation.md](decisions/evaluation.md) |
 | D109 | 2026-10-23 | TF-JEPA, SimMTM and FreRA wrapped from the official code (fda93c1, 169513b, 7236fbf); FordA configs with open placeholders; settings open | [decisions/training.md](decisions/training.md) |
 | D110 | 2026-10-23 | TF-JEPA pretraining views as in the official code (clean inputs in both passes; augmented views unused) (superseded by D113) | [decisions/training.md](decisions/training.md) |
@@ -134,7 +134,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D126 | 2026-10-27 | CWRU: normal files used for pretraining (48 kHz; rate matching decided with the pretraining setup) (rate matching settled by D136) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D127 | 2026-10-27 | CWRU split: both ends pooled, five fault classes; one size per class and end held out; repeated random draws (count open) (superseded by D128) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) (sampling rate clarified by D140) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
-| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class (reproduction-probe point settled by D133) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class (reproduction-probe point settled by D133) (guard narrowed by D148) | [decisions/evaluation.md](decisions/evaluation.md) |
 | D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`) | [decisions/repo.md](decisions/repo.md) |
 | D131 | 2026-10-27 | CWRU input: DE and FE as one two-channel series; base plate not used; MiniRocket open | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D132 | 2026-10-27 | Harness on Python 3.14, the version the environment runs (supersedes the Python version in D14) | [decisions/repo.md](decisions/repo.md) |
@@ -153,6 +153,19 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D145 | 2026-10-28 | Training length stays at each method's standard setting, no search; D142 longer runs kept as checks (TF-JEPA 40 ep. modest gain, SimMTM 20 no gain, TF-C 80 worse) | [decisions/training.md](decisions/training.md) |
 | D146 | 2026-10-28 | Own methods: RankMe on training windows (no labels) as the indicator for training length / checkpoint; details open until the first own method | [decisions/training.md](decisions/training.md) |
 | D147 | 2026-10-28 | Windowed inputs: split, windows and standardisation set in the config (harness/windows.py, harness/labels.py); pretrain.py path for configs with 'split' | [decisions/repo.md](decisions/repo.md) |
+| D148 | 2026-10-28 | Grouped folds: a class whose labelled windows all come from one bearing is accepted and recorded (narrows D129's guard) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D149 | 2026-10-28 | Raw-samples baseline not run on CWRU (only the floor would remain: D89, D133) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D150 | 2026-10-28 | MiniRocket on multichannel data: official multivariate code (same commit, official settings); FordA unchanged | [decisions/evaluation.md](decisions/evaluation.md) |
+| D151 | 2026-10-28 | CWRU: no tuning; official settings, changed only where the input shape forces it; data-dependent official rules applied | [decisions/training.md](decisions/training.md) |
+| D152 | 2026-10-28 | CWRU: RankMe of the final training representations of every method, diagnostic only (never used to choose settings) | [decisions/evaluation.md](decisions/evaluation.md) |
+| D153 | 2026-10-28 | TS2Vec and T-Loss on CWRU: FordA settings unchanged (TS2Vec 600 iterations by its data-size rule) | [decisions/training.md](decisions/training.md) |
+| D154 | 2026-10-28 | TS-JEPA on multichannel data: channels flattened within each patch (CWRU: 10 patches of 204 samples per channel, last 8 dropped); safety fix for channel count | [decisions/training.md](decisions/training.md) |
+| D155 | 2026-10-28 | TF-JEPA on multichannel data: channel-independent (shared model, vectors concatenated); width = window length (2,048) as designed | [decisions/training.md](decisions/training.md) |
+| D156 | 2026-10-28 | TS-TCC on CWRU: input_channels 2, features_len 258, num_classes 5; permutation fixed for multichannel data (FordA unchanged) | [decisions/training.md](decisions/training.md) |
+| D157 | 2026-10-28 | LightGBM baseline: `min_data_in_leaf = min(20, max(1, n_train // 10))`; features, role and other settings open | [decisions/evaluation.md](decisions/evaluation.md) |
+| D158 | 2026-10-28 | PatchTST, FreRA, TF-C (positives) on CWRU: settings unchanged (PatchTST 170 patches; RevIN removes window amplitude, noted) | [decisions/training.md](decisions/training.md) |
+| D159 | 2026-10-28 | SimMTM on CWRU: TSlength_aligned 2048, CNNoutput_channel 87; both channels encoded and reconstructed (decoder 2 x 2048) | [decisions/training.md](decisions/training.md) |
+| D160 | 2026-10-28 | Datasets split by bearing: test accuracy also listed per test bearing (diagnostic; per_bearing.csv, logreg, every seed and budget) | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

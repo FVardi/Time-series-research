@@ -1,0 +1,33 @@
+# TS2Vec on CWRU (D128, D151, D153): official settings, dataset sections for CWRU.
+name: ts2vec_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: ts2vec
+seeds: [0, 1, 2]
+device: cuda
+
+ts2vec:  # official defaults (D28), unchanged on CWRU (D151, D153)
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 8
+  max_train_length: 3000  # windows are 2048 samples, so not cropped
+  temporal_unit: 0
+  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (CWRU: 4041 x 2048 x 2)
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split
