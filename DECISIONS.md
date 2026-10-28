@@ -149,6 +149,10 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D141 | 2026-10-27 | CWRU: missing speed replaced by the table speed where a speed is needed, marked as estimated (pipeline step) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D142 | 2026-10-27 | Longer-training check on FordA: TF-JEPA 40, SimMTM 20, TF-C 80 epochs (twice the configs'); judged by probe accuracy | [decisions/training.md](decisions/training.md) |
 | D143 | 2026-10-27 | TS2Vec and T-Loss log the loss per iteration/step (official callback; hook on the loss module); FordA runs repeated | [decisions/training.md](decisions/training.md) |
+| D144 | 2026-10-27 | PatchTST: learning-rate finder per seed kept (D74 item 3); finding: per-seed results follow the suggested rate | [decisions/training.md](decisions/training.md) |
+| D145 | 2026-10-28 | Training length stays at each method's standard setting, no search; D142 longer runs kept as checks (TF-JEPA 40 ep. modest gain, SimMTM 20 no gain, TF-C 80 worse) | [decisions/training.md](decisions/training.md) |
+| D146 | 2026-10-28 | Own methods: RankMe on training windows (no labels) as the indicator for training length / checkpoint; details open until the first own method | [decisions/training.md](decisions/training.md) |
+| D147 | 2026-10-28 | Windowed inputs: split, windows and standardisation set in the config (harness/windows.py, harness/labels.py); pretrain.py path for configs with 'split' | [decisions/repo.md](decisions/repo.md) |
 
 <!--
 Entry template:

@@ -88,3 +88,17 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Decision:** The harness uses Python 3.14, the version its environment actually runs (`.venv/pyvenv.cfg`: CPython 3.14.3). The rest of D14 (uv, `pyproject.toml` + lock file, separate small environments for methods that need other versions) stands. `pyproject.toml` keeps `requires-python = ">=3.12"`.
 **Alternatives considered:** Pinning 3.12 as D14 said (`uv python pin 3.12`, `uv sync`); the existing runs were made on 3.14, so they would no longer match the environment.
 **Rationale:** User's decision (2026-10-27): no reason to go back; all runs so far on this machine used 3.14.
+
+## 2026-10-28 — D147: Windowed inputs with the split set in the config (`harness/windows.py`, `harness/labels.py`)
+**Decision:** Datasets whose split is not an official one (first CWRU) get their inputs through two new modules: `harness/windows.py` (generic: select captures by filters on the captures table, with the stream's sample rate joined; load, resample to one rate if needed and cut consecutive windows; per-channel standardisation; check that no test capture or test group is in the pretraining data) and `harness/labels.py` (one function per dataset deriving class and group from the captures table; label derivation stays out of the adapters, D4). `scripts/pretrain.py` takes this path when the config has a `split` section (FordA and FD unchanged): pretraining on the `train` windows plus any `pretrain_only` windows, probes on `train` and `test`; the window table gets `label` and `group` columns. `scripts/evaluate.py` uses the grouped folds of D129 when the config sets `evaluation.cv_groups: true`. Config format:
+```yaml
+labels: cwru
+windows: {length: 2048, sample_rate_hz: 12000, standardise: true}
+split:
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}
+evaluation: {probes: [logreg, floor], cv_groups: true, ...}
+```
+**Alternatives considered:** A CWRU-only loader (quicker, but Paderborn and Herning would need their own).
+**Rationale:** User's decision (2026-10-27/28). The same windowing, split selection and checks serve every dataset without an official split.
