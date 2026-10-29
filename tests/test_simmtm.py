@@ -148,3 +148,23 @@ def test_pretraining_equals_official_main(tmp_path, monkeypatch):
     theirs = torch.load(found[0], map_location="cpu")["model_state_dict"]
     assert set(ours) == set(theirs)
     assert all(torch.equal(ours[k], theirs[k]) for k in ours)
+
+
+def test_two_channels_are_encoded_and_rebuilt():
+    """D159: the decoder rebuilds both channels (2 x length values) and pretraining runs."""
+    s = settings()
+    s["changed"].update({"TSlength_aligned": 2048, "CNNoutput_channel": 87, "input_channels": 2})
+    s["main_args"]["pretrain_epoch"] = 1
+    X = np.random.default_rng(4).standard_normal((32, 2048, 2))
+    torch.manual_seed(0)
+    np.random.seed(0)
+    model, losses = simmtm.pretrain(X, s, "cpu")
+    assert model.head.out_features == 2 * 2048 and np.all(np.isfinite(losses))
+    assert simmtm.encode(model, X[:4]).shape == (4, 87 * 128)
+    # the training set keeps both channels, in Load_Dataset's shuffled order
+    np.random.seed(7)
+    ds = simmtm.training_set(X, simmtm.official_config(s))
+    np.random.seed(7)
+    order = list(range(len(X)))
+    np.random.shuffle(order)  # the same draw as Load_Dataset's np.random.shuffle on the list of pairs
+    assert np.allclose(ds[0][0].numpy(), X[order[0]].T.astype(np.float32))

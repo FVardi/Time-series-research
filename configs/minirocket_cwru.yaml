@@ -1,0 +1,28 @@
+# MiniRocket on CWRU (D128, D150): official multivariate code (two channels), official settings; probed with logreg.
+name: minirocket_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: minirocket
+seeds: [0, 1, 2]
+device: cpu
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+minirocket:  # official defaults of fit(), the same in code/minirocket.py and code/minirocket_multivariate.py (D76, D150)
+  num_features: 10000  # 84 kernels x 119 = 9,996 features in practice
+  max_dilations_per_kernel: 32
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split

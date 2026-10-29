@@ -95,3 +95,29 @@ def test_pretrain_and_encode(monkeypatch):
     Z = tstcc.encode(model, X[:50])
     assert Z.shape == (50, 320)
     assert np.allclose(Z[:10], tstcc.encode(model, X[:10]), atol=1e-6)
+
+
+def test_permutation_moves_every_channel_alike():
+    """D156: every channel is permuted with the same segment order; with one channel the
+    result equals the official line pat[0, warp] for the same random draws."""
+    x = np.random.default_rng(3).standard_normal((40, 2, 300))
+    np.random.seed(0)
+    out = tstcc.permutation(x.copy(), max_segments=8).numpy()
+    for i in range(len(x)):
+        warp = np.array([np.where(x[i, 0] == v)[0][0] for v in out[i, 0]])  # positions taken from the input
+        assert np.array_equal(out[i, 1], x[i, 1, warp])  # channel 1 moved exactly as channel 0
+    one = x[:, :1]
+    np.random.seed(5)
+    fixed = tstcc.permutation(one.copy(), max_segments=8).numpy()
+    np.random.seed(5)  # the official line, same draws
+    num_segs = np.random.randint(1, 8, size=len(one))
+    ref = np.zeros_like(one)
+    for i, pat in enumerate(one):
+        if num_segs[i] > 1:
+            split_points = np.sort(np.random.choice(one.shape[2] - 2, num_segs[i] - 1, replace=False))
+            splits = np.split(np.arange(one.shape[2]), split_points)
+            warp = np.concatenate([splits[k] for k in np.random.permutation(len(splits))])
+            ref[i] = pat[0, warp]
+        else:
+            ref[i] = pat
+    assert np.array_equal(fixed, ref)

@@ -114,6 +114,7 @@ def scores(clf, Z, y):
     pred = clf.predict(Z)
     return {"accuracy": accuracy_score(y, pred), "macro_f1": f1_score(y, pred, average="macro")}
 
+
 def per_bearing(clf, Z, y, groups, class_names):
     """Test accuracy per test bearing (D160), a diagnostic next to scores().
 

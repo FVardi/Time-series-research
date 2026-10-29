@@ -1,0 +1,54 @@
+# TF-JEPA (single pass, channel-independent) on CWRU (D128, D151, D155): each channel through the same model,
+# channel vectors concatenated; FordA settings otherwise unchanged.
+name: tfjepa_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: tfjepa
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tfjepa:
+  views: single  # D113 (supersedes D110): one pass on the clean inputs, the paper's loss.
+               #   code: 'official' (second pass on x.flip(1) = the single channel flipped, i.e. the clean inputs again;
+               #   augmented views computed but unused); paper: jitter + frequency augmentation during pretraining,
+               #   without saying which encoder sees which view. 'augmented' = second pass on the augmented
+               #   inputs, as the official fine-tuning loss does.
+  jitter_ratio: 0.8  # σ of the time-domain jitter. paper 0.8; code configs: HAR 0.8, ECG 0.8, SleepEEG 2, FD-A 0.1.
+                     # With views: official or single it has no effect on the model (the jittered view is drawn but not used).
+                     # Frequency augmentation (remove 10 % / add 10 % of bins, summed) is hard-coded in the code.
+  batch_size: 128  # D114. paper: 128 in its profiling, 16-512 in an ablation (HAR saturates from 64);
+                    # code configs: SleepEEG 128, HAR 128, ECG 128, FD-A 64, Epilepsy 32
+  drop_last: true  # D113. code configs: SleepEEG false; HAR, ECG, FD-A, Epilepsy true; paper silent
+  epochs: 20  # D114: README's example of a longer schedule (--epochs-pre 20); main.py default 5; paper silent
+  ema_momentum: 0.995  # paper (Section 2) and code (TF_JEPA default); paper's ablation: best 0.995-0.9995 by dataset; fixed, no schedule
+  encoder:  # paper: "L-layer 1D Transformer, model dimension d_model" (values not given); code below
+    embed_dim: 128  # projector output size d_z: paper and code
+    nhead: 2  # code (TF_JEPA default)
+    nlayers: 2  # code (TF_JEPA default)
+    ff_mult: 2  # code: feed-forward size = 2 x d_model; d_model = series length (CWRU 2048: whole window is one token; D155)
+  optimizer:  # code: hard-coded in pretrain_tf_jepa; paper silent
+    lr: 3.0e-4  # code: main.py --lr default (also lr in every dataset config except ECG)
+    betas: [0.9, 0.99]  # code
+    eps: 1.0e-8  # PyTorch AdamW default (code does not set it)
+    weight_decay: 3.0e-4  # code
+  representation: z  # D113 (paper silent). 'z' = [z_time; z_freq] projector outputs (2 x 128);
+                        # 'z_raw' = z plus the series mean (exactly the official classifier's input);
+                        # 'h' = [h_time; h_freq] encoder outputs before the projectors (2 x 500 for FordA)
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split

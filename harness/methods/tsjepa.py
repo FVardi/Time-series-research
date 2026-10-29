@@ -17,7 +17,9 @@ What one training step does (official):
 
 Not taken from the official code (they are not in it): splitting our series into patches
 (the official loader hard-codes 10 patches of 32 samples from one CSV column), and encode(),
-which turns the encoder's output per patch into one vector per series.
+which turns the encoder's output per patch into one vector per series. With several channels,
+each patch holds the same time span of every channel, one after the other (our adaptation,
+D154; reported as "TS-JEPA (masking fixed, channels flattened per patch)").
 
 Official-code bug (see `masking` in the config): apply_mask expects a list of [batch, K]
 index tensors (as in I-JEPA) but pretrain.py passes one [batch, K] tensor. It then loops over
@@ -56,16 +58,20 @@ def check_settings(s):
 
 
 def to_patches(X, n_patches):
-    """(series, time, 1) float64 -> (series, n_patches, patch_length) float32 tensor (D23).
+    """(series, time, channels) float64 -> (series, n_patches, channels * patch_length) float32 tensor (D23).
 
-    Consecutive, non-overlapping patches (paper). The official tokenizer takes one channel only.
+    Consecutive, non-overlapping patches (paper) of patch_length = time // n_patches samples per
+    channel; samples after n_patches * patch_length are not used (CWRU: 2,048 = 10 x 204 + 8; D154).
+    With several channels, each patch holds the same time span of every channel, one channel
+    after the other (D154): the official tokenizer (one input channel) then sees them as one
+    longer patch. With one channel and a length divisible by n_patches (FordA), this is
+    exactly the previous behaviour.
     """
-    if X.shape[2] != 1:
-        raise ValueError("TS-JEPA's tokenizer takes one channel (Conv1d with in_channels=1)")
-    n, length, _ = X.shape
-    if length % n_patches:
-        raise ValueError(f"series length {length} is not divisible into {n_patches} patches")
-    return torch.from_numpy(X[:, :, 0].reshape(n, n_patches, length // n_patches).astype(np.float32))
+    n, length, channels = X.shape
+    patch_length = length // n_patches
+    P = X[:, : n_patches * patch_length, :].reshape(n, n_patches, patch_length, channels)
+    P = P.transpose(0, 1, 3, 2).reshape(n, n_patches, channels * patch_length)  # channel after channel
+    return torch.from_numpy(np.ascontiguousarray(P).astype(np.float32))
 
 
 def random_masks(batch_size, n_patches, n_masked):
@@ -89,7 +95,7 @@ def shuffled(n):
 
 
 def pretrain(X, s, device, train=True):
-    """Pretrain TS-JEPA on unlabelled training series X (series, time, 1).
+    """Pretrain TS-JEPA on unlabelled training series X (series, time, channels).
 
     s: the 'tsjepa' section of the config; every setting is given explicitly.
     train: False returns the encoder as built, untrained (random-init baseline, D134).
@@ -97,8 +103,13 @@ def pretrain(X, s, device, train=True):
     """
     check_settings(s)
     P = to_patches(X, s["n_patches"])
-    n_patches, patch_length = P.shape[1], P.shape[2]
+    n_patches, patch_length = P.shape[1], P.shape[2]  # patch_length covers all channels (D154)
     e, p, o = s["encoder"], s["predictor"], s["optimizer"]
+    per_channel = X.shape[1] // s["n_patches"]
+    if X.shape[2] > 1 and per_channel % e["kernel_size"]:
+        # The tokenizer's convolution (kernel = stride = kernel_size) must not straddle two channels.
+        raise ValueError(f"{per_channel} samples per channel and patch are not divisible by the tokenizer's "
+                         f"kernel_size {e['kernel_size']}: a convolution window would mix two channels")
 
     encoder = official.Encoder(num_patches=n_patches, dim_in=patch_length, kernel_size=e["kernel_size"],
                                embed_dim=e["embed_dim"], embed_bias=e["embed_bias"], nhead=e["nhead"],
@@ -129,6 +140,7 @@ def pretrain(X, s, device, train=True):
 
     # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
     encoder.n_patches, encoder.pooling, encoder.encode_batch_size = s["n_patches"], s["pooling"], s["encode_batch_size"]
+    encoder.n_channels = X.shape[2]  # encode() checks that it gets the same channels
     if not train:  # random-init baseline (D134): the encoder as built above, no training
         return encoder, []
 
@@ -173,6 +185,8 @@ def encode(model, X):
     """
     model.eval()
     device = next(model.parameters()).device
+    if X.shape[2] != model.n_channels:
+        raise ValueError(f"the encoder was trained on {model.n_channels} channel(s), the data have {X.shape[2]}")
     P = to_patches(X, model.n_patches)
     out = []
     for i in range(0, len(P), model.encode_batch_size):

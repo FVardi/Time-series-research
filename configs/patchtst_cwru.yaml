@@ -1,0 +1,61 @@
+# PatchTST on CWRU (D128, D151, D158): FordA settings unchanged (channel-independent by design).
+name: patchtst_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: patchtst
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+patchtst:
+  patch_len: 12  # D74, unchanged on CWRU (D158): 2048 samples -> 170 patches, the first 8 samples of each
+                 # window unused (official create_patch)
+  stride: 12  # D74: = patch_len. paper: non-overlapping patches for pretraining ("so observed patches do not
+              # contain information of the masked ones"); script default 12
+  mask_ratio: 0.4  # paper ("40% of the patches are masked with zero values"), script, README
+  revin: true  # script (--revin 1); paper: instance normalisation of every series
+  revin_eps: 1.0e-5  # RevInCB default (script does not set it)
+  batch_size: 64  # script (only source; paper silent)
+  epochs: 100  # D74: paper ("pre-training ... for 100 epochs"); script default 10
+  lr: finder  # D74: what the script does by itself: the official learning-rate finder, then training with its
+              # suggestion (--lr 1e-4 is then unused); paper silent. The value used is saved per seed
+  pct_start: 0.3  # script (fit_one_cycle default): share of the batches with rising learning rate
+  validation_fraction: 0.125  # D74: share of the training series held out (random, no labels) to keep the epoch
+                              # with the lowest validation loss, as the script does (SaveModelCB on valid_loss).
+                              # 0.125 is derived, not stated: the script's generic datasets split time 70/10/20,
+                              # i.e. validation = 1/8 of the non-test data
+  model:
+    n_layers: 3  # paper (default size), script
+    n_heads: 16  # paper (default size), script; D74: default size (the paper's reduced size, 4 heads, is for
+                 # datasets smaller than FordA)
+    d_model: 128  # paper (default size), script; reduced size 16 not used (D74)
+    d_ff: 256  # D74: paper (default size); script 512
+    dropout: 0.2  # paper ("all experiments"), script
+    head_dropout: 0.2  # script (only source); acts on the pretraining head only
+    attn_dropout: 0.0  # class
+    shared_embedding: true  # script: one patch projection for all channels
+    norm: BatchNorm  # class
+    act: relu  # script (class default would be gelu)
+    res_attention: false  # script (class default would be true)
+    pre_norm: false  # class
+    pe: zeros  # class: learned positional encoding, initialised uniformly in [-0.02, 0.02]
+    learn_pe: true  # class
+  pooling: mean  # D87: mean over the patch vectors per channel, channels concatenated (supersedes D74's 'last',
+                 # the official heads' choice: 7-16 points weaker on FordA, D86); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split

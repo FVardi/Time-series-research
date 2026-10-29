@@ -12,9 +12,11 @@ Left out from main.py: logging, copying files, and the validation pass after eve
 which computes nothing in this mode. (Starting that pass draws one number from PyTorch's
 random-number generator, so a run here is not bit-identical to main.py with the same seed
 after the first epoch; it is the same procedure.)
-Settings: D105. Representation: D106. Properties of the official code kept as they are: D107.
-One fix, needed to run with NumPy >= 1.24 (D19: fixes go here, the official files stay
-unedited): see permutation() below.
+Settings: D105 (FordA), D156 (CWRU). Representation: D106. Properties of the official code
+kept as they are: D107, except item 3 (channel 0 copied into every channel by the
+permutation), fixed by D156; the method is reported as "TS-TCC (permutation fixed)".
+Two changes in permutation() below (D19: fixes go here, the official files stay unedited):
+one needed to run with NumPy >= 1.24, and the permutation fix (no effect on one channel).
 
     pretrain(X, settings, device) -> (model, loss per epoch)
     encode(model, X)              -> one vector per series
@@ -36,13 +38,16 @@ HARConfig = import_official("tstcc", "config_files.HAR_Configs", local_names=NAM
 
 
 def permutation(x, max_segments=5, seg_mode="random"):
-    """The official dataloader/augmentations.py permutation(), with one line changed so it runs.
+    """The official dataloader/augmentations.py permutation(), with two lines changed.
 
-    The official line `np.random.permutation(splits)` shuffles a list of segments of unequal
-    length; NumPy >= 1.24 refuses to turn such a list into an array. Shuffling the segment
-    indices instead gives the same order from the same random draws (NumPy shuffles k items
-    with the same Fisher-Yates loop either way). Everything else is copied unchanged,
-    including the use of channel 0 for all channels (D107 item 3).
+    1. So it runs: the official line `np.random.permutation(splits)` shuffles a list of
+       segments of unequal length; NumPy >= 1.24 refuses to turn such a list into an array.
+       Shuffling the segment indices instead gives the same order from the same random draws
+       (NumPy shuffles k items with the same Fisher-Yates loop either way).
+    2. Permutation fixed (D156): every channel is permuted with the same segment order
+       (`pat[:, warp]`), as the paper describes; the official `pat[0, warp]` writes channel 0
+       into every channel (D107 item 3). With one channel both give the same result.
+    Everything else is copied unchanged.
     """
     orig_steps = np.arange(x.shape[2])
 
@@ -59,7 +64,7 @@ def permutation(x, max_segments=5, seg_mode="random"):
                 splits = np.array_split(orig_steps, num_segs[i])
             order = np.random.permutation(len(splits))  # changed line (official: np.random.permutation(splits))
             warp = np.concatenate([splits[k] for k in order]).ravel()
-            ret[i] = pat[0, warp]
+            ret[i] = pat[:, warp]  # changed line (official: pat[0, warp]; D156)
         else:
             ret[i] = pat
     return torch.from_numpy(ret)

@@ -15,6 +15,7 @@ split:  # filters on the captures table (D128, D140, D147)
 method: tstcc
 seeds: [0, 1, 2]
 device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
   weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimisers

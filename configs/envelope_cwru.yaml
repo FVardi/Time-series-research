@@ -1,0 +1,27 @@
+# Baseline (D161) on CWRU: squared envelope spectrum per channel (whole band, no filter), probed directly.
+# Copy of configs/fft_cwru.yaml except this header, name, method and the method section (D161).
+name: envelope_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: false  # baselines on raw values (D76, D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: envelope
+seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+device: cpu  # numpy only (D79)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+envelope: {}  # nothing to set (D161)
+
+evaluation:  # D26, D40, D129, D133, D138
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
+  published_accuracy: null  # nothing published for this split

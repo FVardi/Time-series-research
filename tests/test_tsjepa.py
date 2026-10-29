@@ -56,14 +56,18 @@ def test_pretrain_and_encode(masking):
     assert np.allclose(Z, Z_one, atol=1e-5)  # a series' vector does not depend on the other series in its batch
 
 
-def test_placeholders_and_patching_errors():
+def test_placeholders_and_patching():
+    """D154: patches of length // n_patches samples per channel (the rest unused); with several
+    channels each patch holds the same time span of every channel, one after the other."""
     from harness.methods import tsjepa
     with pytest.raises(ValueError, match="placeholder"):
         tsjepa.check_settings({"encoder": {"num_layers": None}})
-    with pytest.raises(ValueError, match="divisible"):
-        tsjepa.to_patches(np.zeros((2, 51, 1)), 5)
-    with pytest.raises(ValueError, match="one channel"):
-        tsjepa.to_patches(np.zeros((2, 50, 2)), 5)
+    X = np.random.default_rng(0).standard_normal((2, 51, 2))
+    P = tsjepa.to_patches(X, 5).numpy()  # 10 samples per channel and patch; sample 50 unused
+    assert P.shape == (2, 5, 20)
+    assert np.allclose(P[1, 3, :10], X[1, 30:40, 0]) and np.allclose(P[1, 3, 10:], X[1, 30:40, 1])
+    one = X[:, :50, :1]  # one channel, divisible: exactly the previous patching
+    assert np.array_equal(tsjepa.to_patches(one, 5).numpy(), one[:, :, 0].reshape(2, 5, 10).astype(np.float32))
 
 
 def test_training_loop_equals_official_script(tmp_path):
@@ -139,3 +143,18 @@ def test_training_loop_equals_official_script(tmp_path):
     theirs = torch.load(tmp_path / "ckpt_epoch_2.pt", map_location="cpu")["encoder"]
     assert set(ours) == set(theirs)
     assert all(torch.equal(ours[k], theirs[k]) for k in ours)
+
+
+def test_two_channels_pretrain_and_encode():
+    """D154: two channels train and encode; the tokenizer check and the channel check stop wrong inputs."""
+    from harness.methods import tsjepa
+    X = np.random.default_rng(1).standard_normal((12, 64, 2))  # 5 patches of 12 samples per channel (+4 unused)
+    torch.manual_seed(0)
+    random.seed(0)
+    model, losses = tsjepa.pretrain(X, settings(), "cpu")
+    assert len(losses) == 2 and np.all(np.isfinite(losses))
+    assert tsjepa.encode(model, X).shape == (12, 16)
+    with pytest.raises(ValueError, match="channel"):
+        tsjepa.encode(model, X[:, :, :1])
+    with pytest.raises(ValueError, match="kernel_size"):
+        tsjepa.pretrain(np.zeros((12, 70, 2)), settings(), "cpu")  # 14 samples per channel and patch, kernel 3

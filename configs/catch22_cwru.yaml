@@ -15,6 +15,7 @@ split:  # filters on the captures table (D128, D140, D147)
 method: catch22
 seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
 device: cpu  # pycatch22 is CPU code (D79)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 catch22:
   catch24: true  # D85: add mean and SD

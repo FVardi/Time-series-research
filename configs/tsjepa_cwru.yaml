@@ -1,0 +1,53 @@
+# TS-JEPA (masking fixed, channels flattened per patch) on CWRU (D128, D151, D154).
+name: tsjepa_cwru
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # filters on the captures table (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+method: tsjepa
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tsjepa:
+  n_patches: 10  # paper; CWRU: 10 patches of 204 samples per channel, the last 8 samples unused (D154);
+                # each patch holds the same time span of both channels, one after the other (D154)
+  mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
+  masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'
+  batch_size: 32  # paper, README, code
+  epochs: 5000  # D66; paper silent; code 5001 (README evaluates the checkpoint saved at epoch index 5000); 1 epoch = 113 batches on FordA
+  ema_momentum: 0.998  # paper, README, code; raised linearly per epoch (official schedule)
+  ipe_scale: 1.25  # code (only source); sets how far the EMA momentum rises towards 1
+  encoder:
+    embed_dim: 128  # paper, README (code: 384; downstream config: 256)
+    nhead: 2  # paper, README (code: 6; downstream config: 4)
+    num_layers: 1  # D66: README (the only source consistent with the paper's 128 dims / 2 heads); code 3, downstream config 2; paper silent
+    kernel_size: 3  # code (all configs agree); paper only says "1D-CNN" tokenizer
+    embed_bias: true  # code; passed to the tokenizer but not used by it
+  predictor:  # paper: "encoder and predictor share the same architecture: 2 attention heads, embedding dimension 128"
+    embed_dim: 128  # paper, README, code
+    nhead: 2  # paper, README, code
+    num_layers: 1  # README, code, downstream config all 1; paper silent
+  optimizer:
+    lr: 6.0e-5  # D69: the official pretraining config's value (what pretrain.py uses without arguments); no tuning, as TS2Vec/T-Loss (README 1e-7 is from their weather run; paper searched 1e-3..1e-6)
+    lr_end_factor: 0.5  # code: LinearLR from 1.0 to 0.5 x lr over the epochs (code's end_lr 1e-4 is never used)
+    betas: [0.9, 0.999]  # code uses PyTorch's AdamW defaults
+    eps: 1.0e-8  # PyTorch AdamW default (code)
+    weight_decay: 0.01  # PyTorch AdamW default (code)
+  pooling: mean  # D66: mean over the 10 patch vectors (downstream config's pooling: "Mean"); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+  print_every: 10  # epochs between loss prints (code prints every 10)
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # nothing published for this split

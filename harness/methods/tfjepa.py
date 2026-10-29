@@ -31,6 +31,11 @@ cos(p_t->f, target_f) + cos(p_f->t, target_t), which is what the official loss g
 when both passes see the same inputs (up to dropout). Reported under its own name,
 "TF-JEPA (single pass)" (D19).
 
+Several channels (our adaptation, D155; reported as "TF-JEPA (single pass, channel-independent)"):
+each channel is passed through the same model as its own univariate series, in pretraining and
+in encoding, and a series' representation is its channels' representations concatenated
+(channel_series / channel_vectors below). With one channel nothing changes.
+
     pretrain(X, settings, device) -> (model, loss per epoch)
     encode(model, X)              -> one vector per series
     save(model, path)
@@ -71,6 +76,18 @@ def model_config(s, length):
     }
 
 
+def channel_series(X):
+    """(series, time, channels) -> (series * channels, time, 1): every channel as its own series,
+    series by series (series 0 channel 0, series 0 channel 1, ...) (D155). Unchanged for one channel."""
+    n, length, channels = X.shape
+    return np.ascontiguousarray(np.transpose(X, (0, 2, 1)).reshape(n * channels, length, 1))
+
+
+def channel_vectors(Z, channels):
+    """(series * channels, d) -> (series, channels * d): a series' channel vectors side by side (D155)."""
+    return Z.reshape(len(Z) // channels, channels * Z.shape[1])
+
+
 def loader(X, s):
     """The official Load_Dataset ('pre_train' mode) in a DataLoader, as data_generator builds it.
 
@@ -89,7 +106,8 @@ def loader(X, s):
 
 
 def pretrain(X, s, device, train=True):
-    """Pretrain TF-JEPA on unlabelled training series X (series, time, 1).
+    """Pretrain TF-JEPA on unlabelled training series X (series, time, channels); several
+    channels are trained as separate series of one channel (D155).
 
     s: the 'tfjepa' section of the config; every setting is given explicitly.
     train: False returns the model as built, untrained (random-init baseline, D134).
@@ -98,7 +116,8 @@ def pretrain(X, s, device, train=True):
     check_settings(s)
     if s["views"] not in ("official", "augmented", "single"):
         raise ValueError(f"tfjepa.views must be 'official', 'augmented' or 'single', not {s['views']!r}")
-    cfg, train_loader = loader(X, s)
+    n_channels = X.shape[2]
+    cfg, train_loader = loader(channel_series(X), s)  # one channel per series (D155)
     model = official_model.TF_JEPA(cfg, momentum=s["ema_momentum"]).to(device)
     model.train()
 
@@ -111,6 +130,7 @@ def pretrain(X, s, device, train=True):
 
     # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
     model.representation, model.encode_batch_size = s["representation"], s["encode_batch_size"]
+    model.n_channels = n_channels  # encode() checks that it gets the same channels
     if not train:  # random-init baseline (D134): the model as built above, no training
         return model, []
 
@@ -156,7 +176,9 @@ def encode(model, X):
     """
     model.eval()
     device = next(model.parameters()).device
-    x_t = torch.from_numpy(np.transpose(X[:, :, :1], (0, 2, 1)).astype(np.float32))
+    if X.shape[2] != model.n_channels:
+        raise ValueError(f"the model was trained on {model.n_channels} channel(s), the data have {X.shape[2]}")
+    x_t = torch.from_numpy(np.transpose(channel_series(X), (0, 2, 1)).astype(np.float32))  # (series*channels, 1, time)
     out = []
     for batch in torch.split(x_t, model.encode_batch_size):
         batch = batch.to(device)
@@ -172,7 +194,7 @@ def encode(model, X):
         else:
             raise ValueError(f"tfjepa.representation must be 'z', 'h' or 'z_raw', not {model.representation!r}")
         out.append(z.cpu())
-    return torch.cat(out).numpy()
+    return channel_vectors(torch.cat(out).numpy(), model.n_channels)  # channels side by side (D155)
 
 
 def save(model, path):

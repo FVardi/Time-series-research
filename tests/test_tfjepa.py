@@ -56,8 +56,8 @@ def test_placeholders_and_channels():
     s["batch_size"] = None
     with pytest.raises(ValueError, match="placeholder"):
         tfjepa.pretrain(np.zeros((10, 40, 1)), s, "cpu")
-    with pytest.raises(ValueError, match="channel 0"):
-        tfjepa.pretrain(np.zeros((10, 40, 2)), settings(), "cpu")
+    with pytest.raises(ValueError, match="channel 0"):  # the official loader itself still takes one channel
+        tfjepa.loader(np.zeros((10, 40, 2)), settings())
 
 
 def test_training_loop_equals_official_function(monkeypatch):
@@ -84,3 +84,21 @@ def test_training_loop_equals_official_function(monkeypatch):
     a, b = ours.state_dict(), theirs.state_dict()
     assert set(a) == set(b)
     assert all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_two_channels_are_encoded_separately():
+    """D155: each channel goes through the same model as its own series; the vectors of a
+    series' channels are concatenated, so channel k's part equals encoding that channel alone."""
+    from harness.methods import tfjepa
+    X = np.random.default_rng(2).standard_normal((16, 40, 2))
+    torch.manual_seed(0)
+    model, losses = tfjepa.pretrain(X, settings("single"), "cpu")
+    assert np.all(np.isfinite(losses))
+    Z = tfjepa.encode(model, X)
+    assert Z.shape == (16, 2 * 32)  # [z_time; z_freq] = 2 x 16 per channel
+    model.n_channels = 1  # encode each channel on its own with the same weights
+    assert np.allclose(Z[:, :32], tfjepa.encode(model, X[:, :, :1]), atol=1e-5)
+    assert np.allclose(Z[:, 32:], tfjepa.encode(model, X[:, :, 1:]), atol=1e-5)
+    model.n_channels = 2
+    with pytest.raises(ValueError, match="channel"):
+        tfjepa.encode(model, X[:, :, :1])

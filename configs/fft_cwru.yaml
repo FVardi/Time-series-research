@@ -15,6 +15,7 @@ split:  # filters on the captures table (D128, D140, D147)
 method: fft
 seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
 device: cpu  # numpy only (D79)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 fft: {}  # nothing to set
 

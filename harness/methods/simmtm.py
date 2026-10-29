@@ -21,6 +21,12 @@ What one training step does (official):
              weighted sum of the others' features; decoder -> series; MSE to the inputs
     loss = Kendall-style automatic weighting of loss_cl and loss_rb (learnt weights)
 
+Several channels (our adaptation, D159): the encoder takes all channels and the decoder
+rebuilds all of them, as the official model does when given several channels (its loss
+compares the decoder output with the input flattened over channels). Load_Dataset keeps
+channel 0 only, so for several channels its steps (the same shuffle) are repeated in
+training_set() without that cut. With one channel nothing changes.
+
 Two fixes needed to run on other series lengths (D19: fixes go in the adapter):
   - the decoder is hard-coded as nn.Linear(1280, 178), the sizes for SleepEEG
     (10 x 128 encoder values -> 178 samples). It is replaced by a layer of the same kind
@@ -115,16 +121,33 @@ def build_model(configs, args, device):
     length = encoder_length(model, configs)
     if length != configs.CNNoutput_channel:  # sizes the projector's first layer (dense)
         raise ValueError(f"CNNoutput_channel is {configs.CNNoutput_channel}, the encoder output has length {length}")
-    n_in, n_out = configs.CNNoutput_channel * configs.final_out_channels, configs.TSlength_aligned
+    # the decoder rebuilds every channel: input_channels x TSlength_aligned values (D159; SleepEEG: 1 x 178)
+    n_in, n_out = configs.CNNoutput_channel * configs.final_out_channels, configs.input_channels * configs.TSlength_aligned
     if (model.head.in_features, model.head.out_features) != (n_in, n_out):  # official: nn.Linear(1280, 178)
         model.head = torch.nn.Linear(n_in, n_out).to(device)
     return model
 
 
+def training_set(X, configs):
+    """The training set as the official data_generator() builds it ('pre_train' mode; labels unused, zeros).
+
+    One channel: the official Load_Dataset. Several channels (D159): Load_Dataset's steps, the
+    same shuffle from NumPy's generator, without its cut to channel 0 (X_train[:, :1, ...]).
+    """
+    samples = torch.from_numpy(np.transpose(X, (0, 2, 1)).astype(np.float32))  # (n, channels, time), 32-bit (D23)
+    labels = torch.zeros(len(X), dtype=torch.long)
+    if X.shape[2] == 1:
+        return official_dataloader.Load_Dataset({"samples": samples, "labels": labels}, configs, "pre_train", subset=False)
+    data = list(zip(samples, labels))
+    np.random.shuffle(data)  # as Load_Dataset
+    x, y = zip(*data)
+    return torch.utils.data.TensorDataset(torch.stack(list(x)), torch.stack(list(y)))
+
+
 def pretrain(X, s, device, train=True):
     """Self-supervised pretraining as main.py and Trainer() do it.
 
-    X: array (n_series, n_samples, 1), training inputs only.
+    X: array (n_series, n_samples, n_channels), training inputs only.
     s: the 'simmtm' section of the config; every setting is given explicitly.
     train: False returns the model as built, untrained (random-init baseline, D134).
     The seeds are set before this call (scripts/pretrain.py); main.py's cuDNN settings are repeated here.
@@ -139,9 +162,7 @@ def pretrain(X, s, device, train=True):
     torch.backends.cudnn.benchmark = False
 
     # The official data_generator(), training part. Labels are not used; zeros fill their slot.
-    samples = torch.from_numpy(np.transpose(X, (0, 2, 1)).astype(np.float32))  # (n, channels, time), 32-bit (D23)
-    data = {"samples": samples, "labels": torch.zeros(len(X), dtype=torch.long)}
-    dataset = official_dataloader.Load_Dataset(data, configs, "pre_train", subset=False)
+    dataset = training_set(X, configs)
     loader = torch.utils.data.DataLoader(dataset, batch_size=configs.batch_size, shuffle=True,
                                          drop_last=configs.drop_last, num_workers=0)
 

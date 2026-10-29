@@ -11,7 +11,9 @@ Only training inputs are used for pretraining; test inputs never are.
 A config with a 'split' section (D147, e.g. CWRU) is cut into windows by harness/windows.py:
 pretraining then uses the training windows plus any 'pretrain_only' windows, and the run
 stops if a test capture or test bearing would be used for pretraining (D121).
-Baselines (raw, fft, catch22, minirocket, mssp) run through the same steps (D77).
+A config with 'rankme_epsilon' also stores RankMe of the training representations per seed
+(rankme.json; D152), as a diagnostic only.
+Baselines (raw, fft, envelope, catch22, minirocket, mssp) run through the same steps (D77).
 
 Random-init baseline (D134): a config with 'random_init: as_initialised' or
 'random_init: bn_from_train' stores the representations of the method's encoder as built,
@@ -27,14 +29,15 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import random_init, runs, windows
+from harness import diagnostics, random_init, runs, windows
 from harness.data import canonical
-from harness.methods import (catch22, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfc_frozen, tfjepa, tloss,
-                             ts2vec, tsjepa, tstcc)
+from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfc_frozen, tfjepa,
+                             tloss, ts2vec, tsjepa, tstcc)
 
 METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
            "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
+           "envelope": envelope,  # squared envelope spectrum baseline (D161)
            "mssp": mssp}  # rig baseline (D49, D85)
 # Methods with an encoder to leave untrained (D134); their pretrain() takes train=False.
 RANDOM_INIT_METHODS = ("ts2vec", "tloss", "tsjepa", "patchtst", "tstcc", "tfjepa", "simmtm", "frera", "tfc")
@@ -158,6 +161,11 @@ def main(config_path):
         method.save(model, os.path.join(out, "model"))
         np.save(os.path.join(out, "Z_train.npy"), Z_train)
         np.save(os.path.join(out, "Z_test.npy"), Z_test)
+        if "rankme_epsilon" in cfg:  # D152: effective rank of the final training representations, a diagnostic only
+            r = diagnostics.rankme(torch.from_numpy(np.asarray(Z_train, dtype=np.float64)), cfg["rankme_epsilon"])
+            runs.save_json(os.path.join(out, "rankme.json"), {"rankme_Z_train": r, "n": len(Z_train),
+                                                               "d": int(np.shape(Z_train)[1])})
+            print(f"  RankMe of Z_train: {r:.1f} (of at most {min(np.shape(Z_train))})", flush=True)
         runs.save_json(os.path.join(out, "timing.json"), {
             "pretrain_s": t1 - t0,  # fitting or pretraining (random_init: building, plus the batch-norm pass in (b))
             "encode_train_s": t2 - t1,

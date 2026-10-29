@@ -13,7 +13,7 @@ from sklearn.linear_model import RidgeClassifierCV
 from harness import evaluate
 import pycatch22
 
-from harness.methods import catch22, fft, minirocket, mssp, raw
+from harness.methods import catch22, envelope, fft, minirocket, mssp, raw
 from harness.methods.mssp_features import FEATURE_NAMES
 from scripts import convert_forda
 from scripts import evaluate as evaluate_script
@@ -35,6 +35,17 @@ def test_fft_is_one_sided_magnitude_per_channel():
     assert Z.shape == (5, 2 * 33)  # 64 // 2 + 1 bins per channel
     assert np.allclose(Z[:, 33:], np.abs(np.fft.rfft(X2[:, :, 1], axis=1)))
 
+
+def test_envelope_layout_and_modulation_peak():
+    """Squared envelope spectrum (D161): same layout as fft; a carrier at bin 100 modulated at
+    bin 8 gives its largest non-DC envelope-spectrum value at bin 8, not near the carrier."""
+    Z = envelope.encode(None, X2)
+    assert Z.shape == (5, 2 * 33)
+    t = np.arange(1024)
+    x = (1 + 0.5 * np.cos(2 * np.pi * 8 * t / 1024)) * np.cos(2 * np.pi * 100 * t / 1024)
+    Z = envelope.encode(None, x[None, :, None])
+    assert Z.shape == (1, 513)
+    assert np.argmax(Z[0, 1:]) + 1 == 8
 
 def test_mssp_statistics_order_and_values():
     fs = 1000.0
@@ -129,3 +140,14 @@ def test_baseline_end_to_end(tmp_path, monkeypatch, name):
     assert results.accuracy.between(0, 1).all() and (results.probe_fit_s >= 0).all()
     # Same seed -> same label subset for every method (D78): n_labels per fraction is the same everywhere.
     assert results.groupby("label_fraction").n_labels.nunique().eq(1).all()
+
+
+def test_minirocket_several_channels_use_the_multivariate_code():
+    """D150: two channels -> official multivariate fit (5 parameter arrays); one channel unchanged (3)."""
+    X = rng.standard_normal((20, 64, 2))
+    s = {"num_features": 168, "max_dilations_per_kernel": 32}
+    np.random.seed(0)
+    params, _ = minirocket.pretrain(X, s, "cpu")
+    assert len(params) == 5 and minirocket.encode(params, X).shape[0] == 20
+    np.random.seed(0)
+    assert len(minirocket.pretrain(X[:, :, :1], s, "cpu")[0]) == 3
