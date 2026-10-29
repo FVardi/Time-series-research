@@ -21,6 +21,7 @@
 [submodule "external/tstcc"]
 	path = external/tstcc
 	url = https://github.com/emadeldeen24/TS-TCC
+	ignore = untracked
 [submodule "external/tfjepa"]
 	path = external/tfjepa
 	url = https://github.com/jchaykow/tf-jepa
@@ -30,3 +31,4 @@
 [submodule "external/frera"]
 	path = external/frera
 	url = https://github.com/Tian0426/FreRA
+	ignore = untracked

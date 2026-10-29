@@ -167,6 +167,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D159 | 2026-10-28 | SimMTM on CWRU: TSlength_aligned 2048, CNNoutput_channel 87; both channels encoded and reconstructed (decoder 2 x 2048) | [decisions/training.md](decisions/training.md) |
 | D160 | 2026-10-28 | Datasets split by bearing: test accuracy also listed per test bearing (diagnostic; per_bearing.csv, logreg, every seed and budget) | [decisions/evaluation.md](decisions/evaluation.md) |
 | D161 | 2026-10-28 | Squared envelope spectrum baseline: as \|FFT\| except whole-band squared-envelope demodulation first; CWRU now, Paderborn later, not FordA | [decisions/evaluation.md](decisions/evaluation.md) |
+| D162 | 2026-10-29 | Submodules tstcc and frera: `ignore = untracked` in .gitmodules (as tloss, minirocket), so __pycache__ no longer marks runs as uncommitted | [decisions/repo.md](decisions/repo.md) |
 
 <!--
 Entry template:

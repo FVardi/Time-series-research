@@ -19,6 +19,9 @@ Contents
 - `herning/herning_eda.ipynb` — interactive examination of the Herning source file
   (structure, run schedule, raw sweeps, spectra, envelopes, SP channel, statistics
   over the run, downsampling).
+- `herning/envelope_model.ipynb` — check of the multiplicative envelope model per band (D60/D61 bands, 20 kHz block
+  energies): variance and distribution of the log band energy against a stationary-Gaussian null, and shared intensity
+  across bands (correlation, eigenvalues).
 - `herning/check_bands.py` — D52 band check (moved from `scripts/`).
 - `herning/spectra_herning.py` — average spectra per operating point (moved from `scripts/`).
 - `herning/check_vfd_lines.py` — frequency-converter line comb test, QUESTIONS.md Q3 (moved from `scripts/`).

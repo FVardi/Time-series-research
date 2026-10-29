@@ -102,3 +102,8 @@ evaluation: {probes: [logreg, floor], cv_groups: true, ...}
 ```
 **Alternatives considered:** A CWRU-only loader (quicker, but Paderborn and Herning would need their own).
 **Rationale:** User's decision (2026-10-27/28). The same windowing, split selection and checks serve every dataset without an official split.
+
+## 2026-10-29 — D162: Submodules external/tstcc and external/frera ignore untracked files
+**Decision:** In `.gitmodules`, `external/tstcc` and `external/frera` get `ignore = untracked`, as `external/tloss` and `external/minirocket` already have. Their only untracked content is Python's `__pycache__/` folders, which made `git status` report the tree as changed, so every run recorded `uncommitted_changes: true` (D99) even right after a commit. Changes to tracked files in these submodules are still reported.
+**Alternatives considered:** `ignore = dirty` (also hides edits to the official code, which would make git.json miss changes that affect results). Leaving it as it was.
+**Rationale:** User's decision (2026-10-29). The record of uncommitted changes (D99) should mean something; the narrower setting keeps real code changes visible.
