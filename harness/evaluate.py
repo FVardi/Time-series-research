@@ -5,7 +5,7 @@ Probes:
   logreg           : the harness probe, logistic regression with C chosen by cross-validation
   ridge_minirocket : MiniRocket's own ridge classifier (reproduction check for MiniRocket, D81)
   floor            : the most frequent training class, ignoring the features (D83)
-Regression (kappa on Herning, D58, D169):
+Regression (kappa on Herning, D58, D170):
   ridge            : ridge regression with alpha chosen by cross-validation
   floor_mean       : the mean of the training targets, ignoring the features
 """
@@ -31,7 +31,7 @@ _spec.loader.exec_module(ts2vec_protocols)
 
 def label_subset(y, fraction, seed, stratify=True):
     """Indices of a random subset holding 'fraction' of the labels (D26 item 5), stratified by
-    class; unstratified for a numeric target (stratify=False; regression, D169).
+    class; unstratified for a numeric target (stratify=False; regression, D170).
 
     A new subset is drawn for each seed, so the spread over seeds includes
     the effect of which labels were drawn (D29).
@@ -114,7 +114,7 @@ def ridge(Z, y, seed):
     """Regression probe (D58, D59): standardise features (training statistics), ridge regression,
     alpha by 5-fold cross-validation on the training data over 1e-4..1e4 (powers of ten).
 
-    For the Herning validation (D169) the folds are not grouped (D59 groups by hold): shuffled
+    For the Herning validation (D170) the folds are not grouped (D59 groups by hold): shuffled
     with the run's seed, scored with R² (sklearn's default for regressors).
     """
     pipe = make_pipeline(StandardScaler(), Ridge())

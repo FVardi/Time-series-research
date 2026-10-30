@@ -29,7 +29,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import band_features, diagnostics, random_init, runs, windows
+from harness import diagnostics, random_init, runs, windows
 from harness.data import canonical
 from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, pooled, raw, simmtm, tfc_frozen,
                              tfjepa, tloss, ts2vec, tsjepa, tstcc)
@@ -85,8 +85,9 @@ def windowed_inputs(cfg, meta, folder):
     X_pre = np.concatenate([X_train, X_only])
     if cfg["windows"]["standardise"]:
         stats = windows.standardisation(X_pre)
-        # the channels of X: the signal channels, or the 48 band features of D165
-        names = band_features.feature_names(cfg["channels"]) if cfg["windows"].get("features") == "band" else cfg["channels"]
+        # the channels of X: the signal channels, or the features (D165, D181)
+        features = cfg["windows"].get("features")
+        names = windows.FEATURE_SETS[features].names(cfg["channels"]) if features else cfg["channels"]
         runs.save_json(os.path.join(folder, "standardisation.json"),
                        {"channels": names, "mean": stats["mean"].tolist(), "std": stats["std"].tolist()})
         X_pre, X_train, X_test = (windows.standardise(X, stats) for X in (X_pre, X_train, X_test))

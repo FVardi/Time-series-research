@@ -1,0 +1,52 @@
+# TS-TCC (permutation fixed) on Herning (D151 as on CWRU, D156, D173): FordA settings with the values the input shape forces.
+name: tstcc_herning
+dataset: herning
+data_root: data/canonical
+channels: [AE, UL]
+labels: herning  # kappa of the sweep's operating point; excluded sweeps have none (harness/labels.py; D55)
+task: regression  # kappa is a number (D58)
+windows:  # D165, D172
+  length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
+  sample_rate_hz: 2500000  # as recorded; the band features need the full rate (D165 item 2)
+  features: band  # 1 ms windows, 12 octave bands x 4 features: (200, 48) per sweep (harness/band_features.py)
+  features_file: data/derived/herning/band_features.h5  # stored features (D172; scripts/derive_features.py, feature set band)
+  standardise: true  # each of the 48 channels with the mean and SD of the training sweeps (D165 item 5)
+split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
+  captures: {}  # no filter: every sweep with a label
+  random: {test_fraction: 0.2, seed: 0}
+method: tstcc
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
+  weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimisers
+  # lambda1 = 1 and lambda2 = 0.7 are hard-coded in the official model_train (not settable here)
+  official_config:  # external/tstcc/config_files/HAR_Configs.py; checked by the adapter, a difference stops the run
+    kernel_size: 8
+    stride: 1
+    dropout: 0.35
+    num_epoch: 40
+    batch_size: 128  # also the TS2Vec paper's batch size for UCR datasets
+    beta1: 0.9
+    beta2: 0.99
+    lr: 0.0003
+    drop_last: true
+    augmentation.jitter_scale_ratio: 1.1  # σ of the weak view's scaling (D107 item 2)
+    augmentation.jitter_ratio: 0.8  # σ of the strong view's jitter
+    augmentation.max_seg: 8  # strong view: 1..7 segments (D107 item 4)
+    TC.hidden_dim: 100
+    TC.timesteps: 6
+    Context_Cont.temperature: 0.2
+    Context_Cont.use_cosine_similarity: true
+  changed:  # HAR values changed for the input shape (D105, D156); the HAR value in the comment
+    input_channels: 48  # HAR 9; Herning: 12 bands x 4 features (D165)
+    final_out_channels: 320  # HAR 128; TS2Vec paper: representation dimension 320 for every baseline
+    features_len: 27  # HAR 18; encoder output length for 200 steps (checked by the adapter); only sizes the unused classifier layer
+    num_classes: 1  # HAR 6; only sizes the unused classifier layer (no classes: kappa is regressed by the probe)
+
+
+evaluation:  # D40, D58, D59, D170
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [ridge, floor_mean]
+  published_accuracy: null  # nothing published

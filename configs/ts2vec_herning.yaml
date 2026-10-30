@@ -1,0 +1,36 @@
+# TS2Vec on Herning (D151 as on CWRU, D173): official settings, dataset sections for Herning.
+name: ts2vec_herning
+dataset: herning
+data_root: data/canonical
+channels: [AE, UL]
+labels: herning  # kappa of the sweep's operating point; excluded sweeps have none (harness/labels.py; D55)
+task: regression  # kappa is a number (D58)
+windows:  # D165, D172
+  length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
+  sample_rate_hz: 2500000  # as recorded; the band features need the full rate (D165 item 2)
+  features: band  # 1 ms windows, 12 octave bands x 4 features: (200, 48) per sweep (harness/band_features.py)
+  features_file: data/derived/herning/band_features.h5  # stored features (D172; scripts/derive_features.py, feature set band)
+  standardise: true  # each of the 48 channels with the mean and SD of the training sweeps (D165 item 5)
+split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
+  captures: {}  # no filter: every sweep with a label
+  random: {test_fraction: 0.2, seed: 0}
+method: ts2vec
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+ts2vec:  # official defaults (D28), unchanged on Herning (D151, D173)
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 8
+  max_train_length: 3000  # series are 200 steps, so not cropped
+  temporal_unit: 0
+  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (Herning: about 2,960 x 200 x 48)
+
+
+evaluation:  # D40, D58, D59, D170
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [ridge, floor_mean]
+  published_accuracy: null  # nothing published

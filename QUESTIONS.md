@@ -32,6 +32,27 @@ D56 says "temperature hold-out", details open.
 **Claude's suggestion.** Temperature hold-out as the main split (a middle block),
 with the hold-grouped split reported alongside so the gap is visible.
 
+**Update (2026-10-30): first numbers.** A random 80/20 split (D169, validation only) is solved by the
+operating point alone: predicting κ as the training mean at the same rpm and temperature target
+(no signal) gives R² 0.996, the pooled band features with ridge 0.974 (`runs/20261030_153010_pooled_herning`).
+A leave-one-temperature-block-out check with the same pooled features (ridge, all labels, seed 0; not a
+pipeline run): MAE 0.03–0.06 for every block from 45 to 95 °C, 0.098 at 40 °C (κ above the training range,
+underestimated) and 0.057 at 100 °C; the no-signal baseline that knows the speed fails everywhere except
+around 60–65 °C. Within a speed, κ varies only through temperature, and the temperature blocks run in
+sequence, so none of these splits separates lubrication from other temperature or time effects.
+
+**Options for D56 (2026-10-30).**
+- (a) *Leave one block out, all 13 blocks in turn.* The full picture (interpolation and both extremes),
+  cheap for the baselines (seconds); 13 pretrainings per SSL method and seed.
+- (b) *Two fixed test blocks: one interior and one extreme* (e.g. 70 °C and 100 °C, or 70 °C and 40 °C),
+  each a separate fold. Interpolation and extrapolation at 2 pretrainings per method and seed.
+- (c) *One interior block* (e.g. 70 °C). One pretraining; tests interpolation only.
+- (d) *One extreme block.* One pretraining; tests extrapolation, where linear probes are weakest
+  (40 °C: κ above the training range).
+- For any of these: α of the ridge chosen by cross-validation inside the training blocks, either
+  shuffled (as D170) or leave-one-block-out inside training (closer to the test situation).
+- Claude's recommendation: (b), with (a) for the baselines, which cost nothing.
+
 **Status.** Open — user to discuss with supervisor.
 
 ---

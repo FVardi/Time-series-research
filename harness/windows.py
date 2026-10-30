@@ -2,9 +2,10 @@
 
 Used by scripts/pretrain.py when the config has a 'split' section. Steps:
   select   - captures matching filters on the captures table (and the stream's sample rate)
-  random_parts - or: a random split of the labelled captures into train and test (D168)
+  random_parts - or: a random split of the labelled captures into train and test (D169)
   cut      - load, resample to one rate if needed (D136), cut consecutive windows (D137);
              optionally turn each capture's windows into per-window features (D165)
+  cut_stored - or: read stored features (band features D172, MSSP statistics D181), one window per capture
   standardisation / standardise - one mean and SD per channel from given windows (D137)
   check_separate - no capture and no group (bearing) of the test set in the pretraining data (D33, D121)
 prepare() runs these for the 'train', 'test' and 'pretrain_only' parts of a config.
@@ -16,11 +17,14 @@ import numpy as np
 import pandas as pd
 from scipy.signal import resample_poly
 
-from harness import band_features
+from harness import band_features, mssp_stats, stored_features
 from harness.data import canonical
 from harness.labels import LABELS
 
 PARTS = ("train", "test", "pretrain_only")
+# Feature sets a config can ask for with windows: features (each module has compute, settings, names).
+FEATURE_SETS = {"band": band_features,  # per-window band features (D165)
+                "mssp": mssp_stats}  # MSSP statistics per band over the whole capture (D181)
 
 
 def stream_rates(meta):
@@ -72,6 +76,21 @@ def cut(root, dataset, captures, channels, length, rate_hz, transform=None):
     return np.concatenate(X), pd.DataFrame(rows)
 
 
+def cut_stored(path, feature_set, captures, channels, length, rate_hz):
+    """As cut() with a feature transform, but reading the stored features (D172, D181).
+
+    Only for windows that are whole captures (Herning: one sweep = one window); stops otherwise.
+    Returns X (n_captures, feature windows, feature channels) and the same table as cut().
+    """
+    if (captures.n_samples != length).any() or (captures.sample_rate_hz != rate_hz).any():
+        raise ValueError("stored features need windows that are whole captures at the recorded rate")
+    expected = FEATURE_SETS[feature_set].settings(channels, rate_hz)  # the file must have been made with these
+    X = stored_features.load(path, captures.run_id, captures.capture_id, expected)
+    rows = [{"run_id": c.run_id, "capture_id": c.capture_id, "start": 0, "stop": length,
+             "resampled_from_hz": c.sample_rate_hz} for c in captures.itertuples()]
+    return X, pd.DataFrame(rows)
+
+
 def standardisation(X):
     """One mean and one standard deviation per channel, over all samples of the windows X (D137)."""
     return {"mean": X.mean(axis=(0, 1)), "std": X.std(axis=(0, 1))}
@@ -96,7 +115,7 @@ def check_separate(table):
 
 
 def random_parts(caps, test_fraction, seed):
-    """A random split of the captures into 'train' and 'test' (D168): one draw with the given
+    """A random split of the captures into 'train' and 'test' (D169): one draw with the given
     seed; round(test_fraction * n) captures go to test. No 'pretrain_only' captures."""
     order = np.random.default_rng(seed).permutation(len(caps))
     test = np.zeros(len(caps), dtype=bool)
@@ -107,7 +126,7 @@ def random_parts(caps, test_fraction, seed):
 
 def part_captures(cfg, meta):
     """Captures of each part, with label and group. cfg['split'] holds either filters per part
-    (D147), or 'random' (D168): the labelled captures matching the filters in 'captures', split at random."""
+    (D147), or 'random' (D169): the labelled captures matching the filters in 'captures', split at random."""
     split = cfg["split"]
     if "random" in split:
         caps = select(meta, split.get("captures", {}))
@@ -127,13 +146,13 @@ def prepare(cfg, meta):
     Returns {part: (X, table)}; each table has split, row (index in X), run_id, capture_id,
     channels, start, stop, resampled_from_hz, label and group. 'train' and 'test' must have a
     label for every window; 'pretrain_only' is used without labels and may be empty.
-    Parts may not share captures. With windows: features: band, X holds the per-window band
-    features of each window instead of its samples (D165).
+    Parts may not share captures. With windows: features (band or mssp), X holds the features of
+    each window instead of its samples (D165, D181); with features_file they are read from the stored file.
     """
     w = cfg["windows"]
     transform = None
-    if w.get("features") == "band":  # D165: (n, length, channels) -> (n, windows of 1 ms, 48)
-        transform = lambda X: band_features.sweep_features(X, cfg["channels"], w["sample_rate_hz"])
+    if w.get("features"):  # D165, D181: (n, length, channels) -> features, e.g. (n, 200 windows of 1 ms, 48)
+        transform = lambda X: FEATURE_SETS[w["features"]].compute(X, cfg["channels"], w["sample_rate_hz"])
     out = {}
     for part, caps in part_captures(cfg, meta).items():
         if part != "pretrain_only" and caps.label.isna().any():
@@ -141,8 +160,11 @@ def prepare(cfg, meta):
         if len(caps) == 0:  # e.g. no pretraining-only captures in a random split; filled in below
             out[part] = None
             continue
-        X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
-                       transform)
+        if w.get("features_file"):  # stored features (D172, D181) instead of computing them here
+            X, table = cut_stored(w["features_file"], w["features"], caps, cfg["channels"], w["length"], w["sample_rate_hz"])
+        else:
+            X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
+                           transform)
         # class and group of each window's capture (a lookup keeps the rows in the order of X)
         key = list(zip(caps.run_id, caps.capture_id))
         label, group = dict(zip(key, caps.label)), dict(zip(key, caps.group))

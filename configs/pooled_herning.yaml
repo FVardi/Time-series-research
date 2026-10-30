@@ -1,17 +1,18 @@
 # Pooled band-feature baseline (D166) on Herning: the per-window band features (D165), averaged over
-# the windows of a sweep, probed for kappa. Validation run of the Herning path (D168, D169).
+# the windows of a sweep, probed for kappa. Validation run of the Herning path (D169, D170).
 name: pooled_herning
 dataset: herning
 data_root: data/canonical
 channels: [AE, UL]
 labels: herning  # kappa of the sweep's operating point; excluded sweeps have none (harness/labels.py; D55)
 task: regression  # kappa is a number (D58)
-windows:  # D165
+windows:  # D165, D172
   length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
   sample_rate_hz: 2500000  # as recorded; the band features need the full rate (D165 item 2)
   features: band  # 1 ms windows, 12 octave bands x 4 features: (200, 48) per sweep (harness/band_features.py)
+  features_file: data/derived/herning/band_features.h5  # stored features (D172; scripts/derive_features.py, feature set band)
   standardise: true  # each of the 48 channels with the mean and SD of the training sweeps (D165 item 5)
-split:  # D168: the sweeps with kappa, 80/20 at random, one fixed draw
+split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
   captures: {}  # no filter: every sweep with a label
   random: {test_fraction: 0.2, seed: 0}
 method: pooled
@@ -20,7 +21,7 @@ device: cpu  # numpy only (D79)
 
 pooled: {}  # nothing to set
 
-evaluation:  # D40, D58, D59, D169
+evaluation:  # D40, D58, D59, D170
   label_fractions: [0.01, 0.1, 1.0]
   probes: [ridge, floor_mean]
   published_accuracy: null  # nothing published

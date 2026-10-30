@@ -1,4 +1,4 @@
-"""Checks of the Herning kappa labels (D55), the random split (D168) and the regression probes (D169)."""
+"""Checks of the Herning kappa labels (D55), the random split (D169) and the regression probes (D170)."""
 
 import numpy as np
 import pandas as pd

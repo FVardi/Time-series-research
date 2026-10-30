@@ -9,6 +9,9 @@ window is dropped) and four features are computed per window:
     kurtosis    Pearson kurtosis (3 for Gaussian data), as the MSSP code
 Channels of the output: band by band (AE bands, then UL bands), the four features per band.
 Standardisation with training statistics is done by the caller (harness.windows, D137).
+
+The features of every capture can be stored once (scripts/derive_features.py, harness/stored_features.py)
+instead of being recomputed in every run (D172); settings() is what a stored file must match.
 """
 
 import antropy as ant
@@ -53,7 +56,7 @@ def channel_features(x, fs, bands, window=WINDOW):
     return np.concatenate(cols, axis=1)
 
 
-def sweep_features(X, channels, fs, window=WINDOW):
+def compute(X, channels, fs, window=WINDOW):
     """Sweeps (series, samples, channels) -> feature sequences (series, windows, n_bands * 4).
 
     channels: the names of X's channels in order (e.g. ["AE", "UL"]); each uses its BANDS.
@@ -62,6 +65,13 @@ def sweep_features(X, channels, fs, window=WINDOW):
                                     axis=1) for s in X])
 
 
-def feature_names(channels):
+def settings(channels, fs, window=WINDOW):
+    """What a stored file must match (D172): everything that determines the features."""
+    return {"channels": list(channels), "fs": float(fs), "window": int(window), "features": FEATURES,
+            "bands_hz": {ch: [list(b) for b in BANDS[ch]] for ch in channels},
+            "filter": "order-5 zero-phase Butterworth per band on the whole capture (mssp_features.bandpass_filter)"}
+
+
+def names(channels):
     """Names of the output channels, in order, e.g. 'AE 50-100 kHz log_energy'."""
     return [f"{ch} {lo / 1e3:.3g}-{hi / 1e3:.3g} kHz {feat}" for ch in channels for lo, hi in BANDS[ch] for feat in FEATURES]

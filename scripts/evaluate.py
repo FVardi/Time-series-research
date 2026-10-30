@@ -9,7 +9,7 @@ run folder, and prints the reproduction check against the published accuracy.
 On datasets split by bearing (cv_groups) it also writes per_bearing.csv: the logreg
 probe's test accuracy per test bearing, for every seed and label fraction (D160).
 Configs with task: regression (kappa on Herning) use the regression probes and report
-MAE and R² instead of accuracy and macro-F1 (D58, D59, D169).
+MAE and R² instead of accuracy and macro-F1 (D58, D59, D170).
 """
 
 import glob
@@ -28,7 +28,7 @@ def main(folder):
     cfg = runs.load_config(os.path.join(folder, "config.yaml"))
     ev = cfg["evaluation"]
     grouped = ev.get("cv_groups", False)  # D129; absent (FordA, FD configs) = folds as before
-    regression = cfg.get("task") == "regression"  # D169
+    regression = cfg.get("task") == "regression"  # D170
     if grouped:  # group (bearing) of each training window, in the row order of Z_train (D33 window table)
         table = pd.read_csv(os.path.join(folder, "windows.csv"))
         groups_train = table[table.split == "train"].sort_values("row").group.to_numpy()
@@ -46,7 +46,7 @@ def main(folder):
             for probe in ev["probes"]:
                 start = time.perf_counter()
                 draw, single = None, None
-                if regression and probe == "ridge":  # alpha on shuffled folds, seeded (D169)
+                if regression and probe == "ridge":  # alpha on shuffled folds, seeded (D170)
                     clf = evaluate.ridge(Z_train[idx], y_train[idx], seed)
                 elif grouped and probe == "logreg":  # folds grouped by bearing, built on the labelled windows (D129)
                     clf, draw, single = evaluate.logreg_grouped(Z_train[idx], y_train[idx], groups_train[idx], seed)

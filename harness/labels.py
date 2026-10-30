@@ -33,7 +33,7 @@ HERNING = {"rpm_per_cmd_hz": 59.5, "rpm_min": 50, "rpm_max": 3600, "temp_min_c":
 
 def herning(captures):
     """Herning (D55): label = kappa of the sweep's operating point (a number; regression, D58);
-    group = None (random split, D168).
+    group = None (random split, D169).
 
     rpm = frequency-converter command x 59.5 (the measured rpm is unreliable); temperature = the
     Omron process value. Sweeps excluded by D55 get no label: bearing not rotating (rpm target 100),

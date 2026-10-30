@@ -1,0 +1,27 @@
+# MSSP domain baseline on Herning (D49-D61, D85, D181): the 14 MSSP statistics per octave band and
+# broadband set, over the whole sweep, probed for kappa. The same split and probes as the other Herning configs.
+name: mssp_herning
+dataset: herning
+data_root: data/canonical
+channels: [AE, UL]
+labels: herning  # kappa of the sweep's operating point; excluded sweeps have none (harness/labels.py; D55)
+task: regression  # kappa is a number (D58)
+windows:  # D181
+  length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
+  sample_rate_hz: 2500000  # as recorded
+  features: mssp  # broadband + octave bands per sensor, 14 statistics each: (1, 196) per sweep (harness/mssp_stats.py)
+  features_file: data/derived/herning/mssp_stats.h5  # stored (D181; scripts/derive_features.py, feature set mssp)
+  standardise: false  # baselines on their values as computed (D76); the ridge probe standardises its inputs
+split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
+  captures: {}  # no filter: every sweep with a label
+  random: {test_fraction: 0.2, seed: 0}
+method: pooled  # one window per sweep, so the mean over windows is the statistics themselves (D166's method)
+seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+device: cpu  # numpy only (D79)
+
+pooled: {}  # nothing to set
+
+evaluation:  # D40, D58, D59, D170
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [ridge, floor_mean]
+  published_accuracy: null  # nothing published
