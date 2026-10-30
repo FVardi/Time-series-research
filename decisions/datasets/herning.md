@@ -25,7 +25,7 @@ Dataset-specific decisions for the AU Herning test rig (the MSSP rig data). Inde
 **Alternatives considered:** Converting all channels and streams (D22 as first approved); raised the unresolved question of how to treat the two microphones, whose sample counts differ (74,153 vs 74,752 at a nominal 80 kHz).
 **Rationale:** Only AE and ultrasound are relevant to the current research; converting less keeps the first code smaller and defers questions that do not matter yet.
 
-## 2026-10-09 — D51: Rig input representation: band-limit and downsample, cut-offs after checking where the information is
+## 2026-10-09 — D51: Rig input representation: band-limit and downsample, cut-offs after checking where the information is (superseded by D165)
 **Decision:** For the SSL methods, the AE and US signals are band-limited and downsampled per sensor (same input for every method). The cut-off frequency per sensor is decided only after checking that the bands above it carry no information (D52). The user expects useful US content up to about 100 kHz (the MSSP config assumed 40 kHz).
 **Alternatives considered:** Short raw windows at full rate (2.5 MHz: windows of a few thousand samples cover 1–2 ms, a fraction of a revolution; attention-based methods cannot take longer windows). AE envelope; frame-wise band energies (both are already feature choices).
 **Rationale:** User's decision (2026-10-09). Removes noise bands and buys context without losing information, provided the check confirms it.
@@ -50,7 +50,19 @@ Dataset-specific decisions for the AU Herning test rig (the MSSP rig data). Inde
 **Alternatives considered:** US by 10 (250 kHz; would cut the rpm-dependent content between 125 and 178 kHz).
 **Rationale:** User's decision (2026-10-10), from the band check (D52). The user regards AE above 560 kHz as noise; US above 40 kHz may carry information (QUESTIONS.md, Q3).
 
-## 2026-10-12 — D64: Downsampling on the fly; AE and US both at 1.25 MHz
+## 2026-10-12 — D64: Downsampling on the fly; AE and US both at 1.25 MHz (not used for the SSL input since D165)
 **Decision:** (1) Downsampling is done when a run loads the data (not stored as a derived copy). (2) AE and US are both downsampled by 2, to 1.25 MHz, so the two channels stay simultaneous on one time grid and methods can use them together. Supersedes the US factor of D62 (by 5, to 500 kHz). Open: anti-alias filter; whether US gets an extra low-pass (e.g. at 178 kHz) to remove its mostly noisy content up to 625 kHz.
 **Alternatives considered:** A stored downsampled copy (faster runs, but a second copy of the data on a nearly full disk). One model per sensor at its own rate (AE 1.25 MHz, US 500 kHz). Only one sensor per study.
 **Rationale:** User's decision (2026-10-10). Simultaneous multichannel recordings are meant to be an advantage.
+
+## 2026-10-30 — D165: Herning SSL input: a sequence of per-window band features (supersedes D51)
+**Decision:** The SSL methods get, per sweep, a multichannel sequence of features computed on short windows, instead of the band-limited, downsampled signal (D51):
+1. *Bands:* the feature-baseline octave bands, AE 50–100, 100–200, 200–400, 400–560 kHz (D61) and the eight UL base-10 octaves with centres 1.0 … 126 kHz, edges centre·10^(±0.15) (D60): 12 bands. All eight UL bands are kept, including the lowest three, whose Hjorth parameters and kurtosis are mostly noise at this window length (user: no preference; Claude's recommendation).
+2. *Band signals:* order-5 zero-phase Butterworth band-pass per band on the whole sweep at the recorded 2.5 MHz (`bandpass_filter` of the MSSP code, `harness/methods/mssp_features.py`), then windows. The D64 downsampling is not used on this path (user: no preference; Claude's recommendation).
+3. *Windows:* consecutive, non-overlapping windows of 1 ms (2,500 samples); the same windows for all features; a 0.2 s sweep gives 200 windows (incomplete last window dropped).
+4. *Features per band and window (4):* log energy (natural log of the mean square of the band signal), Hjorth mobility and complexity, and kurtosis, the last three exactly as the MSSP code (antropy `hjorth_params`, mobility in samples⁻¹; Pearson kurtosis, 3 for Gaussian data). 12 bands × 4 = 48 channels; one sweep = one series of 200 × 48.
+5. *Normalisation:* each of the 48 channels standardised with one mean and SD from the training windows (as D137); the log is the only other transform.
+6. *Augmentations:* each SSL method's standard augmentations, unchanged.
+Code: `harness/band_features.py`. Open: the Herning split (D56, QUESTIONS.md Q1) and wiring into the windowed pipeline (D147).
+**Alternatives considered:** Band-limited, downsampled signal (D51/D64; too long for the methods). Log band energies only, on finer sub-bands (`eda/herning/envelope_model.ipynb` sections 10–11; hundreds of channels). Third-octave bands. 0.5 ms windows (400 steps, keeps more of the fast intensity variation, noisier kurtosis/Hjorth). Dropping the UL bands below 5.6 or 11.2 kHz. Filtering after the D64 downsampling; FFT band masks as in the notebook.
+**Rationale:** User's decision (2026-10-30), after the envelope-model check (`eda/herning/envelope_model.ipynb`): within-sweep band energy dynamics vary with speed and track κ within speed; the scale scan put most of that variation at 0.1–5 ms, of which 1 ms windows keep about 75–85 %. The number of independent values per window is about 2·B·T whatever the sampling rate, so not downsampling does not make the features steadier; 1 ms gives about 22 for UL 11–22 kHz and 100–400 for the AE bands.

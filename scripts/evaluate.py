@@ -8,6 +8,8 @@ fitting time, D79) and summary.csv (mean and standard deviation over seeds) into
 run folder, and prints the reproduction check against the published accuracy.
 On datasets split by bearing (cv_groups) it also writes per_bearing.csv: the logreg
 probe's test accuracy per test bearing, for every seed and label fraction (D160).
+Configs with task: regression (kappa on Herning) use the regression probes and report
+MAE and R² instead of accuracy and macro-F1 (D58, D59, D169).
 """
 
 import glob
@@ -26,6 +28,7 @@ def main(folder):
     cfg = runs.load_config(os.path.join(folder, "config.yaml"))
     ev = cfg["evaluation"]
     grouped = ev.get("cv_groups", False)  # D129; absent (FordA, FD configs) = folds as before
+    regression = cfg.get("task") == "regression"  # D169
     if grouped:  # group (bearing) of each training window, in the row order of Z_train (D33 window table)
         table = pd.read_csv(os.path.join(folder, "windows.csv"))
         groups_train = table[table.split == "train"].sort_values("row").group.to_numpy()
@@ -39,18 +42,21 @@ def main(folder):
         Z_train, y_train = np.load(f"{seed_dir}/Z_train.npy"), np.load(f"{seed_dir}/y_train.npy")
         Z_test, y_test = np.load(f"{seed_dir}/Z_test.npy"), np.load(f"{seed_dir}/y_test.npy")
         for fraction in ev["label_fractions"]:
-            idx = evaluate.label_subset(y_train, fraction, seed)
+            idx = evaluate.label_subset(y_train, fraction, seed, stratify=not regression)
             for probe in ev["probes"]:
                 start = time.perf_counter()
                 draw, single = None, None
-                if grouped and probe == "logreg":  # folds grouped by bearing, built on the labelled windows (D129)
+                if regression and probe == "ridge":  # alpha on shuffled folds, seeded (D169)
+                    clf = evaluate.ridge(Z_train[idx], y_train[idx], seed)
+                elif grouped and probe == "logreg":  # folds grouped by bearing, built on the labelled windows (D129)
                     clf, draw, single = evaluate.logreg_grouped(Z_train[idx], y_train[idx], groups_train[idx], seed)
                     single = ";".join(class_names[c] for c in single)  # classes with one labelled bearing (D148)
                 else:
                     clf = evaluate.PROBES[probe](Z_train[idx], y_train[idx])
                 fit_s = time.perf_counter() - start  # wall-clock time to fit the probe, incl. its cross-validation (D79)
+                score = evaluate.regression_scores(clf, Z_test, y_test) if regression else evaluate.scores(clf, Z_test, y_test)
                 rows.append({"seed": seed, "label_fraction": fraction, "n_labels": len(idx), "probe": probe,
-                             **evaluate.scores(clf, Z_test, y_test), "probe_fit_s": fit_s,
+                             **score, "probe_fit_s": fit_s,
                              "cv_draw": draw,  # grouped folds: the draw used (0 = first assignment valid)
                              "single_bearing_classes": single})
                 print(rows[-1], flush=True)
@@ -60,7 +66,8 @@ def main(folder):
 
     results = pd.DataFrame(rows)
     results.to_csv(os.path.join(folder, "results.csv"), index=False)
-    summary = results.groupby(["probe", "label_fraction"])[["accuracy", "macro_f1"]].agg(["mean", "std"])
+    metrics = ["mae", "r2"] if regression else ["accuracy", "macro_f1"]
+    summary = results.groupby(["probe", "label_fraction"])[metrics].agg(["mean", "std"])
     summary.to_csv(os.path.join(folder, "summary.csv"))
     print(summary)
     if bearing_rows:  # D160

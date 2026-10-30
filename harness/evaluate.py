@@ -5,16 +5,19 @@ Probes:
   logreg           : the harness probe, logistic regression with C chosen by cross-validation
   ridge_minirocket : MiniRocket's own ridge classifier (reproduction check for MiniRocket, D81)
   floor            : the most frequent training class, ignoring the features (D83)
+Regression (kappa on Herning, D58, D169):
+  ridge            : ridge regression with alpha chosen by cross-validation
+  floor_mean       : the mean of the training targets, ignoring the features
 """
 
 import importlib.util
 import os
 
 import numpy as np
-from sklearn.dummy import DummyClassifier
-from sklearn.linear_model import LogisticRegression, RidgeClassifierCV
-from sklearn.metrics import accuracy_score, f1_score
-from sklearn.model_selection import GridSearchCV, StratifiedGroupKFold, train_test_split
+from sklearn.dummy import DummyClassifier, DummyRegressor
+from sklearn.linear_model import LogisticRegression, Ridge, RidgeClassifierCV
+from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, r2_score
+from sklearn.model_selection import GridSearchCV, KFold, StratifiedGroupKFold, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -26,8 +29,9 @@ ts2vec_protocols = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(ts2vec_protocols)
 
 
-def label_subset(y, fraction, seed):
-    """Indices of a stratified random subset holding 'fraction' of the labels (D26 item 5).
+def label_subset(y, fraction, seed, stratify=True):
+    """Indices of a random subset holding 'fraction' of the labels (D26 item 5), stratified by
+    class; unstratified for a numeric target (stratify=False; regression, D169).
 
     A new subset is drawn for each seed, so the spread over seeds includes
     the effect of which labels were drawn (D29).
@@ -35,7 +39,7 @@ def label_subset(y, fraction, seed):
     idx = np.arange(len(y))
     if fraction >= 1.0:
         return idx
-    subset, _ = train_test_split(idx, train_size=fraction, stratify=y, random_state=seed)
+    subset, _ = train_test_split(idx, train_size=fraction, stratify=y if stratify else None, random_state=seed)
     return np.sort(subset)
 
 
@@ -106,13 +110,37 @@ def floor(Z, y):
     return DummyClassifier(strategy="most_frequent").fit(Z, y)
 
 
-PROBES = {"svm_ts2vec": svm_ts2vec, "logreg": logreg, "ridge_minirocket": ridge_minirocket, "floor": floor}
+def ridge(Z, y, seed):
+    """Regression probe (D58, D59): standardise features (training statistics), ridge regression,
+    alpha by 5-fold cross-validation on the training data over 1e-4..1e4 (powers of ten).
+
+    For the Herning validation (D169) the folds are not grouped (D59 groups by hold): shuffled
+    with the run's seed, scored with R² (sklearn's default for regressors).
+    """
+    pipe = make_pipeline(StandardScaler(), Ridge())
+    grid = {"ridge__alpha": [10.0**k for k in range(-4, 5)]}
+    return GridSearchCV(pipe, grid, cv=KFold(5, shuffle=True, random_state=seed)).fit(Z, y).best_estimator_
+
+
+def floor_mean(Z, y):
+    """Regression floor (as D83 for classes): always predicts the mean of the (labelled) training targets."""
+    return DummyRegressor(strategy="mean").fit(Z, y)
+
+
+PROBES = {"svm_ts2vec": svm_ts2vec, "logreg": logreg, "ridge_minirocket": ridge_minirocket, "floor": floor,
+          "floor_mean": floor_mean}  # ridge takes the seed as well; called directly by scripts/evaluate.py
 
 
 def scores(clf, Z, y):
     """Accuracy and macro-F1 on the test data (D26 item 3)."""
     pred = clf.predict(Z)
     return {"accuracy": accuracy_score(y, pred), "macro_f1": f1_score(y, pred, average="macro")}
+
+
+def regression_scores(reg, Z, y):
+    """MAE and R² on the test data (D59)."""
+    pred = reg.predict(Z)
+    return {"mae": mean_absolute_error(y, pred), "r2": r2_score(y, pred)}
 
 
 def per_bearing(clf, Z, y, groups, class_names):

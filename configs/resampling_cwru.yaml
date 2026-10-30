@@ -1,0 +1,15 @@
+# Diagnostic: do CWRU recordings made at 48 kHz and resampled to 12 kHz differ consistently from 12 kHz
+# recordings? (decides whether a resampled healthy class could be recognised by its recording; D163, D167).
+# Choices below are Claude's, for this check only.
+name: resampling_cwru
+data_root: data/canonical
+dataset: cwru
+captures: {fault_end: DE, fault_size_mil: [7, 14, 21]}  # drive-end faults, the sizes used (D117, D119)
+rate_hz: 12000        # native rate of the fault files used in the experiments
+other_rate_hz: 48000  # the same conditions recorded again at 48 kHz (the healthy files' rate)
+channels: [DE, FE]    # each channel analysed on its own
+window_length: 2048   # as the main task (D136)
+band_hz: 100          # band width for the spectra and the classifier's features (60 bands up to 6 kHz)
+edge_hz: 5000         # 'shape_below_edge' uses only bands below this (away from the 6 kHz band edge)
+outer_folds: 5        # folds over conditions (13 drive-end bearings)
+seed: 0               # inner folds of the probe (harness/evaluate.logreg_grouped)

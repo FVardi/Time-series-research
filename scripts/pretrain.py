@@ -29,16 +29,17 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import diagnostics, random_init, runs, windows
+from harness import band_features, diagnostics, random_init, runs, windows
 from harness.data import canonical
-from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, raw, simmtm, tfc_frozen, tfjepa,
-                             tloss, ts2vec, tsjepa, tstcc)
+from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, pooled, raw, simmtm, tfc_frozen,
+                             tfjepa, tloss, ts2vec, tsjepa, tstcc)
 
 METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
            "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
            "envelope": envelope,  # squared envelope spectrum baseline (D161)
-           "mssp": mssp}  # rig baseline (D49, D85)
+           "mssp": mssp,  # rig baseline (D49, D85)
+           "pooled": pooled}  # feature sequence averaged over time (D166)
 # Methods with an encoder to leave untrained (D134); their pretrain() takes train=False.
 RANDOM_INIT_METHODS = ("ts2vec", "tloss", "tsjepa", "patchtst", "tstcc", "tfjepa", "simmtm", "frera", "tfc")
 
@@ -84,8 +85,10 @@ def windowed_inputs(cfg, meta, folder):
     X_pre = np.concatenate([X_train, X_only])
     if cfg["windows"]["standardise"]:
         stats = windows.standardisation(X_pre)
+        # the channels of X: the signal channels, or the 48 band features of D165
+        names = band_features.feature_names(cfg["channels"]) if cfg["windows"].get("features") == "band" else cfg["channels"]
         runs.save_json(os.path.join(folder, "standardisation.json"),
-                       {"channels": cfg["channels"], "mean": stats["mean"].tolist(), "std": stats["std"].tolist()})
+                       {"channels": names, "mean": stats["mean"].tolist(), "std": stats["std"].tolist()})
         X_pre, X_train, X_test = (windows.standardise(X, stats) for X in (X_pre, X_train, X_test))
     print(f"windows: {len(X_train)} training, {len(X_test)} test, {len(X_only)} pretraining only "
           f"({len(X_pre)} for pretraining)", flush=True)
@@ -134,12 +137,15 @@ def main(config_path):
                            window_table(cfg, "test", ids_test, X_test.shape[1])], ignore_index=True)
         runs.check_no_overlap(table)
     table.to_csv(os.path.join(folder, "windows.csv"), index=False)
-    # Class labels -> 0..K-1, ordered as in the training set (as TS2Vec does).
-    classes = np.unique(labels_train)
-    if not set(labels_test) <= set(classes):
-        raise ValueError(f"test classes missing from training: {sorted(set(labels_test) - set(classes))}")
-    runs.save_json(os.path.join(folder, "classes.json"), [str(c) for c in classes])  # class k = classes[k]
-    y_train, y_test = np.searchsorted(classes, labels_train), np.searchsorted(classes, labels_test)
+    if cfg.get("task") == "regression":  # a numeric target, e.g. kappa on Herning (D58): no classes
+        y_train, y_test = np.asarray(labels_train, dtype=float), np.asarray(labels_test, dtype=float)
+    else:
+        # Class labels -> 0..K-1, ordered as in the training set (as TS2Vec does).
+        classes = np.unique(labels_train)
+        if not set(labels_test) <= set(classes):
+            raise ValueError(f"test classes missing from training: {sorted(set(labels_test) - set(classes))}")
+        runs.save_json(os.path.join(folder, "classes.json"), [str(c) for c in classes])  # class k = classes[k]
+        y_train, y_test = np.searchsorted(classes, labels_train), np.searchsorted(classes, labels_test)
 
     for seed in cfg["seeds"]:
         print(f"seed {seed}: pretraining on {len(X_pre)} series", flush=True)
