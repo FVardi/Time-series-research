@@ -4,7 +4,8 @@ Used by scripts/pretrain.py when the config has a 'split' section. Steps:
   select   - captures matching filters on the captures table (and the stream's sample rate)
   random_parts - or: a random split of the labelled captures into train and test (D169)
   split_windows - or: the windows of the labelled captures split at random, stratified by class (D163, D171, D174)
-  cut      - load, resample to one rate if needed (D136), cut consecutive windows (D137);
+  cut      - load, resample to one rate if needed (D136), cut consecutive windows (D137),
+             or overlapping windows with a hop (D226);
              optionally turn each capture's windows into per-window features (D165)
   cut_stored - or: read stored features (band features D172, MSSP statistics D181), one window per capture
   standardisation / standardise - one mean and SD per channel from given windows (D137)
@@ -54,10 +55,11 @@ def select(meta, filters):
     return caps[keep].reset_index(drop=True)
 
 
-def cut(root, dataset, captures, channels, length, rate_hz, transform=None):
+def cut(root, dataset, captures, channels, length, rate_hz, transform=None, hop=None):
     """Load each capture, resample it to rate_hz if it has another rate (D136), and cut
     consecutive windows of 'length' samples from its first sample; the incomplete last
-    window is dropped (D137). If given, transform maps each capture's windows
+    window is dropped (D137). With hop, a window starts every 'hop' samples, so windows
+    overlap when hop < length (D226); without, hop = length (no overlap, D137). If given, transform maps each capture's windows
     (n, length, channels) to what is kept instead, e.g. per-window band features (D165);
     it runs capture by capture, so the raw samples of all captures are never in memory at once.
 
@@ -65,6 +67,7 @@ def cut(root, dataset, captures, channels, length, rate_hz, transform=None):
     run_id, capture_id, start and stop (samples of the signal at rate_hz, stop exclusive)
     and the capture's own rate (resampled_from_hz, equal to rate_hz if not resampled).
     """
+    hop = hop or length
     X, rows = [], []
     for c in captures.itertuples():
         x = canonical.load_captures(root, dataset, c.run_id, [c.capture_id], channels)[0]  # (samples, channels)
@@ -72,10 +75,11 @@ def cut(root, dataset, captures, channels, length, rate_hz, transform=None):
             # polyphase resampling with scipy's built-in anti-alias filter, e.g. 48 -> 12 kHz is up 1, down 4
             ratio = Fraction(int(rate_hz), int(c.sample_rate_hz))
             x = resample_poly(x, ratio.numerator, ratio.denominator, axis=0)
-        n = len(x) // length
-        w = x[: n * length].reshape(n, length, len(channels))
+        n = (len(x) - length) // hop + 1 if len(x) >= length else 0  # equals len(x) // length when hop = length
+        idx = np.arange(n)[:, None] * hop + np.arange(length)  # sample indices of each window
+        w = x[idx]  # (n, length, channels)
         X.append(transform(w) if transform else w)
-        rows += [{"run_id": c.run_id, "capture_id": c.capture_id, "start": i * length, "stop": (i + 1) * length,
+        rows += [{"run_id": c.run_id, "capture_id": c.capture_id, "start": i * hop, "stop": i * hop + length,
                   "resampled_from_hz": c.sample_rate_hz} for i in range(n)]
     return np.concatenate(X), pd.DataFrame(rows)
 
@@ -122,8 +126,9 @@ def check_windows_separate(table):
     """Stop if a test window is also in the pretraining data ('train' and 'pretrain_only' parts) (D33, D176).
 
     For split_windows, where windows of one capture are on both sides by design (D163). A window is
-    identified by its run, capture and start sample; windows are cut without overlap (D137), so
-    different start samples of one capture mean different samples.
+    identified by its run, capture and start sample. Without a hop, windows do not overlap (D137), so
+    different start samples of one capture mean different samples; with overlapping windows (D226)
+    a training and a test window can share samples, as in the protocol being followed.
     """
     key = lambda t: set(zip(t.run_id, t.capture_id, t.start))
     shared = key(table[table.split == "test"]) & key(table[table.split.isin(["train", "pretrain_only"])])
@@ -145,7 +150,8 @@ def split_windows(cfg, meta, transform=None):
     """Windows of the captures matching cfg['split']['captures'], split at random into 'train' and 'test'
     (D163): scikit-learn's train_test_split, stratified by class, with the config's test_fraction and
     random_state, as Zhao et al. (D167, D171, D174). Every capture is cut whole, so windows of one
-    capture are on both sides. Optional 'pretrain_only' filters add unlabelled windows for pretraining
+    capture are on both sides. With 'per_class' in random_windows, that many windows per class are first
+    drawn at random (seeded with random_state) and only those are split, as Thuan & Hong (HUST, D226). Optional 'pretrain_only' filters add unlabelled windows for pretraining
     (D126, D164). Returns {part: (X, table)} as prepare().
     """
     split, w = cfg["split"], cfg["windows"]
@@ -156,7 +162,7 @@ def split_windows(cfg, meta, transform=None):
         caps = select(meta, filters)
         caps["label"], caps["group"] = LABELS[cfg["labels"]](caps)
         X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
-                       transform)
+                       transform, w.get("hop"))
         key = list(zip(caps.run_id, caps.capture_id))
         label, group = dict(zip(key, caps.label)), dict(zip(key, caps.group))
         rows = list(zip(table.run_id, table.capture_id))
@@ -171,6 +177,11 @@ def split_windows(cfg, meta, transform=None):
     if table.label.isna().any():
         raise ValueError("split['captures'] contains captures without a class; every window must have one")
     r = split["random_windows"]
+    if "per_class" in r:  # D226: a fixed number of random windows per class, drawn before the split
+        rng = np.random.default_rng(r["random_state"])
+        keep = np.sort(np.concatenate([rng.choice(np.flatnonzero(table.label == c), r["per_class"], replace=False)
+                                       for c in sorted(table.label.unique())]))
+        X, table = X[keep], table.iloc[keep].reset_index(drop=True)
     train, test = train_test_split(np.arange(len(X)), test_size=r["test_fraction"], stratify=table.label,
                                    random_state=r["random_state"])
     out = {}
@@ -228,7 +239,7 @@ def prepare(cfg, meta):
             X, table = cut_stored(w["features_file"], w["features"], caps, cfg["channels"], w["length"], w["sample_rate_hz"])
         else:
             X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
-                           transform)
+                           transform, w.get("hop"))
         # class and group of each window's capture (a lookup keeps the rows in the order of X)
         key = list(zip(caps.run_id, caps.capture_id))
         label, group = dict(zip(key, caps.label)), dict(zip(key, caps.group))

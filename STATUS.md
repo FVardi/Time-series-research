@@ -68,13 +68,13 @@ further Herning runs until the dataset is final; then: convert, `scripts/derive_
 | FordA | converted, in use (D27, D30, D31) | — |
 | FD-A / FD-B | converted; TF-C reproduction only | — |
 | CWRU | converted (D139; 161 runs in `data/canonical/cwru/`); one split since D218: Zhao et al. protocol (D167, `*_cwru_zhao.yaml`); main and bearing splits no longer used for new results | `_zhao` configs for the D202/D217 TF-C runs and the D134 random-init copies |
-| Paderborn | converted (D212; `scripts/convert_paderborn.py`, 128 runs in `data/canonical/paderborn/`) | task and split (literature protocols listed in D212), windows |
+| Paderborn | converted (D212); protocol D220, D222, D225 implemented (`harness/protocols.py`, `scripts/run_combinations.py`; ~9,000 training / 6,000 test windows per combination); baseline configs `{fft,envelope,catch22,minirocket}_paderborn.yaml`, not yet run | SSL configs: window-length-dependent settings (5,120 samples) per method |
 | Herning | converted (all 3,964 sweeps, `data/canonical/herning/`); status `validation` (rig unfinished, final dataset pending; see 2b); derived files in `data/derived/herning/`: `band_features.h5` (SSL input, D165/D172), `mssp_stats.h5` (MSSP baseline, D181), `subband_power.h5` (1/12-octave sub-band power, D186; stored, not used yet) | κ inputs (D12); split (Q1); sweep vs. window comparison (Q2); VFD comb (Q3); high-pass filtering; final sampling rate |
 | Jim-Tec | EDA notebook only (`eda/jim-tec/`) | everything (no decisions file yet) |
 | FordB | not adopted | Q4 |
 | Synthetic (D196) | generated (3 designs, 144 runs each); split-representation pilot run and parked (D215; METHOD_IDEAS M1) | — |
 | XJTU-SY | adopted (D189); tasks and labels D191; raw downloaded (D193); not converted | FPT details (D191); split, windows |
-| HUST | adopted (D189, D190); raw downloaded (D194); not converted | configuration |
+| HUST | adopted (D189, D190); raw downloaded (D194); converted (D223; 99 runs in `data/canonical/hust/`); task/split D226 (authors' 7-class protocol: 2,048-sample windows, 75 % overlap, 2,500 per class, random 80/20); `configs/tfc_hust.yaml` (D123) | configs for the other methods |
 | UOS | adopted (D189, D190); subsets 1–3 downloaded (D194); not converted | configuration |
 | Ottawa UODS-VAFDC | adopted (D189); raw downloaded (D194); not converted | configuration |
 | DCASE 2022 bearing | adopted (D189); protocol D192; dev set downloaded (D194); not converted | configuration; anomaly scorers not implemented |

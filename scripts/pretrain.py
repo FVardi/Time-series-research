@@ -3,6 +3,7 @@
 Usage:
     uv run python scripts/pretrain.py configs/ts2vec_forda.yaml
     uv run python scripts/pretrain.py configs/ts2vec_forda.yaml --seeds 0   # exploration: only seed 0 (D201)
+    uv run python scripts/pretrain.py configs/fft_paderborn.yaml --combination 3   # a protocol's combination (D220)
 
 --seeds replaces the config's seeds for this run only; the run's copy of the config
 (config.yaml in the run folder) is changed to the seeds actually used and says so (D201).
@@ -11,6 +12,9 @@ Creates runs/<date_time>_<name>/ and, per seed, seed_<k>/ containing the model,
 the representations of the training and test series, the training loss and the
 wall-clock time of each stage (timing.json, D79). The run folder also gets
 hardware.json (where the times were measured).
+A config with split: {protocol: <name>} (D216, e.g. Paderborn, D220) needs --combination k: the split
+is that combination of the protocol (harness/protocols.py), the run is named <name>_c<k>, and the
+filled-in split is saved as split.json. scripts/run_combinations.py runs all combinations.
 Only training inputs are used for pretraining; test inputs never are.
 A config with a 'split' section (D147, e.g. CWRU) is cut into windows by harness/windows.py:
 pretraining then uses the training windows plus any 'pretrain_only' windows, and the run
@@ -35,7 +39,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from harness import diagnostics, random_init, runs, windows
+from harness import diagnostics, protocols, random_init, runs, windows
 from harness.data import canonical
 from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, pooled, raw, simmtm, tfc_frozen,
                              tfjepa, tloss, ts2vec, ts2vec_split, tsjepa, tstcc)
@@ -140,10 +144,16 @@ def record_seed_override(folder, seeds):
         f.write(text)
 
 
-def main(config_path, seeds=None):
+def main(config_path, seeds=None, combination=None):
     cfg = runs.load_config(config_path)
     if seeds is not None:  # D201: e.g. --seeds 0 while exploring; the config file is left unchanged
         cfg["seeds"] = seeds
+    protocol = cfg.get("split", {}).get("protocol")  # D216: a literature protocol named in the config
+    if (protocol is None) != (combination is None):
+        raise ValueError("--combination is needed for, and only for, a config with split: {protocol: ...}")
+    if protocol is not None:  # one run per combination, e.g. Lessmeier et al. 7.3 on Paderborn (D220)
+        cfg["split"] = protocols.PROTOCOLS[protocol](combination)
+        cfg["name"] = f"{cfg['name']}_c{combination}"
     method = METHODS[cfg["method"]]
     variant = cfg.get("random_init")  # D134; absent = pretrain as usual
     if variant is not None and (variant not in random_init.VARIANTS or cfg["method"] not in RANDOM_INIT_METHODS):
@@ -155,6 +165,9 @@ def main(config_path, seeds=None):
     folder = runs.new_run_dir(config_path, cfg)
     if seeds is not None:
         record_seed_override(folder, seeds)
+    if protocol is not None:  # the run's config.yaml names the protocol; the filled-in split is saved here
+        runs.save_json(os.path.join(folder, "split.json"),
+                       {"protocol": protocol, "combination": combination, "split": cfg["split"]})
     runs.save_json(os.path.join(folder, "hardware.json"), hardware(cfg["device"]))
     if hasattr(method, "COMPILE_S"):  # code compiled when imported (MiniRocket, numba): recorded, not counted as fit time
         runs.save_json(os.path.join(folder, "compile.json"), {"compile_s": method.COMPILE_S})
@@ -232,12 +245,14 @@ def main(config_path, seeds=None):
     print(f"Done: {folder}")
     # The next step, ready to copy (forward slashes work in PowerShell too).
     print(f"Next: uv run python scripts/evaluate.py {folder.replace(os.sep, '/')}")
+    return folder
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("config")
     parser.add_argument("--seeds", type=int, nargs="+", help="seeds for this run instead of the config's (D201)")
+    parser.add_argument("--combination", type=int, help="combination of the config's protocol (D216, D220)")
     args = parser.parse_args()
     torch.set_num_threads(os.cpu_count())
-    main(args.config, args.seeds)
+    main(args.config, args.seeds, args.combination)

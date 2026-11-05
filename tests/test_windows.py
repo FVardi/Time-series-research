@@ -163,3 +163,38 @@ def test_cwru_zhao_split():
     counts = pd.concat([t_train, t_test]).label.value_counts()
     assert len(counts) == 10 and counts["healthy"] == 59 and counts.drop("healthy").between(118, 119).all()
     assert set(t_test.label) == set(counts.index)
+
+
+def test_cut_with_hop_overlaps_windows():
+    """D226: with a hop, window i holds samples [i * hop, i * hop + length); without, as before (D137)."""
+    root = "data/canonical"
+    if not os.path.isdir(f"{root}/hust"):
+        pytest.skip("HUST not converted")
+    meta = canonical.load_metadata(root, "hust")
+    caps = windows.select(meta, {"run_id": ["N400", "OB402"]})  # 512,000 and 121,082 samples
+    X, t = windows.cut(root, "hust", caps, ["vibration"], 2048, 51200, hop=512)
+    assert t.groupby("run_id").size().to_dict() == {"N400": 997, "OB402": 233}  # (n - 2048) // 512 + 1
+    x = canonical.load_signal(root, "hust", "N400", "capture_0", "vibration")
+    assert np.array_equal(X[5, :, 0], x[5 * 512: 5 * 512 + 2048]) and t.start[5] == 2560 and t.stop[5] == 4608
+    X0, t0 = windows.cut(root, "hust", caps, ["vibration"], 2048, 51200)  # no hop: consecutive windows
+    assert len(X0) == 512000 // 2048 + 121082 // 2048
+    assert np.array_equal(X0[3, :, 0], x[3 * 2048: 4 * 2048]) and t0.start[3] == 3 * 2048
+
+
+def test_hust_split_per_class():
+    """D226 on a subset (one bearing type, one load, one recording per class): per_class windows of
+    each class, stratified 80/20, the same draw every time, no window on both sides."""
+    cfg = runs.load_config("configs/tfc_hust.yaml")
+    if not os.path.isdir(f"{cfg['data_root']}/hust"):
+        pytest.skip("HUST not converted")
+    cfg["split"]["captures"] = {"bearing_type": "6205", "load_w": 0}
+    cfg["split"]["random_windows"]["per_class"] = 500
+    meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
+    parts = windows.prepare(cfg, meta)
+    (X_train, t_train), (X_test, t_test) = parts["train"], parts["test"]
+    assert X_train.shape == (2800, 2048, 1) and len(X_test) == 700
+    assert (t_train.label.value_counts() == 400).all() and (t_test.label.value_counts() == 100).all()
+    assert set(t_train.label) == {"N", "I", "O", "B", "IO", "IB", "OB"}
+    windows.check_windows_separate(pd.concat([t_train, t_test]))
+    again = windows.prepare(cfg, meta)["test"][1]
+    assert again[["run_id", "start"]].equals(t_test[["run_id", "start"]])  # fixed draw and split (random_state)

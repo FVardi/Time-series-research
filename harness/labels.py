@@ -86,5 +86,21 @@ def synthetic_shared(captures):
     return [int(c.state) for c in captures.itertuples()], [None] * len(captures)
 
 
-LABELS = {"cwru": cwru, "cwru_zhao": cwru_zhao, "herning": herning, "synthetic": synthetic,
+def paderborn_lessmeier(captures):
+    """Paderborn, Lessmeier et al. (2016) Section 7.3 (D220): class = 'healthy', 'OR' or 'IR'
+    (lessmeier_class, D212) for the 15 bearings of their Table 10; every other bearing has no
+    class (not used, D225). group = the bearing (split by bearing; D121, D129)."""
+    from harness.protocols import LESSMEIER_7_3_BEARINGS  # here, so that labels.py does not load the adapter
+    labels = [c.lessmeier_class if c.bearing in LESSMEIER_7_3_BEARINGS else None for c in captures.itertuples()]
+    return labels, list(captures.bearing)
+
+
+def hust(captures):
+    """HUST (D226): seven classes, the fault code (N, I, O, B, IO, IB, OB), as Thuan & Hong's classification
+    experiment; group = the test bearing (fault + bearing type, e.g. 'IO6206'), kept in the window table;
+    the split is by random windows, so groups do not constrain it."""
+    return list(captures.fault), list(captures.bearing)
+
+
+LABELS = {"cwru": cwru, "cwru_zhao": cwru_zhao, "paderborn_lessmeier": paderborn_lessmeier, "herning": herning, "hust": hust, "synthetic": synthetic,
           "synthetic_kappa": synthetic_kappa, "synthetic_shared": synthetic_shared}

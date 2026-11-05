@@ -1,0 +1,25 @@
+# Baseline (D75 e): MiniRocket random convolution features, official defaults, on Paderborn: Lessmeier et al. (2016) Section 7.3 (D220), inputs D222, pretraining on the training windows (D225).
+name: minirocket_paderborn
+dataset: paderborn
+data_root: data/canonical
+channels: [vibration_1]  # vibration only (D222)
+labels: paderborn_lessmeier  # healthy / OR / IR for the 15 bearings of Table 10; group = bearing (harness/labels.py; D220)
+windows:  # D222
+  length: 5120  # 80 ms at 64 kHz, as TF-C's FD-A/FD-B windows (D39)
+  sample_rate_hz: 64000
+  standardise: false  # baselines on raw values (D76, D137)
+split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9: pretrain.py --combination k, or scripts/run_combinations.py (D220, D225)
+method: minirocket
+seeds: [0, 1, 2]
+device: cpu
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+minirocket:  # official defaults of fit(), the same in code/minirocket.py and code/minirocket_multivariate.py (D76, D150)
+  num_features: 10000  # 84 kernels x 119 = 9,996 features in practice
+  max_dilations_per_kernel: 32
+
+evaluation:  # D26, D40, D129, D133, D138, D148
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  published_accuracy: null  # Lessmeier et al. report accuracies of their own feature classifiers, not of a probe
