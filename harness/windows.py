@@ -3,11 +3,13 @@
 Used by scripts/pretrain.py when the config has a 'split' section. Steps:
   select   - captures matching filters on the captures table (and the stream's sample rate)
   random_parts - or: a random split of the labelled captures into train and test (D169)
+  split_windows - or: the windows of the labelled captures split at random, stratified by class (D163, D171, D174)
   cut      - load, resample to one rate if needed (D136), cut consecutive windows (D137);
              optionally turn each capture's windows into per-window features (D165)
   cut_stored - or: read stored features (band features D172, MSSP statistics D181), one window per capture
   standardisation / standardise - one mean and SD per channel from given windows (D137)
   check_separate - no capture and no group (bearing) of the test set in the pretraining data (D33, D121)
+  check_windows_separate - or, for split_windows: no test window in the pretraining data (D33, D176)
 prepare() runs these for the 'train', 'test' and 'pretrain_only' parts of a config.
 """
 
@@ -16,15 +18,17 @@ from fractions import Fraction
 import numpy as np
 import pandas as pd
 from scipy.signal import resample_poly
+from sklearn.model_selection import train_test_split
 
-from harness import band_features, mssp_stats, stored_features
+from harness import band_features, mssp_stats, stored_features, subband_power
 from harness.data import canonical
 from harness.labels import LABELS
 
 PARTS = ("train", "test", "pretrain_only")
 # Feature sets a config can ask for with windows: features (each module has compute, settings, names).
 FEATURE_SETS = {"band": band_features,  # per-window band features (D165)
-                "mssp": mssp_stats}  # MSSP statistics per band over the whole capture (D181)
+                "mssp": mssp_stats,  # MSSP statistics per band over the whole capture (D181)
+                "subbands": subband_power}  # per-window 1/12-octave sub-band power (D186)
 
 
 def stream_rates(meta):
@@ -114,6 +118,19 @@ def check_separate(table):
         raise ValueError(f"groups in both pretraining and test: {sorted(shared)}")
 
 
+def check_windows_separate(table):
+    """Stop if a test window is also in the pretraining data ('train' and 'pretrain_only' parts) (D33, D176).
+
+    For split_windows, where windows of one capture are on both sides by design (D163). A window is
+    identified by its run, capture and start sample; windows are cut without overlap (D137), so
+    different start samples of one capture mean different samples.
+    """
+    key = lambda t: set(zip(t.run_id, t.capture_id, t.start))
+    shared = key(table[table.split == "test"]) & key(table[table.split.isin(["train", "pretrain_only"])])
+    if shared:
+        raise ValueError(f"{len(shared)} windows are in both pretraining and test, e.g. {sorted(shared)[:5]}")
+
+
 def random_parts(caps, test_fraction, seed):
     """A random split of the captures into 'train' and 'test' (D169): one draw with the given
     seed; round(test_fraction * n) captures go to test. No 'pretrain_only' captures."""
@@ -122,6 +139,50 @@ def random_parts(caps, test_fraction, seed):
     test[order[: int(round(test_fraction * len(caps)))]] = True
     return {"train": caps[~test].reset_index(drop=True), "test": caps[test].reset_index(drop=True),
             "pretrain_only": caps.iloc[:0]}
+
+
+def split_windows(cfg, meta, transform=None):
+    """Windows of the captures matching cfg['split']['captures'], split at random into 'train' and 'test'
+    (D163): scikit-learn's train_test_split, stratified by class, with the config's test_fraction and
+    random_state, as Zhao et al. (D167, D171, D174). Every capture is cut whole, so windows of one
+    capture are on both sides. Optional 'pretrain_only' filters add unlabelled windows for pretraining
+    (D126, D164). Returns {part: (X, table)} as prepare().
+    """
+    split, w = cfg["split"], cfg["windows"]
+    if w.get("features_file"):
+        raise ValueError("stored band features (D172) are for whole-capture windows, not for split_windows")
+
+    def windows_of(filters, part):  # cut the captures, then class and group of each window from its capture
+        caps = select(meta, filters)
+        caps["label"], caps["group"] = LABELS[cfg["labels"]](caps)
+        X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
+                       transform)
+        key = list(zip(caps.run_id, caps.capture_id))
+        label, group = dict(zip(key, caps.label)), dict(zip(key, caps.group))
+        rows = list(zip(table.run_id, table.capture_id))
+        table["label"] = [label[k] for k in rows]
+        table["group"] = [group[k] for k in rows]
+        table.insert(0, "split", part)
+        table.insert(1, "row", np.arange(len(table)))
+        table.insert(4, "channels", ";".join(cfg["channels"]))
+        return X, table
+
+    X, table = windows_of(split["captures"], "all")
+    if table.label.isna().any():
+        raise ValueError("split['captures'] contains captures without a class; every window must have one")
+    r = split["random_windows"]
+    train, test = train_test_split(np.arange(len(X)), test_size=r["test_fraction"], stratify=table.label,
+                                   random_state=r["random_state"])
+    out = {}
+    for part, idx in (("train", np.sort(train)), ("test", np.sort(test))):  # rows kept in the order they were cut
+        t = table.iloc[idx].reset_index(drop=True).assign(split=part)
+        t["row"] = np.arange(len(t))
+        out[part] = (X[idx], t)
+    if "pretrain_only" in split:
+        out["pretrain_only"] = windows_of(split["pretrain_only"], "pretrain_only")
+    else:
+        out["pretrain_only"] = (np.empty((0,) + X.shape[1:]), table.iloc[:0].assign(split="pretrain_only"))
+    return out
 
 
 def part_captures(cfg, meta):
@@ -146,13 +207,16 @@ def prepare(cfg, meta):
     Returns {part: (X, table)}; each table has split, row (index in X), run_id, capture_id,
     channels, start, stop, resampled_from_hz, label and group. 'train' and 'test' must have a
     label for every window; 'pretrain_only' is used without labels and may be empty.
-    Parts may not share captures. With windows: features (band or mssp), X holds the features of
+    Parts may not share captures, except with 'random_windows' in the split (split_windows, D163),
+    where they may not share windows. With windows: features (band or mssp), X holds the features of
     each window instead of its samples (D165, D181); with features_file they are read from the stored file.
     """
     w = cfg["windows"]
     transform = None
     if w.get("features"):  # D165, D181: (n, length, channels) -> features, e.g. (n, 200 windows of 1 ms, 48)
         transform = lambda X: FEATURE_SETS[w["features"]].compute(X, cfg["channels"], w["sample_rate_hz"])
+    if "random_windows" in cfg["split"]:  # windows split at random, not captures (D163)
+        return split_windows(cfg, meta, transform)
     out = {}
     for part, caps in part_captures(cfg, meta).items():
         if part != "pretrain_only" and caps.label.isna().any():
@@ -183,3 +247,25 @@ def prepare(cfg, meta):
     if used[0] & used[1] or used[0] & used[2] or used[1] & used[2]:
         raise ValueError("the parts of the split share captures")
     return out
+
+
+def condition_codes(table, meta, columns):
+    """Operating-condition classes of every pretraining window, for methods that use them (D198).
+
+    table: the window table of a run (train, test and pretrain_only rows); the pretraining
+    windows are the 'train' rows followed by the 'pretrain_only' rows, the order of X_pre in
+    scripts/pretrain.py. columns: capture columns (captures or telemetry table), one per factor.
+    Each factor's values become classes 0..K-1 in sorted order (discrete levels, D197).
+    Returns codes (n_pretraining_windows, n_factors) and {column: [value of class 0, 1, ...]}.
+    """
+    pre = pd.concat([table[table.split == "train"], table[table.split == "pretrain_only"]], ignore_index=True)
+    caps = select(meta, {})[["run_id", "capture_id"] + list(columns)]
+    values = pre[["run_id", "capture_id"]].merge(caps, on=["run_id", "capture_id"], how="left", validate="many_to_one")
+    if values[list(columns)].isna().any().any():
+        raise ValueError(f"pretraining windows without a value for {list(columns)}")
+    codes, classes = [], {}
+    for c in columns:
+        levels = np.unique(values[c].to_numpy())
+        codes.append(np.searchsorted(levels, values[c].to_numpy()))
+        classes[c] = [v.item() if hasattr(v, "item") else v for v in levels]
+    return np.stack(codes, axis=1), classes

@@ -62,3 +62,12 @@ Ingestion, canonical storage and metadata. Index: `../DECISIONS.md`.
 **Decision:** Besides the fixed captures columns (D2), a dataset may add its own per-capture columns, such as class labels or official splits (first used for FordA, D30).
 **Alternatives considered:** A separate table for labels and splits.
 **Rationale:** Simplest way to keep per-capture facts filterable; extends D2.
+
+## 2026-11-04 — D213: Raw data kept unpacked (supersedes D212 item 8; packing part of D47 and D193)
+**Decision:** Raw data that arrive as archives (.rar, .zip) are unpacked once, unchanged, into `data/raw/<dataset>/`, with the archives' own internal folder layout; readers read the unpacked files, so the project needs no archive package. Archives are not needed once their contents are checked against the archive listing.
+- Paderborn: unpacked by the user with 7-Zip; `data/raw/paderborn/<bearing>/` holds the 80 measurement files and two PDFs per bearing, as inside the archives (an extra folder level from the extraction was removed by Claude); the archives were removed by the user. `harness/data/paderborn.py` reads the unpacked files; checked on KA04_N15_M07_F04 and KA08_N15_M01_F10: metadata and values identical to the converted runs. The runs converted from the archives (D212) keep the archive as `source_name` in their runs table; their values are unaffected.
+- XJTU-SY: unpacked by the user with 7-Zip; the complete copy is `Data/XJTU-SY_Bearing_Datasets.part01/` (all 9,217 files match the archive listing in name and size). The folders `...part02/` to `...part06/` were partial re-extractions (subsets of the same files, each with one truncated file). With the user's approval (2026-11-04), Claude moved the complete copy to `data/raw/xjtu_sy/XJTU-SY_Bearing_Datasets/` (the archive's layout; rechecked against the archive listing before deletion) and deleted the partial folders and the six archive parts; the photograph archives in `Photographs/` were kept packed.
+**Alternatives considered:** Reading the archives with `unrar-cffi` (D212 item 8; no Windows package for the project's Python 3.14) or with `rarfile` and 7-Zip (keeps the archives packed; needs 7-Zip on every machine).
+**Rationale:** User's decision (2026-11-04): archives are awkward to work with unless the files are to be sent.
+
+*Note (2026-11-04): first recorded as D195, a number another chat had already used; renumbered, content unchanged.*

@@ -1,0 +1,29 @@
+# CWRU literature protocol (Zhao et al. 2020; D167, D177-D179): 10 classes, drive end, 0 hp, 1,024-sample windows.
+# MiniRocket on CWRU (D167, D150): official code, univariate version here (one channel; D150), official settings; probed with logreg.
+name: minirocket_cwru_zhao
+dataset: cwru
+data_root: data/canonical
+channels: [DE]  # drive end only, as Zhao et al. (D167)
+labels: cwru_zhao  # healthy + fault location x size, 10 classes (harness/labels.py; D167)
+windows:  # D136, D137
+  length: 1024  # as Zhao et al. (D167)
+  sample_rate_hz: 12000  # healthy file 97 (48 kHz) resampled to 12 kHz (D167)
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # windows split at random (D167, D174); pretraining = training windows (D164)
+  captures: {source_file: [97, 105, 118, 130, 169, 185, 197, 209, 222, 234]}  # Zhao et al.'s files: 0 hp, healthy + 9 drive-end faults (D167)
+  random_windows: {test_fraction: 0.2, random_state: 40}  # stratified by class, fixed for all seeds, as Zhao et al. (D171, D174)
+method: minirocket
+seeds: [0, 1, 2]
+device: cpu
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+minirocket:  # official defaults of fit(), the same in code/minirocket.py and code/minirocket_multivariate.py (D76, D150)
+  num_features: 10000  # 84 kernels x 119 = 9,996 features in practice
+  max_dilations_per_kernel: 32
+
+evaluation:  # D26, D133, D178, D179
+  label_fractions: [0.1, 1.0]  # 1 % dropped: fewer labels than classes (D178)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, not grouped (D179)
+  per_class: true  # test accuracy per class, logreg probe (D168, D179)
+  published_accuracy: null  # Zhao et al. train each network end to end; no probe result to compare with

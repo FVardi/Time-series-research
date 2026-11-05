@@ -24,6 +24,24 @@ def cwru(captures):
     return labels, groups
 
 
+def cwru_zhao(captures):
+    """CWRU, literature protocol of Zhao et al. (D167): ten classes, 'healthy' (normal file) and fault
+    location with size ('inner_7', 'ball_14', 'outer_21', ...); outer race at 6 o'clock only, as their
+    file list. group = the bearing's ID (the healthy file: none), kept in the window table; the split is
+    by random windows (D167, D174), so groups do not constrain it."""
+    labels, groups = [], []
+    for c in captures.itertuples():
+        if c.fault_location == "none":
+            labels.append("healthy")
+            groups.append(None)
+            continue
+        if c.fault_location == "outer" and c.clock_hour != 6:
+            raise ValueError(f"run {c.run_id}: outer race at {c.clock_hour} o'clock; the protocol has 6 o'clock only")
+        labels.append(f"{c.fault_location}_{int(c.fault_size_mil)}")
+        groups.append(c.de_bearing if c.fault_end == "DE" else c.fe_bearing)
+    return labels, groups
+
+
 # Herning operating point and kappa as the MSSP code (D55), the same values as configs/band_check_herning.yaml.
 # Viscosities: the MSSP fallback (the file's lubricant metadata has none); d_pw: the bearing's pitch diameter.
 HERNING = {"rpm_per_cmd_hz": 59.5, "rpm_min": 50, "rpm_max": 3600, "temp_min_c": 38,
@@ -51,4 +69,22 @@ def herning(captures):
     return labels, [None] * len(labels)
 
 
-LABELS = {"cwru": cwru, "herning": herning}
+def synthetic(captures):
+    """Synthetic data (D196): class = lubrication state (0, 1, 2); group = bearing."""
+    return [int(c.state) for c in captures.itertuples()], [c.bearing for c in captures.itertuples()]
+
+
+def synthetic_kappa(captures):
+    """Synthetic data (D196): label = kappa_like of the operating point (regression); group = bearing."""
+    return [float(c.kappa_like) for c in captures.itertuples()], [c.bearing for c in captures.itertuples()]
+
+
+def synthetic_shared(captures):
+    """Synthetic data, splits that share bearings between pretraining and test by design (D198:
+    held-out operating points, departure runs): class = state; no group, so the bearing check (D121)
+    does not apply. Captures are still kept apart (D33)."""
+    return [int(c.state) for c in captures.itertuples()], [None] * len(captures)
+
+
+LABELS = {"cwru": cwru, "cwru_zhao": cwru_zhao, "herning": herning, "synthetic": synthetic,
+          "synthetic_kappa": synthetic_kappa, "synthetic_shared": synthetic_shared}

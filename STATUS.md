@@ -2,7 +2,7 @@
 
 Living list of the state of the repository. Update it when something changes;
 decisions themselves stay in `decisions/` (index: `DECISIONS.md`), questions for the
-supervisor in `QUESTIONS.md`. Last updated: 2026-10-27 (evening).
+supervisor in `QUESTIONS.md`. Last updated: 2026-11-03 (Herning items, section 2b; D186 items 2026-11-02; the rest as of 2026-10-27, evening).
 
 ## 1. FordA benchmark (frozen probes, D26: `svm_ts2vec` + `logreg`, 1/10/100 % labels, 3 seeds)
 
@@ -23,6 +23,9 @@ Run: `uv run python scripts/pretrain.py configs/<method>_forda.yaml`, then the `
 
 ## 2. Methods: planned or in progress
 
+- **TF-C loss comparison** (D202; pairs as positives vs negatives vs left out, seed 0): variants `left_out`, `left_out_x3`
+  added to `tfc.py`; configs `configs/tfc_{forda,cwru}_{paper,left_out,left_out_x3}.yaml` ready, **to run**;
+  Paderborn and further datasets after conversion.
 - **Random-init frozen encoders** (D134; probes on untrained encoders, to see how much pretraining helps):
   implemented; FordA configs ready, **to run**: 9 × `configs/*_random.yaml` (a) and 6 × `*_random_bn.yaml` (b).
   CWRU/Paderborn copies follow when those trained configs exist (D134). Earlier: TF-C on FD (`scripts/probe_tfc.py`).
@@ -31,18 +34,51 @@ Run: `uv run python scripts/pretrain.py configs/<method>_forda.yaml`, then the `
 - *(Optional)* frozen probes on the TF-C (positives) FD-A → FD-B encoders (`runs/20261027_141808_tfc_positives_fd`;
   copy of `configs/probe_tfc_fd.yaml` pointing at that run).
 
+## 2b. Herning pipeline (validation run; paused until the final dataset)
+
+Everything below ran on the current validation run (one rig run, one bearing, one lubricant). The user waits with
+further Herning runs until the dataset is final; then: convert, `scripts/derive_features.py` for `band`, `mssp`
+(and `subbands`), and rerun the configs.
+
+- **Pipeline:** κ labels from the telemetry (D55; `harness/labels.py`, `task: regression`); random 80/20 split of the
+  sweeps with κ, one fixed draw (D169, validation only); ridge probe with ungrouped, shuffled folds, MAE and R² (D170).
+  SSL input: per-window band features, 200 windows of 1 ms × 48 per sweep (D165), stored once (D172).
+- **Baselines (done):** pooled band features, mean + SD over windows (D166, D187): `runs/20261102_112102_pooled_herning`;
+  MSSP statistics per band and broadband (D181): `runs/20261102_103532_mssp_herning`. No catch24 on Herning (D188).
+  `runs/20261030_*_pooled_herning` are the superseded mean-only version.
+- **SSL methods** (configs `configs/<method>_herning.yaml`, D173): done for TS2Vec, T-Loss, TS-TCC, SimMTM, FreRA, TF-C,
+  PatchTST, TF-JEPA (`runs/2026110[23]_*_<method>_herning`). TS-JEPA: patching fixed (D195); `runs/20261103_111018_tsjepa_herning`
+  incomplete when this was written (seed 0 only); `runs/20261103_104546_…` and `runs/20261103_110408_…` are failed starts
+  (empty seed folders) and can be deleted.
+- **Results so far** (random split, MAE of κ at 1 / 10 / 100 % labels): pooled 0.097 / 0.046 / 0.038; TS-TCC 0.087 / 0.046 / 0.041;
+  MSSP 0.142 / 0.068 / 0.042; all other SSL methods below the pooled baseline. Caveat: κ is a function of rpm and temperature
+  on this rig and the random split puts every operating point on both sides, so these mainly measure recognising the
+  operating point (QUESTIONS.md Q1, update 2026-10-30). Within a speed κ varies only with temperature, so no split of this
+  run separates lubrication from other temperature or time effects.
+- **Open:** temperature hold-out (D56; options in QUESTIONS.md Q1); probe folds grouped by hold (D59; MSSP `grouping.py`
+  not ported, D170 deviates); TS-JEPA on the final data.
+- **EDA:** `eda/herning/envelope_model.ipynb` (envelope model, VFD-off reference, burst rate vs κ, scale scan, same-shape
+  tests, burst durations); findings informed D165. Not in QUESTIONS.md yet: AE 50–100 kHz bursts at standstill disappear
+  with the VFD off (converter interference; relevant to Q3).
+
 ## 3. Datasets
 
 | dataset | state | open |
 |---|---|---|
 | FordA | converted, in use (D27, D30, D31) | — |
 | FD-A / FD-B | converted; TF-C reproduction only | — |
-| CWRU | raw files downloaded; split settled (D128), probe CV grouped by bearing (D129); **not converted** (no `convert_cwru.py`) | sampling-rate matching of the normal files (D126); window length and input representation; one config per method |
-| Paderborn | raw archives downloaded (D47); signals chosen (D48); **not converted** | conversion, task, split, windows |
-| Herning | conversion code tested; **not fully converted**; status `validation` (rig unfinished) | κ inputs (D12); split (Q1); sweep vs. window comparison (Q2); VFD comb (Q3); high-pass filtering; final sampling rate |
+| CWRU | converted (D139; 161 runs in `data/canonical/cwru/`); one split since D218: Zhao et al. protocol (D167, `*_cwru_zhao.yaml`); main and bearing splits no longer used for new results | `_zhao` configs for the D202/D217 TF-C runs and the D134 random-init copies |
+| Paderborn | converted (D212; `scripts/convert_paderborn.py`, 128 runs in `data/canonical/paderborn/`) | task and split (literature protocols listed in D212), windows |
+| Herning | converted (all 3,964 sweeps, `data/canonical/herning/`); status `validation` (rig unfinished, final dataset pending; see 2b); derived files in `data/derived/herning/`: `band_features.h5` (SSL input, D165/D172), `mssp_stats.h5` (MSSP baseline, D181), `subband_power.h5` (1/12-octave sub-band power, D186; stored, not used yet) | κ inputs (D12); split (Q1); sweep vs. window comparison (Q2); VFD comb (Q3); high-pass filtering; final sampling rate |
 | Jim-Tec | EDA notebook only (`eda/jim-tec/`) | everything (no decisions file yet) |
 | FordB | not adopted | Q4 |
-| run-to-failure / RUL | not adopted | D115 |
+| Synthetic (D196) | generated (3 designs, 144 runs each); split-representation pilot run and parked (D215; METHOD_IDEAS M1) | — |
+| XJTU-SY | adopted (D189); tasks and labels D191; raw downloaded (D193); not converted | FPT details (D191); split, windows |
+| HUST | adopted (D189, D190); raw downloaded (D194); not converted | configuration |
+| UOS | adopted (D189, D190); subsets 1–3 downloaded (D194); not converted | configuration |
+| Ottawa UODS-VAFDC | adopted (D189); raw downloaded (D194); not converted | configuration |
+| DCASE 2022 bearing | adopted (D189); protocol D192; dev set downloaded (D194); not converted | configuration; anomaly scorers not implemented |
+| other run-to-failure / RUL | not adopted (D115, D189) | candidates in `DATASET_CANDIDATES.md` |
 
 Standing rule (D123): every new benchmark dataset gets a TF-C (positives) config with the same protocol as the other methods.
 
@@ -55,9 +91,11 @@ Standing rule (D123): every new benchmark dataset gets a TF-C (positives) config
 - **`tfc.scores`**: AUROC fails on binary tasks (two-column probabilities), so TF-C fine-tuning (`scripts/tfc_ours.py`) cannot run on two-class datasets.
 - **TF-C study**: ablation stages have seed 0 only (D96: up to 3); `collapse_fd.yaml` has two placeholders (seeds, diagnostic windows); collapse examination of the official TF-C code; longer-training check: see D142 above.
 - **TS-JEPA**: rerun with timing (D102).
+- **D186 uncommitted**: `harness/subband_power.py`, `tests/test_subband_power.py`, edits to `harness/stored_features.py`, `harness/windows.py`, `scripts/derive_features.py`, `eda/herning/check_stft_bands.py`, `runs/20261102_stft_check/` and the decision entry.
 
 ## 5. Deferred by the user
 
-- Statistics across methods (critical-difference diagrams etc.).
+- Statistics across methods (critical-difference diagrams etc.): deferred until about ten datasets are converted (D203). Comparison tables across runs exist: `uv run python scripts/compare.py configs/compare/<name>.yaml` (D203; first: `forda.yaml`).
 - A common fine-tuning protocol for all methods.
 - Results report (`report/results.tex`): updated only when asked.
+- One-off kurtogram across the Herning data, to check the bands used for kurtosis (D186).

@@ -8,6 +8,8 @@ fitting time, D79) and summary.csv (mean and standard deviation over seeds) into
 run folder, and prints the reproduction check against the published accuracy.
 On datasets split by bearing (cv_groups) it also writes per_bearing.csv: the logreg
 probe's test accuracy per test bearing, for every seed and label fraction (D160).
+Configs with evaluation: per_class: true also get per_class.csv: the logreg probe's test
+accuracy per class, for every seed and label fraction (D168, D179).
 Configs with task: regression (kappa on Herning) use the regression probes and report
 MAE and R² instead of accuracy and macro-F1 (D58, D59, D170).
 """
@@ -29,14 +31,17 @@ def main(folder):
     ev = cfg["evaluation"]
     grouped = ev.get("cv_groups", False)  # D129; absent (FordA, FD configs) = folds as before
     regression = cfg.get("task") == "regression"  # D170
+    per_class = ev.get("per_class", False)  # D168, D179; absent = no per_class.csv
     if grouped:  # group (bearing) of each training window, in the row order of Z_train (D33 window table)
         table = pd.read_csv(os.path.join(folder, "windows.csv"))
         groups_train = table[table.split == "train"].sort_values("row").group.to_numpy()
         groups_test = table[table.split == "test"].sort_values("row").group.to_numpy()  # for per_bearing.csv (D160)
+    if grouped or per_class:
         with open(os.path.join(folder, "classes.json")) as f:
             class_names = json.load(f)  # class k = class_names[k]
     rows = []
     bearing_rows = []  # per test bearing (D160), grouped datasets only
+    class_rows = []  # per class (D168, D179), configs with per_class only
     for seed_dir in sorted(glob.glob(os.path.join(folder, "seed_*"))):
         seed = int(seed_dir.rsplit("_", 1)[1])
         Z_train, y_train = np.load(f"{seed_dir}/Z_train.npy"), np.load(f"{seed_dir}/y_train.npy")
@@ -63,6 +68,9 @@ def main(folder):
                 if grouped and probe == "logreg":  # per test bearing (D160)
                     for r in evaluate.per_bearing(clf, Z_test, y_test, groups_test, class_names):
                         bearing_rows.append({"seed": seed, "label_fraction": fraction, "probe": probe, **r})
+                if per_class and probe == "logreg":  # per class (D168, D179)
+                    for r in evaluate.per_class(clf, Z_test, y_test, class_names):
+                        class_rows.append({"seed": seed, "label_fraction": fraction, "probe": probe, **r})
 
     results = pd.DataFrame(rows)
     results.to_csv(os.path.join(folder, "results.csv"), index=False)
@@ -72,6 +80,8 @@ def main(folder):
     print(summary)
     if bearing_rows:  # D160
         pd.DataFrame(bearing_rows).to_csv(os.path.join(folder, "per_bearing.csv"), index=False)
+    if class_rows:  # D168, D179
+        pd.DataFrame(class_rows).to_csv(os.path.join(folder, "per_class.csv"), index=False)
 
     # Reproduction check (D26 item 6): the method's own probe (config: reproduction_probe, e.g.
     # svm_ts2vec for TS2Vec, ridge_minirocket for MiniRocket) with all labels vs the published accuracy.

@@ -1,0 +1,8 @@
+# TS-JEPA epoch diagnostic (D200): RankMe and validation accuracy during pretraining, CWRU main task.
+name: tsjepa_epochs_cwru
+base_config: configs/tsjepa_cwru.yaml  # data, split, standardisation and TS-JEPA settings exactly as the main run
+seed: 0                     # the main run's first seed
+every: 250                  # epochs between measurements (also before the first epoch and after the last)
+validation_fraction: 0.2    # of the training windows, stratified by class; the probe is fitted on the rest (D200)
+validation_random_state: 0  # one fixed draw
+rankme_epsilon: 1.0e-7      # as the main run (D152)

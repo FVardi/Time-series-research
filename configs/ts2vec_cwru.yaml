@@ -1,4 +1,4 @@
-# TS2Vec on CWRU (D128, D151, D153): official settings, dataset sections for CWRU.
+# TS2Vec on CWRU (D163, D151, D153): official settings, dataset sections for CWRU.
 name: ts2vec_cwru
 dataset: cwru
 data_root: data/canonical
@@ -8,10 +8,10 @@ windows:  # D136, D137
   length: 2048
   sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
   standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # filters on the captures table (D128, D140, D147)
-  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
-  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
-  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+split:  # windows split at random (D163); pretraining = training + pretrain_only windows (D164)
+  captures: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14, 21]}  # labelled windows (D117, D119, D140)
+  random_windows: {test_fraction: 0.2, random_state: 40}  # stratified by class, fixed for all seeds, as Zhao et al. (D171, D174)
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126, D164)
 method: ts2vec
 seeds: [0, 1, 2]
 device: cuda
@@ -25,10 +25,10 @@ ts2vec:  # official defaults (D28), unchanged on CWRU (D151, D153)
   batch_size: 8
   max_train_length: 3000  # windows are 2048 samples, so not cropped
   temporal_unit: 0
-  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (CWRU: 4041 x 2048 x 2)
+  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (CWRU: 4781 pretraining windows x 2048 x 2)
 
-evaluation:  # D26, D40, D129, D133, D138, D148
+evaluation:  # D26, D40, D133, D138, D175
   label_fractions: [0.01, 0.1, 1.0]
   probes: [logreg, floor]
-  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129, D148)
+  cv_groups: false  # plain stratified 5-fold, not grouped: the split is by random windows (D175)
   published_accuracy: null  # nothing published for this split

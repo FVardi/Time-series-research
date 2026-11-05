@@ -9,10 +9,10 @@ windows:  # D136, D137
   length: 2048
   sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
   standardise: false  # baselines on raw values (D76, D137)
-split:  # filters on the captures table (D128, D140, D147)
-  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
-  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
-  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126)
+split:  # windows split at random (D163); pretraining = training + pretrain_only windows (D164)
+  captures: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14, 21]}  # labelled windows (D117, D119, D140)
+  random_windows: {test_fraction: 0.2, random_state: 40}  # stratified by class, fixed for all seeds, as Zhao et al. (D171, D174)
+  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126, D164)
 method: envelope
 seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
 device: cpu  # numpy only (D79)
@@ -20,8 +20,8 @@ rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representa
 
 envelope: {}  # nothing to set (D161)
 
-evaluation:  # D26, D40, D129, D133, D138
+evaluation:  # D26, D40, D133, D138, D175
   label_fractions: [0.01, 0.1, 1.0]
   probes: [logreg, floor]
-  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
+  cv_groups: false  # plain stratified 5-fold, not grouped: the split is by random windows (D175)
   published_accuracy: null  # nothing published for this split

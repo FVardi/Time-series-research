@@ -15,11 +15,11 @@ windows:  # D181
 split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
   captures: {}  # no filter: every sweep with a label
   random: {test_fraction: 0.2, seed: 0}
-method: pooled  # one window per sweep, so the mean over windows is the statistics themselves (D166's method)
+method: raw  # one window per sweep: flattening it gives the 196 statistics themselves (D187)
 seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
 device: cpu  # numpy only (D79)
 
-pooled: {}  # nothing to set
+raw: {}  # nothing to set
 
 evaluation:  # D40, D58, D59, D170
   label_fractions: [0.01, 0.1, 1.0]

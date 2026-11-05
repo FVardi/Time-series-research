@@ -12,10 +12,13 @@ import h5py
 import numpy as np
 
 
-def create(path, n_captures, row_shape, settings, names):
-    """An empty file for n_captures rows of shape row_shape (windows, feature channels); fill it row by row."""
+def create(path, n_captures, row_shape, settings, names, dtype="float64"):
+    """An empty file for n_captures rows of shape row_shape (windows, feature channels); fill it row by row.
+
+    dtype: how the values are stored (float64 unless a feature set asks for float32, D186).
+    """
     f = h5py.File(path, "w")
-    f.create_dataset("features", (n_captures,) + tuple(row_shape), dtype="float64")
+    f.create_dataset("features", (n_captures,) + tuple(row_shape), dtype=dtype)
     f.create_dataset("run_id", (n_captures,), dtype=h5py.string_dtype())
     f.create_dataset("capture_id", (n_captures,), dtype=h5py.string_dtype())
     f.attrs["settings"] = json.dumps(settings)

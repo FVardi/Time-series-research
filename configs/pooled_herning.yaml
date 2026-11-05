@@ -1,5 +1,5 @@
-# Pooled band-feature baseline (D166) on Herning: the per-window band features (D165), averaged over
-# the windows of a sweep, probed for kappa. Validation run of the Herning path (D169, D170).
+# Pooled band-feature baseline (D166, D187) on Herning: the per-window band features (D165), summarised by
+# their mean and SD over the windows of a sweep (96 per sweep), probed for kappa. Validation run (D169, D170).
 name: pooled_herning
 dataset: herning
 data_root: data/canonical
@@ -15,7 +15,7 @@ windows:  # D165, D172
 split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
   captures: {}  # no filter: every sweep with a label
   random: {test_fraction: 0.2, seed: 0}
-method: pooled
+method: pooled  # mean and SD over the 200 windows of each of the 48 features (D187)
 seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
 device: cpu  # numpy only (D79)
 

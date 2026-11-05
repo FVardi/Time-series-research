@@ -4,9 +4,11 @@ Usage:
     uv run python scripts/derive_features.py <canonical root> <dataset> <feature set> <output file>
     e.g. uv run python scripts/derive_features.py data/canonical herning band data/derived/herning/band_features.h5
          uv run python scripts/derive_features.py data/canonical herning mssp data/derived/herning/mssp_stats.h5
+         uv run python scripts/derive_features.py data/canonical herning subbands data/derived/herning/subband_power.h5
 
 Feature sets (harness/windows.py, FEATURE_SETS): band = per-window band features (D165), mssp = MSSP
-statistics per band over the whole capture (D181). Reads the canonical signals (read-only, D5)
+statistics per band over the whole capture (D181), subbands = per-window 1/12-octave sub-band power,
+stored as float32 (D186). Reads the canonical signals (read-only, D5)
 capture by capture and writes the features, with the settings used, into one HDF5 file
 (harness/stored_features.py). Configs read it with windows: features_file. Every capture is stored,
 labelled or not, so the split and labels can change without recomputing. Rerun after any change to
@@ -33,8 +35,9 @@ def main(root, dataset, feature_set, path):
     row_shape = module.compute(first, channels, fs[0]).shape[1:]  # (windows, feature channels)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     print(f"{feature_set}: {len(caps)} captures x {row_shape} from {channels} -> {path}", flush=True)
+    dtype = getattr(module, "STORE_DTYPE", "float64")  # float32 only where the feature set asks for it (D186)
     with stored_features.create(path, len(caps), row_shape, module.settings(channels, fs[0]),
-                                module.names(channels)) as f:
+                                module.names(channels), dtype=dtype) as f:
         for i, c in enumerate(caps.itertuples()):
             x = canonical.load_captures(root, dataset, c.run_id, [c.capture_id], channels)  # (1, samples, channels)
             f["features"][i] = module.compute(x, channels, fs[0])[0]

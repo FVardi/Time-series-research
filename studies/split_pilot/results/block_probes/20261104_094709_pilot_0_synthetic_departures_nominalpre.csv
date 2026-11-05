@@ -1,0 +1,13 @@
+seed,block,target,status,label_fraction,n_labels,probe,accuracy,macro_f1,pred_nominal
+0,full,class,ok,0.01,32,logreg,0.28375,0.26150982102800713,0.42875
+0,full,class,ok,0.01,32,floor,0.32,0.16161616161616163,0.36
+0,full,class,ok,0.1,320,logreg,0.28,0.28298762324833165,0.47125
+0,full,class,ok,0.1,320,floor,0.32,0.16161616161616163,0.36
+0,full,class,ok,1.0,3200,logreg,0.26125,0.2574280894000576,0.5275
+0,full,class,ok,1.0,3200,floor,0.32,0.16161616161616163,0.36
+0,full,speed_rpm,ok,1.0,3200,logreg,0.9725,0.9699133526995893,
+0,full,speed_rpm,ok,1.0,3200,floor,0.24,0.0967741935483871,
+0,full,temperature_c,ok,1.0,3200,logreg,0.555,0.5616224710502268,
+0,full,temperature_c,ok,1.0,3200,floor,0.24,0.12903225806451613,
+0,full,bearing,ok,1.0,3200,logreg,0.8125,0.43373871972436767,
+0,full,bearing,ok,1.0,3200,floor,0.0,0.0,

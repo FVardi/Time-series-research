@@ -57,18 +57,22 @@ def check_settings(s):
     walk(s, "")
 
 
-def to_patches(X, n_patches):
+def to_patches(X, n_patches, kernel_size=1):
     """(series, time, channels) float64 -> (series, n_patches, channels * patch_length) float32 tensor (D23).
 
     Consecutive, non-overlapping patches (paper) of patch_length = time // n_patches samples per
     channel; samples after n_patches * patch_length are not used (CWRU: 2,048 = 10 x 204 + 8; D154).
     With several channels, each patch holds the same time span of every channel, one channel
     after the other (D154): the official tokenizer (one input channel) then sees them as one
-    longer patch. With one channel and a length divisible by n_patches (FordA), this is
-    exactly the previous behaviour.
+    longer patch. Its convolution (kernel = stride = kernel_size) must not straddle two channels, so
+    with several channels patch_length is rounded down to a multiple of kernel_size (D195; CWRU's
+    204 already is one; Herning: 200 // 10 = 20 -> 18, the last 20 steps unused). With one channel
+    and a length divisible by n_patches (FordA), this is exactly the previous behaviour.
     """
     n, length, channels = X.shape
     patch_length = length // n_patches
+    if channels > 1:
+        patch_length -= patch_length % kernel_size
     P = X[:, : n_patches * patch_length, :].reshape(n, n_patches, patch_length, channels)
     P = P.transpose(0, 1, 3, 2).reshape(n, n_patches, channels * patch_length)  # channel after channel
     return torch.from_numpy(np.ascontiguousarray(P).astype(np.float32))
@@ -94,22 +98,20 @@ def shuffled(n):
     return torch.randperm(n, generator=torch.Generator().manual_seed(seed))
 
 
-def pretrain(X, s, device, train=True):
+def pretrain(X, s, device, train=True, on_epoch=None):
     """Pretrain TS-JEPA on unlabelled training series X (series, time, channels).
 
     s: the 'tsjepa' section of the config; every setting is given explicitly.
     train: False returns the encoder as built, untrained (random-init baseline, D134).
+    on_epoch: optional function(epochs_done, encoder) for diagnostics (D200), called before the
+    first epoch (0) and after every epoch; it must leave the encoder and the random number
+    generators as it found them, so training is the same as without it.
     Returns the online encoder (the one the official code saves and evaluates) and the loss per epoch.
     """
     check_settings(s)
-    P = to_patches(X, s["n_patches"])
-    n_patches, patch_length = P.shape[1], P.shape[2]  # patch_length covers all channels (D154)
     e, p, o = s["encoder"], s["predictor"], s["optimizer"]
-    per_channel = X.shape[1] // s["n_patches"]
-    if X.shape[2] > 1 and per_channel % e["kernel_size"]:
-        # The tokenizer's convolution (kernel = stride = kernel_size) must not straddle two channels.
-        raise ValueError(f"{per_channel} samples per channel and patch are not divisible by the tokenizer's "
-                         f"kernel_size {e['kernel_size']}: a convolution window would mix two channels")
+    P = to_patches(X, s["n_patches"], e["kernel_size"])  # no tokenizer window across two channels (D154, D195)
+    n_patches, patch_length = P.shape[1], P.shape[2]  # patch_length covers all channels (D154)
 
     encoder = official.Encoder(num_patches=n_patches, dim_in=patch_length, kernel_size=e["kernel_size"],
                                embed_dim=e["embed_dim"], embed_bias=e["embed_bias"], nhead=e["nhead"],
@@ -141,10 +143,13 @@ def pretrain(X, s, device, train=True):
     # Settings encode() needs, kept with the model (the harness calls encode(model, X)).
     encoder.n_patches, encoder.pooling, encoder.encode_batch_size = s["n_patches"], s["pooling"], s["encode_batch_size"]
     encoder.n_channels = X.shape[2]  # encode() checks that it gets the same channels
+    encoder.kernel_size = e["kernel_size"]  # encode() patches as here (D195)
     if not train:  # random-init baseline (D134): the encoder as built above, no training
         return encoder, []
 
     log = []
+    if on_epoch:  # D200: the encoder before training
+        on_epoch(0, encoder)
     for epoch in range(s["epochs"]):
         scheduler.step()  # official order: stepped at the start of each epoch, before any optimiser step
         # EMA momentum, official schedule (per epoch): m0 + epoch * (1 - m0) / (epochs * ipe_scale)
@@ -174,6 +179,8 @@ def pretrain(X, s, device, train=True):
         log.append(float(np.mean(losses)))
         if epoch % s["print_every"] == 0:
             print(f"  epoch {epoch}: loss {log[-1]:.4f}", flush=True)
+        if on_epoch:  # D200
+            on_epoch(epoch + 1, encoder)
     return encoder, log
 
 
@@ -187,7 +194,7 @@ def encode(model, X):
     device = next(model.parameters()).device
     if X.shape[2] != model.n_channels:
         raise ValueError(f"the encoder was trained on {model.n_channels} channel(s), the data have {X.shape[2]}")
-    P = to_patches(X, model.n_patches)
+    P = to_patches(X, model.n_patches, model.kernel_size)
     out = []
     for i in range(0, len(P), model.encode_batch_size):
         tokens = model(P[i:i + model.encode_batch_size].to(device))  # [batch, n_patches, embed_dim]

@@ -1,0 +1,38 @@
+# Synthetic data, confounded design (METHOD_IDEAS M5, D196): state = nominal state of the operating point.
+# Generate once: uv run python scripts/make_synthetic.py configs/synthetic/confounded.yaml data/canonical
+dataset: synthetic_confounded
+design: confounded
+seed: 0
+sample_rate_hz: 10000  # nominal
+n_samples: 32768  # per run (one capture): 32 windows of 1,024
+speeds_rpm: [600, 1200, 1800, 2400]
+temperatures_c: [40, 60, 80]
+n_bearings: 4
+repetitions: 3  # 4 x 3 x 4 x 3 = 144 runs; state = nominal state
+
+states:  # lubrication-state classes 0, 1, 2; subtle by default (operating point strong, state weak)
+  burst_rate_hz: [40, 50, 60]
+  burst_amp: [0.30, 0.35, 0.40]  # median burst amplitude
+  burst_log_amp_sd: 0.3  # spread of log burst amplitude
+periodic:
+  n_harmonics: 5  # shaft harmonics k * rpm/60, amplitude amp / k
+  amp: 1.0
+  order: 3.57  # one characteristic order (BPFO-like)
+  order_amp: 0.5
+noise_std_per_temperature: [0.2, 0.3, 0.4]  # one per temperature level
+burst_cutoff_decays: 6  # a burst is cut after 6 decay times
+sensors:
+  AE: {periodic_weight: 0.5, burst_weight: 1.0, noise_weight: 1.0, burst_carrier_hz: 3000, burst_decay_s: 0.002}
+  US: {periodic_weight: 1.0, burst_weight: 0.5, noise_weight: 1.0, burst_carrier_hz: 1500, burst_decay_s: 0.004}
+bearing:  # nuisance, drawn once per bearing and sensor
+  log_gain_sd: 0.2
+  resonance_hz: {AE: [2000, 4000], US: [800, 2000]}  # uniform range of the resonance frequency
+  resonance_q: 5
+  resonance_mix: 0.5
+kappa_like:  # kappa_like = scale * (rpm / rpm_ref)^a * (temp_ref / temp)^b; nominal state = class by bins
+  scale: 1.0
+  rpm_ref: 1200
+  temp_ref: 60
+  a: 0.5
+  b: 2.0
+  state_bins: [0.8, 1.5]

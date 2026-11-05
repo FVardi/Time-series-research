@@ -1,0 +1,21 @@
+# Comparison on FordA (D203): which run counts for each method, chosen by hand.
+# Runs as in STATUS.md section 1 (FordA benchmark). PatchTST is listed twice
+# (mean and flatten pooling), because STATUS.md and make_report.py name different runs.
+# role: method = compared against the best baseline; baseline = candidate for the best baseline (D80).
+name: compare_forda
+settings:
+  FordA:
+    TS2Vec: {run: runs/20261020_144711_ts2vec_forda, role: method}
+    T-Loss: {run: runs/20261020_144932_tloss_forda, role: method}
+    TS-TCC: {run: runs/20261027_151321_tstcc_forda, role: method}
+    TS-JEPA (masking fixed): {run: runs/20261016_114616_tsjepa_forda_fixed, role: method}
+    PatchTST (mean): {run: runs/20261019_154248_patchtst_forda_mean, role: method}
+    PatchTST (flatten): {run: runs/20261019_154305_patchtst_forda_flatten, role: method}
+    TF-C (positives): {run: runs/20261027_144405_tfc_forda, role: method}
+    TF-JEPA: {run: runs/20261027_153543_tfjepa_forda, role: method}
+    SimMTM: {run: runs/20261027_153657_simmtm_forda, role: method}
+    FreRA: {run: runs/20261027_153909_frera_forda, role: method}
+    Raw samples: {run: runs/20261020_143928_raw_forda, role: baseline}
+    FFT: {run: runs/20261020_144122_fft_forda, role: baseline}
+    catch24: {run: runs/20261020_144235_catch22_forda, role: baseline}
+    MiniRocket: {run: runs/20261020_152809_minirocket_forda, role: baseline}

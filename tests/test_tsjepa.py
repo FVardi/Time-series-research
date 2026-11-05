@@ -68,6 +68,14 @@ def test_placeholders_and_patching():
     assert np.allclose(P[1, 3, :10], X[1, 30:40, 0]) and np.allclose(P[1, 3, 10:], X[1, 30:40, 1])
     one = X[:, :50, :1]  # one channel, divisible: exactly the previous patching
     assert np.array_equal(tsjepa.to_patches(one, 5).numpy(), one[:, :, 0].reshape(2, 5, 10).astype(np.float32))
+    # D195: with several channels the patch length is rounded down to a multiple of the tokenizer's kernel
+    # (Herning: 200 steps, 10 patches -> 18 steps per channel, the last 20 unused); CWRU's 204 is unchanged.
+    H = np.random.default_rng(1).standard_normal((2, 200, 3))
+    P = tsjepa.to_patches(H, 10, kernel_size=3).numpy()
+    assert P.shape == (2, 10, 3 * 18)
+    assert np.allclose(P[0, 9, :18], H[0, 162:180, 0]) and np.allclose(P[0, 9, 36:], H[0, 162:180, 2])
+    C = np.random.default_rng(2).standard_normal((1, 2048, 2))
+    assert np.array_equal(tsjepa.to_patches(C, 10, kernel_size=3).numpy(), tsjepa.to_patches(C, 10).numpy())
 
 
 def test_training_loop_equals_official_script(tmp_path):
@@ -146,7 +154,8 @@ def test_training_loop_equals_official_script(tmp_path):
 
 
 def test_two_channels_pretrain_and_encode():
-    """D154: two channels train and encode; the tokenizer check and the channel check stop wrong inputs."""
+    """D154: two channels train and encode; the channel check stops wrong inputs; D195: a patch length that is
+    not a multiple of the tokenizer's kernel is rounded down instead of stopping the run."""
     from harness.methods import tsjepa
     X = np.random.default_rng(1).standard_normal((12, 64, 2))  # 5 patches of 12 samples per channel (+4 unused)
     torch.manual_seed(0)
@@ -156,5 +165,39 @@ def test_two_channels_pretrain_and_encode():
     assert tsjepa.encode(model, X).shape == (12, 16)
     with pytest.raises(ValueError, match="channel"):
         tsjepa.encode(model, X[:, :, :1])
-    with pytest.raises(ValueError, match="kernel_size"):
-        tsjepa.pretrain(np.zeros((12, 70, 2)), settings(), "cpu")  # 14 samples per channel and patch, kernel 3
+    # D195: 70 // 5 = 14 samples per channel and patch are rounded down to 12 (a multiple of the kernel 3),
+    # so no tokenizer window spans two channels; pretraining and encoding use the same patches.
+    X14 = np.random.default_rng(2).standard_normal((12, 70, 2))
+    assert tuple(tsjepa.to_patches(X14, 5, kernel_size=3).shape) == (12, 5, 2 * 12)
+    model14, _ = tsjepa.pretrain(X14, settings(), "cpu")
+    assert tsjepa.encode(model14, X14).shape == (12, 16)
+
+
+def test_on_epoch_hook_leaves_training_unchanged():
+    """D200: the hook is called before training and after every epoch; with the study's measurement
+    (encode, draw random numbers, then restore the generators) the weights equal a run without it."""
+    from harness.methods import tsjepa
+    from studies.tsjepa_epochs.check_epochs import rng_state, set_rng_state
+    X = np.random.default_rng(3).normal(size=(12, 50, 1))
+    s = settings()
+    s["epochs"] = 3
+
+    torch.manual_seed(0)
+    random.seed(0)
+    np.random.seed(0)
+    plain, _ = tsjepa.pretrain(X, s, "cpu")
+
+    seen = []
+    def measure(done, encoder):  # what the study does, plus draws from every generator
+        state = rng_state()
+        tsjepa.encode(encoder, X)
+        random.random(), np.random.rand(), torch.rand(1)
+        set_rng_state(state)
+        seen.append(done)
+    torch.manual_seed(0)
+    random.seed(0)
+    np.random.seed(0)
+    hooked, _ = tsjepa.pretrain(X, s, "cpu", on_epoch=measure)
+    assert seen == [0, 1, 2, 3]
+    a, b = plain.state_dict(), hooked.state_dict()
+    assert all(torch.equal(a[k], b[k]) for k in a)

@@ -1,0 +1,41 @@
+# Split-representation pilot (D182), variant B10, cwru_bearing. Written by make_configs.py.
+name: pilot_B10_cwru_bearing
+dataset: cwru
+data_root: data/canonical
+channels: [DE, FE]  # D131
+windows:  # D136, D137
+  length: 2048
+  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+conditions: [load_hp]  # D182, D198
+labels: cwru  # D118, D125
+split:  # bearing split (D128, D140, D147)
+  train: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14]}
+  test: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [21]}
+  pretrain_only: {fault_end: [none]}  # D126
+method: ts2vec_split
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152, diagnostic only
+
+ts2vec_split:  # D183, D185, D197
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 64  # D183 item 6 (official: 8)
+  max_train_length: 3000
+  temporal_unit: 0
+  n_iters: 600  # D185 item 2
+  z_op_dims: 32  # D183 item 1
+  head_hidden: 64  # D185 item 5
+  op_weight: 1.0  # D185 item 4
+  removal: adversary  # D182 item 3
+  removal_weight: 10.0  # D185 item 4
+  ramp_max: 1.0  # D185 item 3
+
+evaluation:  # as configs/ts2vec_cwru_bearing.yaml
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # D129, D148
+  published_accuracy: null

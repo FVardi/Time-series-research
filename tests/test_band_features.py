@@ -1,4 +1,4 @@
-"""Checks of the per-window band features (D165) and the pooled baseline (D166)."""
+"""Checks of the per-window band features (D165) and the pooled baseline (D166, D187)."""
 
 import numpy as np
 import pytest
@@ -51,9 +51,11 @@ def test_a_tone_lands_in_its_band():
     assert np.isclose(Z[names.index("AE 100-200 kHz complexity")], 1, atol=0.05)
 
 
-def test_pooled_is_the_mean_over_windows():
-    X = np.arange(24, dtype=float).reshape(2, 3, 4)
-    assert np.allclose(pooled.encode(None, X), X.mean(axis=1))
+def test_pooled_is_mean_and_sd_over_windows():
+    X = np.random.default_rng(4).standard_normal((2, 3, 4))
+    Z = pooled.encode(None, X)
+    assert Z.shape == (2, 8)
+    assert np.allclose(Z[:, :4], X.mean(axis=1)) and np.allclose(Z[:, 4:], X.std(axis=1))
 
 
 def test_stored_features_round_trip_and_settings_check(tmp_path):

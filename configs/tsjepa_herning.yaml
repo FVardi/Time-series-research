@@ -20,8 +20,8 @@ device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tsjepa:
-  n_patches: 10  # paper; Herning: 10 patches of 20 steps per channel, none unused (D173); 20 is not a multiple of
-                # the tokenizer's stride 3, so some tokenizer windows span two channels (CWRU's 204 was);
+  n_patches: 10  # paper; Herning: 10 patches of 18 steps per channel (200 // 10 = 20, rounded down to a multiple
+                # of the tokenizer's kernel 3 so no window spans two channels), the last 20 steps unused (D195);
                 # each patch holds the same time span of all 48 channels, one after the other (D154)
   mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
   masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'

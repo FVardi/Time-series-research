@@ -1,0 +1,40 @@
+# Split-representation pilot (D182), variant C10, synthetic_loso1200. Written by make_configs.py.
+name: pilot_C10_synthetic_loso1200
+dataset: synthetic_crossed
+data_root: data/canonical
+channels: [AE, US]
+labels: synthetic_shared
+windows:
+  length: 1024
+  sample_rate_hz: 10000  # the generated rate (D196)
+  standardise: true  # per channel, statistics of the pretraining windows (as D137)
+conditions: [speed_rpm, temperature_c]  # one head per factor (D197, D198)
+split:
+  train: {speed_rpm: [600, 1800, 2400]}
+  test: {speed_rpm: [1200]}
+  pretrain_only: {speed_rpm: []}  # none
+method: ts2vec_split
+seeds: [0, 1, 2]
+device: cuda
+rankme_epsilon: 1.0e-7  # D152, diagnostic only
+
+ts2vec_split:  # D183, D185, D197
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 64  # D183 item 6 (official: 8)
+  max_train_length: 3000
+  temporal_unit: 0
+  n_iters: 600  # D185 item 2
+  z_op_dims: 32  # D183 item 1
+  head_hidden: 64  # D185 item 5
+  op_weight: 1.0  # D185 item 4
+  removal: hsic  # D182 item 3
+  removal_weight: 10.0  # D185 item 4
+
+evaluation:
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold (as D175)
+  published_accuracy: null

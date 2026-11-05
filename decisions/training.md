@@ -171,12 +171,12 @@ Open: probe protocol on Paderborn and Herning; Herning windows vs sweeps (QUESTI
 **Alternatives considered:** Only F and G (H asks a different question: more alignment rather than the cause of the collapse). A hinge on the sum of the three terms instead of each term. In H, the sum of the four terms (four times D's weight) instead of their mean.
 **Rationale:** User's decision (2026-10-21: "do them all"), following Claude's proposal. F controls the S_TF weight; G separates the missing hinge from the tension between the pair terms and L_T, L_F; H tests the consistent alternative.
 
-## 2026-10-21 — D102: TS-JEPA compared in its masking-fixed version only (supersedes part of D66 item 1)
+## 2026-10-21 — D102: TS-JEPA compared in its masking-fixed version only (supersedes part of D66 item 1) (rerun question settled by D210)
 **Decision:** Comparisons use TS-JEPA with masking 'per_sample' ("TS-JEPA (masking fixed)"); on FordA run `20261016_114616_tsjepa_forda_fixed`. The 'official' variant (run `20261016_114600_tsjepa_forda`) is not part of the comparison; the run stays in `runs/` and in the run index. Whether the official variant is run on later datasets is not decided. Both FordA runs are evaluated with the probes of the other methods (svm_ts2vec, logreg); `reproduction_probe: svm_ts2vec` (as for TS2Vec and T-Loss) was added to both run configs on 2026-10-21, since the key was introduced after the runs (evaluation only). The runs are used as they are: no stage timing (pretrained before D79's timing existed) and started from an uncommitted tree (before D99); whether to rerun them is deferred.
 **Alternatives considered:** Both variants in the comparison (D66 item 1). The official variant only (the reproduction reference for the paper's 0.915).
 **Rationale:** User's decision (2026-10-21). In the official code `apply_mask` receives one [batch, K] index tensor instead of a list of tensors, so every series in a batch takes its patches from the first series (`external/tsjepa/src/models/utils/mask_utils.py`); this affects both the context and the target, so the official variant learns from one series per batch of 32. That is not the method the paper describes.
 
-## 2026-10-21 — D104: TS-TCC wrapped from the official code; CA-TCC deferred
+## 2026-10-21 — D104: TS-TCC wrapped from the official code; CA-TCC deferred (CA-TCC part superseded by D208)
 **Decision:** TS-TCC (Eldele et al., IJCAI 2021) is added as a wrapped method (D10 mode A, D19): the official repository (github.com/emadeldeen24/TS-TCC) as submodule `external/tstcc`, pinned at commit 15bdfd6. The official main.py is a script that reads files from fixed paths, so it is not run: the adapter `harness/methods/tstcc.py` writes out main.py's steps for self-supervised training and calls the official code for everything inside them (`Load_Dataset` with its augmentations, `base_Model`, `TC`, `model_train` with `NTXentLoss`). It runs through `scripts/pretrain.py` and `scripts/evaluate.py` like the other methods. CA-TCC (TPAMI 2023: TS-TCC, then fine-tuning on the labels, pseudo-labels for the unlabelled series and supervised contrastive training on them) is not implemented now: it stands or falls with pseudo-labelling, which is deferred as a whole (possibly later, then perhaps as a protocol for all methods).
 **Alternatives considered:** The CA-TCC repository only (its model, temporal contrasting and augmentation code are TS-TCC's with formatting changes and two `.cpu().numpy()` conversions). CA-TCC now, sharing the TS-TCC encoder of each seed and fine-tuned per label budget (proposed on 2026-10-21, shelved before being recorded). Pseudo-labelling as a protocol applied to every method.
 **Rationale:** User's decision (2026-10-21). Using TS-TCC's own repository keeps the method with its authors' code.
@@ -313,3 +313,104 @@ Open: probe protocol on Paderborn and Herning; Herning windows vs sweeps (QUESTI
 **Rationale:** User's decision (2026-10-28). What the official model code does with two channels; the encoder is an ordinary multichannel CNN, as TS-TCC's.
 *Note (2026-10-28), finding from the official masking code: the geometric mask is drawn as one sequence over the interleaved (time, channel) values (`noise_mask` on (batch, time, channels)), not per channel. Measured on 64 × 2,048 × 2 values: each channel is still 50 % masked, but the masked stretches per channel average 2.25 samples instead of 3 (one channel: 3.0), and about one third of the time steps are masked in both channels, one third in exactly one, one third in neither. This is the official code's behaviour with two channels and is kept (D159); the sentence "masks are drawn per channel" above is imprecise.*
 
+## 2026-10-30 — D182: Split-representation pilot (METHOD_IDEAS M1): TS2Vec backbone on CWRU, step 0 first
+**Decision:** Test the operating-point removal idea of METHOD_IDEAS M1 before Herning varies lubrication.
+1. *Backbone:* TS2Vec. *Dataset:* CWRU (fault classes crossed with loads 0-3 hp). *Condition label:* `load_hp` (4 classes), not the recorded rpm.
+2. *Step 0 (pre-check):* probe existing CWRU representations for `load_hp` with the harness logreg probe (`studies/split_pilot/`). If load is not recoverable, CWRU cannot test the mechanism (Paderborn instead).
+3. *Variants:* (0) plain TS2Vec; (A) split + load head on `z_op`, no removal; (B) A + adversary on `z_state` (gradient reversal); (C) A + HSIC between `z_state` and load.
+**Alternatives considered:** Paderborn (larger condition changes, not converted); rpm as condition label (nearly a function of load, missing in some files); other backbones.
+**Rationale:** User's decision (2026-10-30). CWRU is converted and crossed; tests the mechanism, not lubrication (vibration data).
+
+## 2026-10-30 — D183: `ts2vec_split` settings (pilot, D182)
+**Decision:** A new named method (D19), `ts2vec_split`: official TSEncoder, cropping and hierarchical contrastive loss in an own training loop (the official `fit()` takes no extra losses); official settings otherwise (D28).
+1. Representation (320 dims) split into `z_op` = 32 dims and `z_state` = 288 dims.
+2. Heads act on the max-pooled crop representations, not per timestep.
+3. TS2Vec loss on all 320 dims.
+4. Adversary (variant B): MLP, gradient reversal (one optimiser), weight ramped as in DANN (Ganin et al. 2016): lambda_p = 2/(1+exp(-10 p)) - 1, p = training progress.
+5. HSIC (variant C): Gaussian kernel on `z_state` with median-heuristic bandwidth; delta kernel on load.
+6. Batch size 64 for variants A-C; plain TS2Vec (variant 0) rerun at batch 64 as well, so the comparison is fair.
+**Open (placeholders until decided):** maximum adversary weight; loss weights of the load head and of removal (adversary / HSIC); MLP sizes (adversary, load head); number of iterations at batch 64; CWRU split for the pilot (D163 main split or D128 bearing split).
+**Alternatives considered:** larger `z_op`; per-timestep heads; TS2Vec loss on `z_state` only; linear adversary; alternating adversary updates; fixed weight; official batch 8 (too few loads per batch for the adversary and HSIC).
+**Rationale:** User's decision (2026-10-30), approving Claude's suggestions.
+
+## 2026-10-30 — D185: Pilot (D182, D183): both CWRU splits; remaining settings (evaluation MLP probe in item 5 superseded by D209)
+**Decision:**
+1. *Splits:* the pilot runs on both the D163 main split (random windows) and the D128 bearing split (unseen 21 mil bearings); configs named as D180 (`*_cwru.yaml`, `*_cwru_bearing.yaml`).
+2. *Iterations:* 600 at batch 64, as TS2Vec's count at batch 8 (8x more windows seen); plain TS2Vec (variant 0) at batch 64 with the same 600.
+3. *Adversary weight:* the DANN ramp goes from 0 to a maximum of 1.0.
+4. *Loss weights:* load head 1.0 relative to the TS2Vec loss; removal weight (adversary or HSIC) in {0.1, 1, 10}, one run each.
+5. *MLP sizes:* one hidden layer of 64 units for the adversary, the load head and the evaluation MLP probe (D184).
+**Alternatives considered:** bearing split only (user wants both); 75 iterations (same windows seen as at batch 8); other weights and sizes.
+**Rationale:** User's decision (2026-10-30), approving Claude's suggestions for items 2-5.
+
+## 2026-11-03 — D197: Split representation: one head per operating-condition factor
+**Decision:** `z_op` gets one head per operating-condition factor (synthetic: speed and temperature; CWRU: load), and the removal from `z_state` (adversary or HSIC) covers each factor. How the factors reach pretraining is still open (pilot item A).
+**Alternatives considered:** one head on the combined operating-point class.
+**Rationale:** User's decision (2026-11-03). Closer to Herning, where rpm and temperature are separate measurements.
+
+## 2026-11-03 — D198: Pilot: operating conditions into pretraining; synthetic splits; pretraining comparison
+**Decision:**
+1. *Conditions (pilot item A):* a config key `conditions: [<capture column>, ...]` (captures or telemetry table), one per factor. `scripts/pretrain.py` computes the class of each factor for every pretraining window (`harness/windows.condition_codes`; levels sorted, classes 0..K-1; saved as `conditions.json` in the run folder) and passes them to methods with `NEEDS_CONDITIONS` (`ts2vec_split`); the run stops if the key and the method do not match. Classification heads for discrete levels; regression heads for continuous factors (Herning) later. Synthetic: `[speed_rpm, temperature_c]`; CWRU: `[load_hp]`.
+2. *Synthetic splits:* (a) random windows on `synthetic_crossed` (test 20 %, stratified, `random_state` 40 as D174); (b) leave one speed out on `synthetic_crossed` (which speed: open); (c) departures on `synthetic_departures`: probe trained on the nominal runs, test = the departure runs of bearings B0 and B1, the departure runs of B2 and B3 pretraining-only (unlabelled). Splits (b) and (c) share bearings between pretraining and test by design, so they use the labels `synthetic_shared` (class = state, no group; captures still kept apart, D33).
+3. *Pretraining comparison:* split (c) also with pretraining on the nominal runs only (`*_synthetic_departures_nominalpre`), to test whether the removal keeps state information only when the pretraining data has state variation at fixed operating points (METHOD_IDEAS M1).
+4. *Configs:* `studies/split_pilot/configs/`, written by `studies/split_pilot/make_configs.py` (variants 0, A, B0.1/1/10, C0.1/1/10 x splits synthetic_random, synthetic_departures, synthetic_departures_nominalpre, cwru, cwru_bearing: 40 configs). Synthetic windows: 1,024 samples at 10 kHz, standardised as D137.
+**Alternatives considered:** a separate pretraining script; one head on the combined class (D197); group = bearing for (b) and (c), which the bearing check (D121) would stop.
+**Rationale:** User's decision (2026-11-03), approving Claude's proposal; config details (random_state, bearings for the departure halves, file layout) are Claude's choices within it.
+
+## 2026-11-03 — D199: Pilot: leave one speed out, all four speeds in turn
+**Decision:** The leave-one-speed-out split of D198 item 1b holds out each of the four synthetic speeds in turn (`*_synthetic_loso{600,1200,1800,2400}`): test = every run at that speed, training and pretraining = the runs at the other three; no pretraining-only part. 32 configs (8 variants x 4 speeds). The block probes (pilot item B) and the MLP probe settings (item C) are worked out one at a time.
+**Alternatives considered:** one middle speed (interpolation only); one extreme speed (extrapolation only).
+**Rationale:** User's decision (2026-11-03).
+
+## 2026-11-03 — D200: TS-JEPA epoch diagnostic on CWRU: RankMe and validation accuracy every 250 epochs (one seed)
+**Decision:** To see whether TS-JEPA needs its 5,000 epochs (D66; 195 min per seed on the main CWRU task, the slowest method), one diagnostic run trains TS-JEPA exactly as `configs/tsjepa_cwru.yaml` (main task, seed 0, all 5,000 epochs) and, before the first epoch and every 250 epochs, records (a) RankMe of the training representations (as D152) and (b) the standard `logreg` probe's accuracy on a validation set: 20 % of the main task's training windows, stratified by class, drawn once with a fixed seed; the probe is fitted on the other 80 % with all labels. Test windows are never used, so no setting is chosen on the test set. Code: `tsjepa.pretrain` gets an optional per-epoch callback (no change without it); the measurements restore the random number generators, so training is as without them; `studies/tsjepa_epochs/` holds the script and config. The run needs the GPU to itself. Whether to shorten the schedule is decided afterwards; the loss is not usable for this (on CWRU it drops within 10 epochs, rises to about 0.5 by epoch 500 and drifts to about 0.41, the same in all three seeds of `runs/20261029_175245_tsjepa_cwru`).
+**Alternatives considered:** RankMe only (has not ranked methods consistently with accuracy on CWRU). Cutting the epochs without evidence (the learning-rate and EMA schedules are stretched over the total epochs, so this changes the whole schedule). Speed-ups that keep results identical (gain not measurable here). Larger batches or mixed precision (change the optimisation).
+**Rationale:** User's decision (2026-11-03): evidence first, then decide.
+
+## 2026-11-04 — D202: TF-C loss comparison: augmented cross-domain pairs as positives, as negatives, or left out
+**Decision:** (1) To find out whether using the augmented cross-domain pairs as positives (D122) is actually better, our TF-C is compared in four variants of the consistency term C, with λ = 0.5 fixed and everything else as the dataset's TF-C (positives) config: `paper` (pairs as negatives, the paper's L_C; ablation stage E), `left_out` (C = S_TF; stage D), `left_out_x3` (C = 3·S_TF, S_TF weighted as in L_C = 3·S_TF − ΣS_pair + 3δ; stage F, which separates the effect of the pairs from that of S_TF's weight) and `positives` (stage H). (2) `left_out` and `left_out_x3` are new values of `tfc.loss.variant` in `harness/methods/tfc.py`; tested (`tests/test_ablation.py`) to give exactly the weights of stages D and F with the same seed. The paper variant takes δ = 1 (D41 item 4). (3) Pipeline: the benchmark frozen-probe pipeline (`scripts/pretrain.py` + `scripts/evaluate.py`), same protocol, probes and label budgets as the other methods on each dataset; configs `configs/tfc_<dataset>_{paper,left_out,left_out_x3}.yaml`. (4) Datasets: FordA and CWRU (main task, random split, D163) first; Paderborn and some of the other downloaded datasets once they are converted and configured (which ones: open). (5) One seed (seed 0, `--seeds 0`, D201) while exploring.
+**Alternatives considered:** (1) The official 2023 code's weights, 0.2·(L_T + L_F) + S_TF (faithful to the code, but changes the weight of L_T + L_F and of S_TF at the same time as the pair terms); both. (3) The ablation script `studies/tfc_ablation/ablation.py` (collapse diagnostics every epoch, but it loads only FordA/FD-style splits, so CWRU and later datasets would need code there). (5) Seeds 0–2.
+**Rationale:** User's decision (2026-11-04), following Claude's recommendations except (5). On FordA (ablation, seed 0, logreg on z at 1 / 10 / 100 % labels) E (0.800 / 0.852 / 0.874) is below D (0.829 / 0.886 / 0.899), F (0.870 / 0.898 / 0.928) and H (0.888 / 0.903 / 0.911), but F and H are close and F is ahead at 100 %, so whether positives beat leaving the pairs out is not settled by FordA alone.
+
+## 2026-11-04 — D204: Pilot: minimal synthetic set first, seed 0 only (D201), to cut training time
+**Decision:** The remaining synthetic runs are cut to the minimal set that answers the main question: variant A on the splits not yet run (loso2400, loso600, random) and B1 and C1 (removal weight 1.0) on all seven synthetic splits, with seed 0 only, set with `pretrain.py --seeds 0` (D201); the configs keep seeds 0-2. About 40 minutes instead of about 4.5 hours. Already finished and kept: variant 0 on all seven splits and A on departures, departures_nominalpre, loso1200 and loso1800, with seeds 0-2. B0.1, B10, C0.1, C10 and the CWRU configs run later if the results call for it. `studies/split_pilot/run_synthetic.ps1` runs A, B1, C1 with `--seeds 0` by default (`-Variants`, `-Seeds` to change) and counts a run as finished when the last requested seed is stored.
+**Alternatives considered:** all 56 configs with three seeds; two configs at once on the GPU (inflates recorded training times, D79); fewer iterations (changes D185).
+**Rationale:** User's decision (2026-11-04). Pretraining dominates (about 2 minutes per seed); variants 0 and A with three seeds show how much the seed matters.
+
+## 2026-11-04 — D206: Split-representation pilot: seed 0 only throughout
+**Decision:** The pilot uses seed 0 only, for every further run (other removal weights, CWRU: `pretrain.py --seeds 0`, D201; `run_synthetic.ps1` does this by default) and for the block probes (`block_probes.py --seeds 0`). The runs that already have seeds 0-2 (variant 0 on the seven synthetic splits, A on four) are probed at seed 0 only, so every comparison is like with like. More seeds only for results meant to support conclusions (D201).
+**Alternatives considered:** three seeds where they exist (spread over seeds for 0 and A; more probe time; unequal comparisons).
+**Rationale:** User's decision (2026-11-04): save time while exploring.
+
+## 2026-11-04 — D207: Pilot follow-up: live-encoder diagnostic for B1; plain HSIC at weights 100 and 1000
+**Decision:** After the first block probes (z_state still predicts speed at 0.98-1.00 in A, B1 and C1; the B1 adversary's loss stays at chance; the HSIC term is about 0.016 against a TS2Vec loss of about 1):
+1. *B1 diagnostic (`pilot_B1live_*`):* B1 with `save_live_encoder: true`: the live encoder (`model._net`, the weights the losses act on) is saved next to the official weight-averaged copy (`model_live`), and its representations are stored as `Z_train_live.npy` / `Z_test_live.npy`; `block_probes.py` probes them as z_op_live, z_state_live, full_live. Tells whether the averaged copy keeps information the live encoder hides. Without the setting nothing changes.
+2. *C at larger weights (`pilot_C100_*`, `pilot_C1000_*`):* plain HSIC (unchanged estimator) with removal weight 100 and 1000.
+3. *Splits:* synthetic departures and random only; seed 0 (D206).
+**Alternatives considered:** a normalised HSIC (value between 0 and 1); more splits.
+**Rationale:** User's decision (2026-11-04): both diagnostics, plain HSIC.
+
+## 2026-11-04 — D208: CA-TCC dropped (supersedes the CA-TCC part of D104)
+**Decision:** CA-TCC is not implemented in the harness. TS-TCC (D104) stays.
+**Alternatives considered:** Keeping CA-TCC deferred together with pseudo-labelling (D104); CA-TCC on the current classification datasets only.
+**Rationale:** User's decision (2026-11-04).
+
+## 2026-11-04 — D210: TS-JEPA FordA rerun with timing dropped (settles the rerun question of D102)
+**Decision:** The TS-JEPA FordA runs are not rerun. They are used as they are, without stage timing and made from an uncommitted tree (D102, D103: "not timed" row).
+**Alternatives considered:** Rerunning with stage timing (D79) from a committed tree.
+**Rationale:** User's decision (2026-11-04).
+
+## 2026-11-04 — D211: TF-C FD-A → FD-B transfer tested with all four TF-C variants
+**Decision:** The FD-A → FD-B transfer is tested with all four variants of the consistency term from D202: `paper` (augmented cross-domain pairs as negatives), `left_out`, `left_out_x3` and `positives`. Pipeline, probes and seeds are still open and will be decided when it is set up.
+**Alternatives considered:** The positives variant only (the earlier optional item: probes on `runs/20261027_141808_tfc_positives_fd`); `left_out` or `left_out_x3` only as the "left out" variant.
+**Rationale:** User's decision (2026-11-04): the same comparison as D202, on the transfer setting.
+
+## 2026-11-04 — D215: Split-representation pilot parked
+**Decision:** The pilot (D182-D207) is parked after the synthetic runs: z_state keeps the operating point under every removal variant tried (adversary at weight 1, plain HSIC at 1, 100 and 1000), and large HSIC weights break training. Results and the options for picking it up again are in METHOD_IDEAS.md M1. The code, configs and runs stay as they are; the CWRU pilot configs, the other removal weights and the MLP probe (pilot item C) are not run.
+**Alternatives considered:** continuing with the adversary check (B at removal weight 0) first.
+**Rationale:** User's decision (2026-11-04): other work first.
+
+## 2026-11-04 — D217: TF-C with the consistency term only (λ = 0): two arms in the benchmark pipeline
+**Decision:** (1) To test whether the time- and frequency-specific losses L_T and L_F are needed, our TF-C is run with λ = 0, so the loss is the consistency term C alone: two encoders with their projectors (time and frequency), trained only through C. Two arms, everything else as the dataset's D202 configs: (a) `left_out` with λ = 0, loss S_TF (a window against its own magnitude spectrum; the augmented views enter no loss term); (b) `positives` with λ = 0, loss (S_TF + ΣS_pair)/4 (augmentations only as cross-domain positives). Both are our constructions, reported under their own names (D19). (2) Pipeline: the benchmark frozen-probe pipeline (`scripts/pretrain.py` + `scripts/evaluate.py`), probes on z only (D123), as D202. (3) Datasets and seeds as D202: FordA and CWRU (main task, random split, D163), seed 0 (`--seeds 0`, D201). (4) λ = 0 needs no code change (`tfc.loss.lambda` in the config); configs to be written in a task chat.
+**Alternatives considered:** (1) Only one of the two arms. (2) The ablation script (h and z probed, collapse diagnostics every epoch; FordA/FD-style data only). (3) More seeds or datasets.
+**Rationale:** User's decision (2026-11-04), prompted by D202: using the pairs as negatives was worst on both datasets, and positives was not separated from leaving the pairs out, so the user suspects the consistency term alone may be the better objective. D202 does not test this, since L_T and L_F were in every arm. Note for (a): `tfc.pretrain` still runs the augmented forward pass when λ = 0, so in train mode the BatchNorm running statistics (used when encoding) also see augmented batches, and the augmentations' random draws are still made; (a) is therefore "no augmentation in the loss", not "no augmentation anywhere". Whether that matters is open; making it strict would need a code change (skip the augmented pass) and its own decision.

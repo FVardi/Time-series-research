@@ -14,6 +14,8 @@ the setting loss.variant (D122):
     "paper":     C = L_C = Σ_pairs (S_TF − S_pair + δ)    (paper, eq. 1-3)
     "positives": C = (S_TF + Σ_pairs S_pair) / 4         (augmented pairs as positives instead
                  of negatives; ablation stage H, D101; our construction, used for the benchmarks)
+    "left_out":    C = S_TF          (augmented pairs left out; ablation stage D, D202)
+    "left_out_x3": C = 3 S_TF        (left out, S_TF weighted as in "paper"; ablation stage F, D202)
 Fine-tuning: cross-entropy of a small classifier on [z_T; z_F] + the same loss (same variant),
 encoder and classifier trained together. Representation for probes: [z_T; z_F].
 
@@ -215,6 +217,9 @@ def tfc_loss(out, out_aug, l):
       "paper":     C = L_C = Σ_pairs (S_TF − S_pair + δ)  (paper, eq. 1-3; D41 item 4)
       "positives": C = (S_TF + Σ_pairs S_pair) / 4: the augmented cross-domain pairs are further
                    positives, not negatives (ablation stage H, D101). δ is not used.
+      "left_out":    C = S_TF: the augmented cross-domain pairs left out (ablation stage D, D202).
+      "left_out_x3": C = 3 S_TF: left out, with S_TF weighted as in "paper", where L_C = 3 S_TF − Σ S_pair + 3δ
+                     (ablation stage F, D202). δ is used only by "paper".
 
     out, out_aug: (h_t, z_t, h_f, z_f) for the original and the augmented views.
     """
@@ -229,8 +234,13 @@ def tfc_loss(out, out_aug, l):
         consistency = sum(s_tf - p + l["delta"] for p in s_pair)
     elif l["variant"] == "positives":
         consistency = (s_tf + sum(s_pair)) / 4
+    elif l["variant"] == "left_out":  # the pairs are computed but not used (D202)
+        consistency = s_tf
+    elif l["variant"] == "left_out_x3":
+        consistency = 3 * s_tf
     else:
-        raise ValueError(f"unknown tfc.loss.variant {l['variant']!r} (D122: 'paper' or 'positives')")
+        raise ValueError(f"unknown tfc.loss.variant {l['variant']!r} "
+                         "(D122, D202: 'paper', 'positives', 'left_out' or 'left_out_x3')")
     return lam * (loss_t + loss_f) + (1 - lam) * consistency
 
 

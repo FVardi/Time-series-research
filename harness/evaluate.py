@@ -143,6 +143,14 @@ def regression_scores(reg, Z, y):
     return {"mae": mean_absolute_error(y, pred), "r2": r2_score(y, pred)}
 
 
+def per_class(clf, Z, y, class_names):
+    """Test accuracy per class (D168, D179), a diagnostic next to scores(): for each class, its number
+    of test windows and the share of them the probe predicts correctly."""
+    pred = clf.predict(Z)
+    return [{"class": class_names[k], "n_windows": int((y == k).sum()), "accuracy": float((pred[y == k] == k).mean())}
+            for k in sorted(set(y))]
+
+
 def per_bearing(clf, Z, y, groups, class_names):
     """Test accuracy per test bearing (D160), a diagnostic next to scores().
 

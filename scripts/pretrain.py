@@ -2,6 +2,10 @@
 
 Usage:
     uv run python scripts/pretrain.py configs/ts2vec_forda.yaml
+    uv run python scripts/pretrain.py configs/ts2vec_forda.yaml --seeds 0   # exploration: only seed 0 (D201)
+
+--seeds replaces the config's seeds for this run only; the run's copy of the config
+(config.yaml in the run folder) is changed to the seeds actually used and says so (D201).
 
 Creates runs/<date_time>_<name>/ and, per seed, seed_<k>/ containing the model,
 the representations of the training and test series, the training loss and the
@@ -10,7 +14,8 @@ hardware.json (where the times were measured).
 Only training inputs are used for pretraining; test inputs never are.
 A config with a 'split' section (D147, e.g. CWRU) is cut into windows by harness/windows.py:
 pretraining then uses the training windows plus any 'pretrain_only' windows, and the run
-stops if a test capture or test bearing would be used for pretraining (D121).
+stops if a test capture or test bearing would be used for pretraining (D121); with windows
+split at random ('random_windows', D163), if a test window would be (D176).
 A config with 'rankme_epsilon' also stores RankMe of the training representations per seed
 (rankme.json; D152), as a diagnostic only.
 Baselines (raw, fft, envelope, catch22, minirocket, mssp) run through the same steps (D77).
@@ -20,9 +25,10 @@ Random-init baseline (D134): a config with 'random_init: as_initialised' or
 without training (see harness/random_init.py). Without the key, the method is pretrained.
 """
 
+import argparse
 import os
 import platform
-import sys
+import re
 import time
 
 import numpy as np
@@ -32,14 +38,15 @@ import torch
 from harness import diagnostics, random_init, runs, windows
 from harness.data import canonical
 from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, pooled, raw, simmtm, tfc_frozen,
-                             tfjepa, tloss, ts2vec, tsjepa, tstcc)
+                             tfjepa, tloss, ts2vec, ts2vec_split, tsjepa, tstcc)
 
 METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
            "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)
            "raw": raw, "fft": fft, "catch22": catch22, "minirocket": minirocket,  # baselines (D75, D85)
            "envelope": envelope,  # squared envelope spectrum baseline (D161)
            "mssp": mssp,  # rig baseline (D49, D85)
-           "pooled": pooled}  # feature sequence averaged over time (D166)
+           "pooled": pooled,  # feature sequence averaged over time (D166)
+           "ts2vec_split": ts2vec_split}  # split-representation pilot (D182, D183, D197, D198)
 # Methods with an encoder to leave untrained (D134); their pretrain() takes train=False.
 RANDOM_INIT_METHODS = ("ts2vec", "tloss", "tsjepa", "patchtst", "tstcc", "tfjepa", "simmtm", "frera", "tfc")
 
@@ -74,14 +81,18 @@ def windowed_inputs(cfg, meta, folder):
 
     Returns the pretraining inputs ('train' and 'pretrain_only' windows, without labels, D126),
     the labelled training and test windows with their classes, and the window table (D33).
-    Stops if a test capture or test bearing is in the pretraining data (D121). If the config
+    Stops if a test capture or test bearing is in the pretraining data (D121), or with windows
+    split at random, a test window (D176). If the config
     says so, every window is standardised per channel with the mean and SD of the pretraining
     windows (D137); the statistics are saved in the run folder.
     """
     parts = windows.prepare(cfg, meta)
     (X_train, t_train), (X_test, t_test), (X_only, t_only) = parts["train"], parts["test"], parts["pretrain_only"]
     table = pd.concat([t_train, t_test, t_only], ignore_index=True)
-    windows.check_separate(table)
+    if "random_windows" in cfg["split"]:  # windows of one capture on both sides by design (D163): checked per window (D176)
+        windows.check_windows_separate(table)
+    else:
+        windows.check_separate(table)
     X_pre = np.concatenate([X_train, X_only])
     if cfg["windows"]["standardise"]:
         stats = windows.standardisation(X_pre)
@@ -112,15 +123,38 @@ def hardware(device):
     return info
 
 
-def main(config_path):
+def record_seed_override(folder, seeds):
+    """Write the seeds given with --seeds into the run's copy of the config (D201).
+
+    The run folder's config.yaml is a copy of the config file; its 'seeds:' line is replaced,
+    so the copy shows the seeds the run actually used and that they came from the command line.
+    """
+    path = os.path.join(folder, "config.yaml")
+    with open(path) as f:
+        text = f.read()
+    line = f"seeds: {seeds}  # set with --seeds on the command line (D201), not the config file's seeds"
+    text, n = re.subn(r"^seeds:.*$", line, text, flags=re.MULTILINE)
+    if n != 1:  # exactly one top-level 'seeds:' line expected
+        raise ValueError(f"expected one 'seeds:' line in {path}, found {n}")
+    with open(path, "w") as f:
+        f.write(text)
+
+
+def main(config_path, seeds=None):
     cfg = runs.load_config(config_path)
+    if seeds is not None:  # D201: e.g. --seeds 0 while exploring; the config file is left unchanged
+        cfg["seeds"] = seeds
     method = METHODS[cfg["method"]]
     variant = cfg.get("random_init")  # D134; absent = pretrain as usual
     if variant is not None and (variant not in random_init.VARIANTS or cfg["method"] not in RANDOM_INIT_METHODS):
         raise ValueError(f"random_init must be one of {random_init.VARIANTS}, for one of {RANDOM_INIT_METHODS}")
     if hasattr(method, "check_settings"):  # stop before any work if a setting is still a placeholder
         method.check_settings(cfg[cfg["method"]])
+    if getattr(method, "NEEDS_CONDITIONS", False) != ("conditions" in cfg):  # D198
+        raise ValueError("'conditions' must be set for, and only for, a method that uses them (D198)")
     folder = runs.new_run_dir(config_path, cfg)
+    if seeds is not None:
+        record_seed_override(folder, seeds)
     runs.save_json(os.path.join(folder, "hardware.json"), hardware(cfg["device"]))
     if hasattr(method, "COMPILE_S"):  # code compiled when imported (MiniRocket, numba): recorded, not counted as fit time
         runs.save_json(os.path.join(folder, "compile.json"), {"compile_s": method.COMPILE_S})
@@ -138,6 +172,14 @@ def main(config_path):
                            window_table(cfg, "test", ids_test, X_test.shape[1])], ignore_index=True)
         runs.check_no_overlap(table)
     table.to_csv(os.path.join(folder, "windows.csv"), index=False)
+    # D198: operating-condition classes of the pretraining windows, for methods that use them (ts2vec_split)
+    conditions = None
+    if "conditions" in cfg:
+        if "split" not in cfg:
+            raise ValueError("'conditions' needs a config with a 'split' section (windowed inputs)")
+        conditions, classes = windows.condition_codes(table, meta, cfg["conditions"])
+        assert len(conditions) == len(X_pre)
+        runs.save_json(os.path.join(folder, "conditions.json"), classes)  # class k of factor c = classes[c][k]
     if cfg.get("task") == "regression":  # a numeric target, e.g. kappa on Herning (D58): no classes
         y_train, y_test = np.asarray(labels_train, dtype=float), np.asarray(labels_test, dtype=float)
     else:
@@ -154,7 +196,9 @@ def main(config_path):
         os.makedirs(out)
         runs.set_seed(seed)
         t0 = clock(cfg["device"])
-        if variant is None:
+        if variant is None and conditions is not None:  # D198
+            model, loss_log = method.pretrain(X_pre, cfg[cfg["method"]], cfg["device"], conditions)
+        elif variant is None:
             model, loss_log = method.pretrain(X_pre, cfg[cfg["method"]], cfg["device"])
         else:  # D134: the encoder as built, untrained; (b) also sets the batch-norm statistics from the pretraining inputs
             model, loss_log = method.pretrain(X_pre, cfg[cfg["method"]], cfg["device"], train=False)
@@ -168,6 +212,9 @@ def main(config_path):
         method.save(model, os.path.join(out, "model"))
         np.save(os.path.join(out, "Z_train.npy"), Z_train)
         np.save(os.path.join(out, "Z_test.npy"), Z_test)
+        if getattr(model, "save_live_encoder", False):  # D207: diagnostic, live encoder of ts2vec_split
+            np.save(os.path.join(out, "Z_train_live.npy"), method.encode_live(model, X_train))
+            np.save(os.path.join(out, "Z_test_live.npy"), method.encode_live(model, X_test))
         if "rankme_epsilon" in cfg:  # D152: effective rank of the final training representations, a diagnostic only
             r = diagnostics.rankme(torch.from_numpy(np.asarray(Z_train, dtype=np.float64)), cfg["rankme_epsilon"])
             runs.save_json(os.path.join(out, "rankme.json"), {"rankme_Z_train": r, "n": len(Z_train),
@@ -188,5 +235,9 @@ def main(config_path):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("config")
+    parser.add_argument("--seeds", type=int, nargs="+", help="seeds for this run instead of the config's (D201)")
+    args = parser.parse_args()
     torch.set_num_threads(os.cpu_count())
-    main(sys.argv[1])
+    main(args.config, args.seeds)

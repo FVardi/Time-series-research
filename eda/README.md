@@ -24,7 +24,7 @@ Contents
   across bands (correlation, eigenvalues), with two references (VFD on / off, bearing not rotating); burst rate over
   the whole run against κ within rpm levels; scale scan of the block length (how much intensity variation survives
   averaging); same-shape test of the multiplicative model (loud vs quiet in-band spectra), also at finer band widths
-  (sub-bands).
+  (sub-bands); burst durations and intervals (sizing the feature windows).
 - `herning/check_bands.py` — D52 band check (moved from `scripts/`).
 - `herning/spectra_herning.py` — average spectra per operating point (moved from `scripts/`).
 - `herning/check_vfd_lines.py` — frequency-converter line comb test, QUESTIONS.md Q3 (moved from `scripts/`).
