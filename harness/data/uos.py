@@ -113,6 +113,10 @@ def read(folder, path, name):
         raise ValueError(f"{name}.mat: NaN values")  # the grid check cannot handle them: stop
     step, offset = quantized.grid_constants(x)
     codes = quantized.to_codes(x, step, offset, name, np.int32, MAX_ULP)
+    tiny = np.flatnonzero((x != 0) & (np.abs(x) < step / 2))  # e.g. -6.4e-302 in U1_IR_8_6204_600
+    if len(tiny):
+        notes.append(f"{len(tiny)} non-zero values smaller than half a step stored as code 0 (= 0.0): "
+                     f"samples {tiny[:5].tolist()}, values {x[tiny[:5]].tolist()}")
 
     btype, pitch, roller, angle, n_el = MODELS[model]
     rid = run_id(name)

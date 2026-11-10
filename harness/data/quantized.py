@@ -14,14 +14,18 @@ GRID_TOLERANCE_STEPS = 1e-6  # a value further than this from the grid stops the
 def grid_constants(x):
     """Step and offset of the ADC grid that the values x lie on.
 
-    The step is estimated from the smallest difference between distinct values and refined by a
+    The step is estimated from the smallest difference between distinct values (ignoring differences
+    far below the median one) and refined by a
     least-squares fit of value against grid index; the offset is taken as the grid point nearest
     zero, so that codes are centred on 0 (exactly 0 is tried when it is within float noise). Among the
     fitted constants and their roundings to 4-12 significant digits (instruments often store round decimals, e.g. 0.000323335 V), the pair whose
     reconstruction matches x exactly most often is returned.
     """
     u = np.unique(x)
-    k = np.rint((u - u[0]) / np.min(np.diff(u)))
+    d = np.diff(u)
+    # First guess of the step: the smallest gap between distinct values, ignoring gaps far below the
+    # typical one (a stray value such as -6.4e-302 next to 0 in one UOS file, D248 note)
+    k = np.rint((u - u[0]) / np.min(d[d >= 0.5 * np.median(d)]))
     c0, step = np.linalg.lstsq(np.vstack([np.ones_like(k), k]).T, u, rcond=None)[0]
     offset = c0 - np.rint(c0 / step) * step
     candidates = [(step, offset)] + [(float(f"{step:.{p}g}"), float(f"{offset:.{p}g}")) for p in range(4, 13)]
