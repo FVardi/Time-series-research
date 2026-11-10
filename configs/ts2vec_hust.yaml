@@ -1,0 +1,36 @@
+# TS2Vec on HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
+# Settings as ts2vec_cwru.yaml; only the values the input shape forces are changed (D151, D256).
+#   uv run python scripts/pretrain.py configs/ts2vec_hust.yaml --seeds 0
+name: ts2vec_hust
+dataset: hust
+data_root: data/canonical
+channels: [vibration]  # the only channel (D223)
+labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
+windows:  # D226
+  length: 2048  # as Thuan & Hong (D226)
+  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
+  sample_rate_hz: 51200  # as recorded (D223)
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # windows split at random (D226); pretraining = training windows (as D164)
+  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
+  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
+method: ts2vec
+seeds: [0]  # standard run: seed 0 (D239)
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+ts2vec:  # official defaults (D28), unchanged (D151)
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 8
+  max_train_length: 3000  # windows are 2,048 samples, so not cropped
+  temporal_unit: 0
+  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (here: 14,000 training windows x 2,048 x 1)
+
+evaluation:  # D26, D40, D133, D226
+  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, random split (as D175)
+  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

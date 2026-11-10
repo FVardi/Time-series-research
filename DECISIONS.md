@@ -261,6 +261,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D253 | 2026-11-10 | Harness standard: method inputs standardised per channel with the pretraining data's statistics (D137) for every dataset; no per-instance normalisation, also where the reference protocol uses it (CWRU/Zhao, XJTU-SY/DSCN: documented departures); baselines too (D255) | [decisions/training.md](decisions/training.md) |
 | D254 | 2026-11-10 | XJTU-SY: whole one-minute windows again (supersedes D247 item 1; DSCN's 2,560 points come from another recording scheme, per RCNN) and D253 standardisation instead of DSCN's per-sample z-score (supersedes D232 item 3); 2026-11-10 runs archived | [decisions/datasets/xjtu-sy.md](decisions/datasets/xjtu-sy.md) |
 | D255 | 2026-11-10 | D253's normalisation also for all baselines (supersedes D76 item 1's raw values and D253's baseline exception); 12 configs; Paderborn FFT and Herning MSSP runs to redo; FordA as distributed | [decisions/training.md](decisions/training.md) |
+| D256 | 2026-11-10 | Configs for the other methods on Paderborn and HUST (7 SSL each) and baselines for HUST and XJTU-SY stage (22 files, shape-forced values only, D151); TS-JEPA epochs = FordA's 565,000 steps capped at 5,000 epochs (Paderborn 2,004, HUST 1,290); mixed precision not used; TF-JEPA and XJTU-SY SSL configs not now | [decisions/training.md](decisions/training.md) |
 
 <!--
 Entry template:

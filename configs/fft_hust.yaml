@@ -1,0 +1,28 @@
+# Baseline (D75 c, D76 item 2): one-sided linear |FFT| magnitude spectrum per channel, probed directly, on HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
+# Same data, split and evaluation as tfc_hust.yaml; standardised as every input (D253, D255).
+#   uv run python scripts/pretrain.py configs/fft_hust.yaml --seeds 0
+name: fft_hust
+dataset: hust
+data_root: data/canonical
+channels: [vibration]  # the only channel (D223)
+labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
+windows:  # D226
+  length: 2048  # as Thuan & Hong (D226)
+  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
+  sample_rate_hz: 51200  # as recorded (D223)
+  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253, extended to baselines by D255)
+split:  # windows split at random (D226); pretraining = training windows (as D164)
+  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
+  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
+method: fft
+seeds: [0]  # standard run: seed 0 (D239)
+device: cpu  # numpy only (D79)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+fft: {}  # nothing to set
+
+evaluation:  # D26, D40, D133, D226
+  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, random split (as D175)
+  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

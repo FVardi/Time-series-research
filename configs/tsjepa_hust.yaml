@@ -1,0 +1,56 @@
+# TS-JEPA (masking fixed, channels flattened per patch) on HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
+# Settings as tsjepa_cwru.yaml; only the values the input shape forces are changed (D151, D256).
+#   uv run python scripts/pretrain.py configs/tsjepa_hust.yaml --seeds 0
+name: tsjepa_hust
+dataset: hust
+data_root: data/canonical
+channels: [vibration]  # the only channel (D223)
+labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
+windows:  # D226
+  length: 2048  # as Thuan & Hong (D226)
+  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
+  sample_rate_hz: 51200  # as recorded (D223)
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # windows split at random (D226); pretraining = training windows (as D164)
+  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
+  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
+method: tsjepa
+seeds: [0]  # standard run: seed 0 (D239)
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tsjepa:
+  n_patches: 10  # paper; here: 10 patches of 204 samples, the last 8 samples unused (D154);
+                # with one channel, as here, each patch is plain samples (D154 changes nothing)
+  mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
+  masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'
+  batch_size: 32  # paper, README, code
+  epochs: 1290  # D256: FordA's optimiser steps (D66: 5,000 epochs x 113 batches = 565,000); here 14,000 windows = 438 batches
+                # per epoch: 565,000 / 438 = 1,290 epochs. LR and EMA schedules run over these epochs
+  ema_momentum: 0.998  # paper, README, code; raised linearly per epoch (official schedule)
+  ipe_scale: 1.25  # code (only source); sets how far the EMA momentum rises towards 1
+  encoder:
+    embed_dim: 128  # paper, README (code: 384; downstream config: 256)
+    nhead: 2  # paper, README (code: 6; downstream config: 4)
+    num_layers: 1  # D66: README (the only source consistent with the paper's 128 dims / 2 heads); code 3, downstream config 2; paper silent
+    kernel_size: 3  # code (all configs agree); paper only says "1D-CNN" tokenizer
+    embed_bias: true  # code; passed to the tokenizer but not used by it
+  predictor:  # paper: "encoder and predictor share the same architecture: 2 attention heads, embedding dimension 128"
+    embed_dim: 128  # paper, README, code
+    nhead: 2  # paper, README, code
+    num_layers: 1  # README, code, downstream config all 1; paper silent
+  optimizer:
+    lr: 6.0e-5  # D69: the official pretraining config's value (what pretrain.py uses without arguments); no tuning, as TS2Vec/T-Loss (README 1e-7 is from their weather run; paper searched 1e-3..1e-6)
+    lr_end_factor: 0.5  # code: LinearLR from 1.0 to 0.5 x lr over the epochs (code's end_lr 1e-4 is never used)
+    betas: [0.9, 0.999]  # code uses PyTorch's AdamW defaults
+    eps: 1.0e-8  # PyTorch AdamW default (code)
+    weight_decay: 0.01  # PyTorch AdamW default (code)
+  pooling: mean  # D66: mean over the 10 patch vectors (downstream config's pooling: "Mean"); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+  print_every: 10  # epochs between loss prints (code prints every 10)
+
+evaluation:  # D26, D40, D133, D226
+  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, random split (as D175)
+  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

@@ -1,0 +1,39 @@
+# T-Loss on Paderborn: Lessmeier et al. (2016) Section 7.3 (D220), inputs D222, pretraining on the training windows (D225).
+# Settings as tloss_cwru.yaml; only the values the input shape forces are changed (D151, D256).
+# All 10 combinations, seed 0 (D239):
+#   uv run python scripts/run_combinations.py configs/tloss_paderborn.yaml --seeds 0
+name: tloss_paderborn
+dataset: paderborn
+data_root: data/canonical
+channels: [vibration_1]  # vibration only (D222)
+labels: paderborn_lessmeier  # healthy / OR / IR for the 15 bearings of Table 10; group = bearing (harness/labels.py; D220)
+windows:  # D222
+  length: 5120  # 80 ms at 64 kHz, as TF-C's FD-A/FD-B windows (D39)
+  sample_rate_hz: 64000
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9 (D220, D225)
+method: tloss
+seeds: [0]  # standard run: seed 0 (D239)
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tloss:  # official settings (D32), unchanged (D151)
+  compared_length: null  # null = compare full-length series (5,120 samples)
+  nb_random_samples: 10  # K = 10
+  negative_penalty: 1
+  batch_size: 10
+  nb_steps: 2000  # paper: 2000 steps for K >= 10
+  lr: 0.001
+  penalty: null  # only for T-Loss's own classifier, not used
+  early_stopping: null
+  channels: 40
+  depth: 10
+  reduced_size: 160
+  out_channels: 320  # representation size
+  kernel_size: 3
+
+evaluation:  # D26, D40, D129, D133, D138
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
+  published_accuracy: null  # Lessmeier et al. report accuracies of their own feature classifiers, not of a probe
