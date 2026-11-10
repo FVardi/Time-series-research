@@ -5,7 +5,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: minirocket
-seeds: [0, 1, 2]  # the SSL runs' seeds (D78); here the seed also fixes MiniRocket's random choices (D81)
+seeds: [0]  # standard run: seed 0 (D239)
 device: cpu  # MiniRocket is CPU code (numba) (D79)
 
 minirocket:  # official defaults of fit() in code/minirocket.py (D76)

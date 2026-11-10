@@ -10,7 +10,7 @@ windows:  # D222
   standardise: false  # baselines on raw values (D76, D137)
 split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9: pretrain.py --combination k, or scripts/run_combinations.py (D220, D225)
 method: fft
-seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+seeds: [0]  # standard run: seed 0 (D239)
 device: cpu  # numpy only (D79)
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 

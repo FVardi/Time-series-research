@@ -5,19 +5,23 @@ Probes:
   logreg           : the harness probe, logistic regression with C chosen by cross-validation
   ridge_minirocket : MiniRocket's own ridge classifier (reproduction check for MiniRocket, D81)
   floor            : the most frequent training class, ignoring the features (D83)
-Regression (kappa on Herning, D58, D170):
+Regression (kappa on Herning, D58, D170; XJTU-SY remaining useful life, D232):
   ridge            : ridge regression with alpha chosen by cross-validation
+  ridge_grouped    : the same, with folds grouped by bearing (XJTU-SY, D232 item 5)
   floor_mean       : the mean of the training targets, ignoring the features
+XJTU-SY (D231, D232): time_window_embedding (DSCN Eq. 16 on the representations) and rul_scores
+(DSCN's score and RMSE in minutes, plus MAE and R², over the second half of each test bearing's life).
 """
 
 import importlib.util
 import os
 
 import numpy as np
+import pandas as pd
 from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.linear_model import LogisticRegression, Ridge, RidgeClassifierCV
 from sklearn.metrics import accuracy_score, f1_score, mean_absolute_error, r2_score
-from sklearn.model_selection import GridSearchCV, KFold, StratifiedGroupKFold, train_test_split
+from sklearn.model_selection import GridSearchCV, GroupKFold, KFold, StratifiedGroupKFold, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -122,6 +126,15 @@ def ridge(Z, y, seed):
     return GridSearchCV(pipe, grid, cv=KFold(5, shuffle=True, random_state=seed)).fit(Z, y).best_estimator_
 
 
+def ridge_grouped(Z, y, groups, seed, n_splits):
+    """ridge() with alpha chosen on folds grouped by 'groups' (bearing), shuffled with the run's seed
+    (XJTU-SY: 4 folds as DSCN's 4-fold cross-validation, grouped by bearing as D129; D232 item 5)."""
+    pipe = make_pipeline(StandardScaler(), Ridge())
+    grid = {"ridge__alpha": [10.0**k for k in range(-4, 5)]}
+    folds = list(GroupKFold(n_splits=n_splits, shuffle=True, random_state=seed).split(Z, y, groups))
+    return GridSearchCV(pipe, grid, cv=folds).fit(Z, y).best_estimator_
+
+
 def floor_mean(Z, y):
     """Regression floor (as D83 for classes): always predicts the mean of the (labelled) training targets."""
     return DummyRegressor(strategy="mean").fit(Z, y)
@@ -164,3 +177,54 @@ def per_bearing(clf, Z, y, groups, class_names):
         rows.append({"bearing": g, "class": class_names[y[m][0]], "n_windows": int(m.sum()),
                      "accuracy": float((pred[m] == y[m]).mean()), "top_prediction": class_names[top]})
     return rows
+
+
+def time_window_embedding(Z, runs, minutes, S):
+    """DSCN's time-window embedding (Wang et al., 2019, Eq. 16) applied to frozen representations
+    (D232 item 4): the input of minute n is [z_(n-S+1); ...; z_n] of the same run, in time order.
+
+    Z: (n_windows, d), one row per minute; runs, minutes: run ID and minute of each row.
+    Rows without S - 1 earlier minutes in their run are left out. Stops if a run has gaps.
+    Returns the embedded representations (n_kept, S * d) and the indices of the kept rows in Z.
+    """
+    runs, minutes = np.asarray(runs), np.asarray(minutes)
+    out, kept = [], []
+    for r in pd.unique(runs):
+        idx = np.flatnonzero(runs == r)
+        idx = idx[np.argsort(minutes[idx])]  # time order
+        if (np.diff(minutes[idx]) != 1).any():
+            raise ValueError(f"run {r}: minutes are not consecutive")
+        for j in range(S - 1, len(idx)):
+            out.append(Z[idx[j - S + 1: j + 1]].reshape(-1))  # oldest first, current last (Eq. 16)
+            kept.append(idx[j])
+    return np.stack(out), np.array(kept)
+
+
+CLIP = (0.0, 0.99)  # predicted normalised RUL before Eq. 15 (D232 item 6)
+
+
+def phm08_score(d):
+    """PHM 2008 scoring function as in DSCN (Eq. 12), d = predicted - actual RUL (minutes):
+    sum of exp(-d/13) - 1 for d < 0 and exp(d/10) - 1 for d >= 0."""
+    d = np.asarray(d, dtype=np.float64)
+    return float(np.sum(np.where(d < 0, np.exp(-d / 13) - 1, np.exp(d / 10) - 1)))
+
+
+def rul_scores(pred, y, minutes, lifetime):
+    """Remaining-useful-life metrics of one test bearing (D231 item 4, D232 item 6).
+
+    pred, y: predicted and actual normalised RUL ((N - n) / N, D228) of its minutes; minutes: n;
+    lifetime: N (minutes). Only minutes n >= N / 2 are scored ("from the half to the end of lifetime").
+    For score and RMSE, the prediction is clipped to CLIP and converted to minutes with DSCN's Eq. 15,
+    RUL = q * n / (1 - q); the actual RUL in minutes is N - n. MAE and R² are on the normalised
+    target, unclipped predictions.
+    """
+    pred, y, minutes = (np.asarray(a, dtype=np.float64) for a in (pred, y, minutes))
+    m = minutes >= lifetime / 2
+    q = np.clip(pred[m], *CLIP)
+    pre_min = q * minutes[m] / (1 - q)  # Eq. 15
+    act_min = lifetime - minutes[m]
+    d = pre_min - act_min
+    return {"score": phm08_score(d), "rmse_min": float(np.sqrt(np.mean(d**2))),
+            "mae": mean_absolute_error(y[m], pred[m]), "r2": r2_score(y[m], pred[m]),
+            "n_scored": int(m.sum()), "n_clipped": int(((pred[m] < CLIP[0]) | (pred[m] > CLIP[1])).sum())}

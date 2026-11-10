@@ -14,7 +14,7 @@ split:  # windows split at random (D226); pretraining = training windows (as D16
   captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
   random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
 method: tfc
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 

@@ -1,0 +1,17 @@
+# Spectral probe (D244) on CWRU (Zhao protocol, D218): the TF-C variants (the other methods' standard runs come later).
+name: cwru
+targets: [absolute, relative, total, centroid]  # D244
+n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
+label_fractions: [0.01, 0.1, 1.0]  # D244
+seed: 0  # seed_0 of every run; label subsets and folds drawn with it (D239, D244)
+alphas: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]  # as harness/evaluate.ridge (D58)
+cv_groups: false  # windows split at random: plain shuffled folds (as D179)
+cv_folds: 5
+fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+runs:
+  - runs/20261105_153432_tfc_cwru
+  - runs/20261105_153502_tfc_cwru_paper
+  - runs/20261105_153546_tfc_cwru_left_out
+  - runs/20261105_153616_tfc_cwru_left_out_x3
+  - runs/20261105_153646_tfc_cwru_left_out_lambda0
+  - runs/20261105_153715_tfc_cwru_positives_lambda0

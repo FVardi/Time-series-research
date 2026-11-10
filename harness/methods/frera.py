@@ -179,6 +179,10 @@ def encode(model, X):
 
 
 def save(model, path):
-    """Save the contrastive model and the learnt frequency weights (main_worker keeps the
-    model's state dict; the FreRA weights are logged to fitlog there)."""
-    torch.save({"model": model["model"].state_dict(), "aug": model["aug"].state_dict()}, path + ".pt")
+    """Save what encode() uses: the FCN encoder (conv blocks) and the learnt frequency weights (D237).
+
+    The projector (encoder_q.logits: Linear(d, d) on the flattened FCN output, then the official
+    output layer) is not saved. It is only used in pretraining, and on long windows it is very large
+    (CWRU, d = 33,024: about 1.1 billion weights, 4.4 GB per seed)."""
+    encoder = {k: v for k, v in model["model"].encoder_q.state_dict().items() if not k.startswith("logits.")}
+    torch.save({"encoder": encoder, "aug": model["aug"].state_dict()}, path + ".pt")

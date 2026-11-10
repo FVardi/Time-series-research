@@ -1,7 +1,7 @@
 """Timing check: seconds per pretraining epoch for TS-JEPA (to plan the learning-rate search, D66).
 
 Usage:
-    uv run python scripts/time_tsjepa.py configs/tsjepa_forda.yaml configs/tsjepa_forda_fixed.yaml
+    uv run python scripts/time_tsjepa.py configs/tsjepa_forda_official_masking.yaml configs/tsjepa_forda.yaml
 
 For each config: one warm-up epoch (excluded; the first epoch includes start-up costs),
 then n_epochs timed epochs on the config's data and device. Prints seconds per epoch and

@@ -1,0 +1,24 @@
+# Spectral probe (D244) on XJTU-SY: the TF-C variants of both tasks, RUL (tfc_xjtu_sy*) and health stage (tfc_xjtu_sy_stage*).
+# The two tasks have different splits, so their windows (and targets) differ; runs of one task are listed together.
+name: xjtu_sy
+targets: [relative, centroid]  # windows standardised per window (D232): total energy is constant (D244)
+n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
+label_fractions: [0.01, 0.1, 1.0]  # D244
+seed: 0  # seed_0 of every run; label subsets and folds drawn with it (D239, D244)
+alphas: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]  # as harness/evaluate.ridge (D58)
+cv_groups: true  # folds grouped by bearing (as D232 item 5)
+cv_folds: 4  # as DSCN's 4-fold cross-validation (D232 item 5)
+fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+runs:
+  - runs/20261105_151243_tfc_xjtu_sy
+  - runs/20261105_160034_tfc_xjtu_sy_paper
+  - runs/20261105_161136_tfc_xjtu_sy_left_out
+  - runs/20261105_162137_tfc_xjtu_sy_left_out_x3
+  - runs/20261105_163138_tfc_xjtu_sy_left_out_lambda0
+  - runs/20261105_164139_tfc_xjtu_sy_positives_lambda0
+  - runs/20261105_165203_tfc_xjtu_sy_stage
+  - runs/20261105_170230_tfc_xjtu_sy_stage_paper
+  - runs/20261105_171339_tfc_xjtu_sy_stage_left_out
+  - runs/20261105_172325_tfc_xjtu_sy_stage_left_out_x3
+  - runs/20261105_173310_tfc_xjtu_sy_stage_left_out_lambda0
+  - runs/20261105_174309_tfc_xjtu_sy_stage_positives_lambda0

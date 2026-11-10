@@ -1,0 +1,59 @@
+# TF-C loss comparison (D202): variant 'paper', augmented cross-domain pairs as negatives (paper's L_C; ablation stage E).
+# Everything else exactly as configs/tfc_hust.yaml (the 'positives' arm); D243.
+# HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
+# TF-C (positives) on HUST (D123): settings as on CWRU and FordA (sized from the data).
+name: tfc_hust_paper
+dataset: hust
+data_root: data/canonical
+channels: [vibration]  # the only channel (D223)
+labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
+windows:  # D226
+  length: 2048  # as Thuan & Hong (D226)
+  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
+  sample_rate_hz: 51200  # as recorded (D223)
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # windows split at random (D226); pretraining = training windows (as D164)
+  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
+  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
+method: tfc
+seeds: [0]  # standard run: seed 0 (D239)
+device: cuda
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+tfc:
+  encoder:  # both branches, as on CWRU (D123)
+    channels: [32, 64, 128]  # paper (as the ablation, D124)
+    kernel_size: 8  # paper (as the ablation, D124); official FD_A config 32
+    strides: [8, 1, 1]  # paper (as the ablation, D124)
+    padding: 4  # not in paper; 2022 code, kernel_size // 2 (as the ablation, D124)
+    pool_padding: 1  # not in paper; 2022 code (as the ablation, D124)
+    conv_bias: false  # not in paper; 2022 code (as the ablation, D124)
+    dropout_block1: 0.35  # not in paper; 2022 code, after the first block only (as the ablation, D124)
+    projector: [256, 128]  # paper (as the ablation, D124)
+  loss:
+    variant: paper  # D202
+    delta: 1.0  # paper's L_C margin (D41 item 4), as configs/tfc_fd.yaml and ablation stage E
+    temperature: 0.2  # paper (as the ablation, D124)
+    lambda: 0.5  # paper (as the ablation, D124)
+  freq_aug:
+    n_components: 1  # paper, E (as the ablation, D124)
+    alpha: 0.5  # paper (as the ablation, D124)
+  time_aug:  # D42: one of three per window
+    jitter_sigma: 0.1  # official FD_A config jitter_ratio (as the ablation, D124)
+    scaling_mean: 1.0  # our choice, D42 (as the ablation, D124)
+    scaling_sigma: 0.1  # our choice, D42 (as the ablation, D124)
+    max_segments: 5  # official code, max_seg (as the ablation, D124)
+  pretrain:
+    epochs: 40  # paper (as the ablation, D124)
+    batch_size: 64  # paper (as the ablation, D124); FordA: 56 steps per epoch
+    drop_last: true  # code (as the ablation, D124)
+    lr: 0.0003  # paper (as the ablation, D124)
+    betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
+    weight_decay: 0.0005  # paper (as the ablation, D124)
+  eval_chunk: 512  # series per forward pass when encoding; does not change results
+
+evaluation:  # D26, D40, D133, D226
+  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, random split (as D175)
+  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

@@ -15,7 +15,7 @@ split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
   captures: {}  # no filter: every sweep with a label
   random: {test_fraction: 0.2, seed: 0}
 method: tstcc
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 

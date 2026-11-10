@@ -1,16 +1,15 @@
 # Comparison on FordA (D203): which run counts for each method, chosen by hand.
-# Runs as in STATUS.md section 1 (FordA benchmark). PatchTST is listed twice
-# (mean and flatten pooling), because STATUS.md and make_report.py name different runs.
+# One standard run per method (D239, D241). PatchTST: mean pooling (D87); the flatten run is a diagnostic (D86).
+# TS2Vec and T-Loss: the standard runs made again on 2026-11-10 (D242).
 # role: method = compared against the best baseline; baseline = candidate for the best baseline (D80).
 name: compare_forda
 settings:
   FordA:
-    TS2Vec: {run: runs/20261020_144711_ts2vec_forda, role: method}
-    T-Loss: {run: runs/20261020_144932_tloss_forda, role: method}
+    TS2Vec: {run: runs/20261110_095303_ts2vec_forda, role: method}  # D242
+    T-Loss: {run: runs/20261110_095353_tloss_forda, role: method}  # D242
     TS-TCC: {run: runs/20261027_151321_tstcc_forda, role: method}
     TS-JEPA (masking fixed): {run: runs/20261016_114616_tsjepa_forda_fixed, role: method}
     PatchTST (mean): {run: runs/20261019_154248_patchtst_forda_mean, role: method}
-    PatchTST (flatten): {run: runs/20261019_154305_patchtst_forda_flatten, role: method}
     TF-C (positives): {run: runs/20261027_144405_tfc_forda, role: method}
     TF-JEPA: {run: runs/20261027_153543_tfjepa_forda, role: method}
     SimMTM: {run: runs/20261027_153657_simmtm_forda, role: method}

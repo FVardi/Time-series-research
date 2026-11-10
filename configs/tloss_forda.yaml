@@ -6,7 +6,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: tloss
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 tloss:  # official settings (D32)

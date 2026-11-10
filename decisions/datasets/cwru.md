@@ -157,7 +157,7 @@ Dataset-specific decisions for the CWRU bearing data (Case Western Reserve Unive
 **Alternatives considered:** Zhao et al.'s own evaluation (each network trained end to end with labels; not a probe on a frozen representation, so it does not fit how the SSL methods are compared).
 **Rationale:** User's decision (2026-10-30): the same probe as on all other tests.
 
-## 2026-10-30 — D180: CWRU config names: bearing split kept as `*_cwru_bearing.yaml`
+## 2026-10-30 — D180: CWRU config names: bearing split kept as `*_cwru_bearing.yaml` (superseded by D240)
 **Decision:** The configs of the bearing split (D128) are kept under new names, `configs/<method>_cwru_bearing.yaml` (content unchanged apart from `name`), so its runs stay reproducible. `configs/<method>_cwru.yaml` becomes the main task (D163); the literature protocol (D167) gets `configs/<method>_cwru_zhao.yaml`. Whether D128 is run again as a second, harder test stays open.
 **Alternatives considered:** Replacing the D128 configs (old versions only in git history).
 **Rationale:** User's decision (2026-10-30).
@@ -167,7 +167,12 @@ Dataset-specific decisions for the CWRU bearing data (Case Western Reserve Unive
 **Alternatives considered:** Keeping CWRU as an exception to D216 (main split chosen for realism, D163; the parked pilot used both D163 and D128).
 **Rationale:** User's decision (2026-11-04).
 
-## 2026-11-04 — D219: Remaining CWRU runs with seed 0 only
+## 2026-11-04 — D219: Remaining CWRU runs with seed 0 only (superseded by D240)
 **Decision:** The CWRU runs still to be made (main task: FreRA, TF-JEPA, TS-JEPA, PatchTST; literature protocol: all 13 configs) use seed 0 only, pretraining and probes alike. The configs are not changed: the runs use copies in `runs/cwru_seed0_configs/` that differ only in `seeds: [0]`; each run folder's `config.yaml` records it. The nine main-task configs already run with seeds 0, 1 and 2 (`runs/20261102_*_cwru`) keep their three seeds; comparisons across all methods use seed 0, which every run has. Single-seed results have no spread over seeds.
 **Alternatives considered:** Three seeds as configured (about three times the GPU time).
 **Rationale:** User's decision (2026-11-04).
+
+## 2026-11-05 — D240: CWRU under D239: only the Zhao et al. protocol (supersedes D180 and D219)
+**Decision:** The CWRU standard runs use the literature protocol (D167, D218). The configs `*_cwru_zhao.yaml` are renamed `*_cwru.yaml` (run names follow); the main-split configs (old `*_cwru.yaml`, D163) and bearing-split configs (`*_cwru_bearing.yaml`, D128) are deleted (in git history). The TF-C variants get protocol configs as on Paderborn: `tfc_cwru_{paper,left_out,left_out_x3}.yaml` (D202) and `tfc_cwru_{left_out,positives}_lambda0.yaml` (D217), copies of `tfc_cwru.yaml` that differ only in the loss settings. All 25 earlier CWRU benchmark runs (bearing split 2026-10-29/30, main split 2026-11-02, TF-C variants 2026-11-04) and `runs/cwru_logs/` moved to `runs/archive/`. The four main-split runs still queued by D219 (FreRA, TF-JEPA, TS-JEPA, PatchTST) are cancelled, and its seed-0 config copies (`runs/cwru_seed0_configs/`) are deleted: the configs now say `seeds: [0]`. The parked split-representation pilot keeps its own CWRU configs in `studies/split_pilot/`.
+**Alternatives considered:** Deleting the earlier runs (about 25 GB) instead of archiving them.
+**Rationale:** User's decision (2026-11-05): archive, plain names, seed 0.

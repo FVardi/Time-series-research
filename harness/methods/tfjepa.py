@@ -197,6 +197,13 @@ def encode(model, X):
     return channel_vectors(torch.cat(out).numpy(), model.n_channels)  # channels side by side (D155)
 
 
+# The parts of the model that encode() uses (D237): the online encoders and projectors.
+ONLINE = ("enc_time_online.", "enc_freq_online.", "proj_time_online.", "proj_freq_online.")
+
+
 def save(model, path):
-    """Save all weights as the official main.py saves the pretrained model (a plain state dict)."""
-    torch.save(model.state_dict(), path + ".pt")
+    """Save the weights encode() uses: the online encoders and projectors, as a plain state dict (D237).
+
+    The EMA targets and the predictors are only used in pretraining and are not saved (the
+    official main.py saves the whole state dict; with width 2,048 on CWRU that is about 1 GB per seed)."""
+    torch.save({k: v for k, v in model.state_dict().items() if k.startswith(ONLINE)}, path + ".pt")

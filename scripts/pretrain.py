@@ -88,7 +88,8 @@ def windowed_inputs(cfg, meta, folder):
     Stops if a test capture or test bearing is in the pretraining data (D121), or with windows
     split at random, a test window (D176). If the config
     says so, every window is standardised per channel with the mean and SD of the pretraining
-    windows (D137); the statistics are saved in the run folder.
+    windows (D137); the statistics are saved in the run folder. With standardise: per_window,
+    each window is standardised by its own mean and SD instead (D232).
     """
     parts = windows.prepare(cfg, meta)
     (X_train, t_train), (X_test, t_test), (X_only, t_only) = parts["train"], parts["test"], parts["pretrain_only"]
@@ -98,7 +99,9 @@ def windowed_inputs(cfg, meta, folder):
     else:
         windows.check_separate(table)
     X_pre = np.concatenate([X_train, X_only])
-    if cfg["windows"]["standardise"]:
+    if cfg["windows"]["standardise"] == "per_window":  # each window by its own mean and SD (D232; DSCN Eq. 14)
+        X_pre, X_train, X_test = (windows.standardise_per_window(X) for X in (X_pre, X_train, X_test))
+    elif cfg["windows"]["standardise"]:
         stats = windows.standardisation(X_pre)
         # the channels of X: the signal channels, or the features (D165, D181)
         features = cfg["windows"].get("features")

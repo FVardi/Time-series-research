@@ -102,5 +102,27 @@ def hust(captures):
     return list(captures.fault), list(captures.bearing)
 
 
+def xjtu_sy_rul(captures):
+    """XJTU-SY remaining useful life (D228): label = (N - n) / N for file (minute) n of a bearing with
+    N files, i.e. RUL divided by the lifetime, linear from the start (DSCN, Wang et al., 2019; the
+    inspection time of file n taken as n minutes, inferred). N is the bearing's file count from the
+    dataset table (intro Table 2, checked at conversion, D224), not the number of selected captures.
+    group = the bearing (split by bearing; D121, D231)."""
+    from harness.data.xjtu_sy import BEARINGS  # here, so that labels.py does not load the adapter at import
+    labels = [(BEARINGS[c.bearing][1] - c.file_number) / BEARINGS[c.bearing][1] for c in captures.itertuples()]
+    return labels, list(captures.bearing)
+
+
+def xjtu_sy_health_stage(captures):
+    """XJTU-SY health stage (D191 task 3, D232 item 7): 'healthy' for minutes before the FPT,
+    'degrading' from the FPT on (FPT from D230, harness/fpt.py). Bearings left out by D230 item 5
+    have no label (they are used for pretraining only). group = the bearing."""
+    from harness.fpt import XJTU_SY
+    labels = [None if c.bearing not in XJTU_SY else ("healthy" if c.file_number < XJTU_SY[c.bearing] else "degrading")
+              for c in captures.itertuples()]
+    return labels, list(captures.bearing)
+
+
 LABELS = {"cwru": cwru, "cwru_zhao": cwru_zhao, "paderborn_lessmeier": paderborn_lessmeier, "herning": herning, "hust": hust, "synthetic": synthetic,
-          "synthetic_kappa": synthetic_kappa, "synthetic_shared": synthetic_shared}
+          "synthetic_kappa": synthetic_kappa, "synthetic_shared": synthetic_shared,
+          "xjtu_sy_rul": xjtu_sy_rul, "xjtu_sy_health_stage": xjtu_sy_health_stage}

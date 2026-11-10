@@ -13,7 +13,7 @@ windows:  # D222
   standardise: true  # per channel, statistics of the pretraining windows (D137)
 split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9 (D220, D225)
 method: tfc
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 

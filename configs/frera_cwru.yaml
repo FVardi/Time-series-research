@@ -1,19 +1,19 @@
-# FreRA on CWRU (D163, D151, D158): FordA settings unchanged (sized from the data).
+# CWRU literature protocol (Zhao et al. 2020; D167, D177-D179): 10 classes, drive end, 0 hp, 1,024-sample windows.
+# FreRA on CWRU (D167, D151, D158): FordA settings unchanged (sized from the data).
 name: frera_cwru
 dataset: cwru
 data_root: data/canonical
-channels: [DE, FE]  # D131
-labels: cwru  # class = fault location (+ clock hour), group = faulty bearing (harness/labels.py; D118, D125)
+channels: [DE]  # drive end only, as Zhao et al. (D167)
+labels: cwru_zhao  # healthy + fault location x size, 10 classes (harness/labels.py; D167)
 windows:  # D136, D137
-  length: 2048
-  sample_rate_hz: 12000  # normal files (48 kHz) resampled to 12 kHz
+  length: 1024  # as Zhao et al. (D167)
+  sample_rate_hz: 12000  # healthy file 97 (48 kHz) resampled to 12 kHz (D167)
   standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # windows split at random (D163); pretraining = training + pretrain_only windows (D164)
-  captures: {sample_rate_hz: 12000, fault_end: [DE, FE], fault_size_mil: [7, 14, 21]}  # labelled windows (D117, D119, D140)
+split:  # windows split at random (D167, D174); pretraining = training windows (D164)
+  captures: {source_file: [97, 105, 118, 130, 169, 185, 197, 209, 222, 234]}  # Zhao et al.'s files: 0 hp, healthy + 9 drive-end faults (D167)
   random_windows: {test_fraction: 0.2, random_state: 40}  # stratified by class, fixed for all seeds, as Zhao et al. (D171, D174)
-  pretrain_only: {fault_end: [none]}  # normal files, unlabelled (D126, D164)
 method: frera
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
@@ -39,8 +39,9 @@ frera:
                    #   λ searched in {0.1, 0.3, 1, 3, 10, 30} (best UCIHAR 1, MS 10, WISDM 3)
   encode_batch_size: 256  # series per forward pass when encoding; does not change results
 
-evaluation:  # D26, D40, D133, D138, D175
-  label_fractions: [0.01, 0.1, 1.0]
+evaluation:  # D26, D133, D178, D179
+  label_fractions: [0.1, 1.0]  # 1 % dropped: fewer labels than classes (D178)
   probes: [logreg, floor]
-  cv_groups: false  # plain stratified 5-fold, not grouped: the split is by random windows (D175)
-  published_accuracy: null  # nothing published for this split
+  cv_groups: false  # plain stratified 5-fold, not grouped (D179)
+  per_class: true  # test accuracy per class, logreg probe (D168, D179)
+  published_accuracy: null  # Zhao et al. train each network end to end; no probe result to compare with

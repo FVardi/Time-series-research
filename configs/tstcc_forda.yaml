@@ -6,7 +6,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: tstcc
-seeds: [0, 1, 2]  # D108
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128

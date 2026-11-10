@@ -62,30 +62,6 @@ def test_grouped_folds_accept_a_class_with_one_group():
     assert all({0, 1, 2, 3} <= set(y[train]) for train, _ in folds)
 
 
-CONFIG = "configs/fft_cwru_bearing.yaml"  # the bearing split (D128; config renamed by D180)
-
-
-@pytest.mark.skipif(not os.path.exists("data/canonical/cwru"), reason="converted CWRU data not available")
-def test_cwru_split_windows():
-    """D128, D136, D140: windows of the CWRU split; no test bearing in the pretraining data."""
-    cfg = runs.load_config(CONFIG)
-    parts = windows.prepare(cfg, canonical.load_metadata(cfg["data_root"], cfg["dataset"]))
-    table = pd.concat([t for _, t in parts.values()], ignore_index=True)
-    windows.check_separate(table)
-    (X_train, t_train), (X_test, t_test), (X_only, t_only) = parts["train"], parts["test"], parts["pretrain_only"]
-    assert X_train.shape[1:] == (2048, 2) and len(X_train) == len(t_train)
-    assert t_train.group.nunique() == 17 and t_test.group.nunique() == 9
-    assert set(t_train.label) == set(t_test.label) == {"inner", "ball", "outer@3", "outer@6", "outer@12"}
-    assert t_only.label.isna().all() and t_only.run_id.nunique() == 4  # the normal files, resampled
-    # windows are consecutive and start at the first sample of their capture
-    first = t_train.groupby(["run_id", "capture_id"]).start.min()
-    assert (first == 0).all()
-    # window k of a capture equals samples [start, stop) of the stored signal (12 kHz files)
-    r = t_train.iloc[3]
-    x = canonical.load_signal(cfg["data_root"], "cwru", r.run_id, r.capture_id, "DE", r.start, r.stop)
-    assert np.array_equal(X_train[3, :, 0], x)
-
-
 def test_check_windows_separate_stops_on_shared_window():
     """D176: windows of one capture may be on both sides, the same window may not."""
     table = pd.DataFrame({"split": ["train", "test", "test"], "run_id": ["a", "a", "a"], "capture_id": ["c", "c", "c"],
@@ -116,47 +92,10 @@ def test_per_class_accuracy():
     assert rows == [{"class": "a", "n_windows": 2, "accuracy": 1.0}, {"class": "b", "n_windows": 3, "accuracy": 0.0}]
 
 
-@pytest.mark.skipif(not os.path.exists("data/canonical/cwru"), reason="converted CWRU data not available")
-def test_cwru_random_window_split():
-    """D163, D171, D174, D176: windows split at random, 20 % of each class in test, the same split every
-    time, every recording on both sides, no window on both; normal files only for pretraining (D164)."""
-    from sklearn.model_selection import train_test_split
-    cfg = runs.load_config("configs/fft_cwru.yaml")
-    meta = canonical.load_metadata(cfg["data_root"], cfg["dataset"])
-    parts = windows.prepare(cfg, meta)
-    (X_train, t_train), (X_test, t_test), (X_only, t_only) = parts["train"], parts["test"], parts["pretrain_only"]
-    table = pd.concat([t_train, t_test, t_only], ignore_index=True)
-    windows.check_windows_separate(table)
-    with pytest.raises(ValueError, match="captures are in both"):  # the capture check would stop this split
-        windows.check_separate(table)
-    n = len(X_train) + len(X_test)
-    assert len(X_test) == int(np.ceil(0.2 * n))  # scikit-learn rounds the test size up
-    per_class = t_test.label.value_counts() / pd.concat([t_train, t_test]).label.value_counts()
-    assert np.allclose(per_class, 0.2, atol=0.01)
-    assert set(zip(t_test.run_id, t_test.capture_id)) == set(zip(t_train.run_id, t_train.capture_id))
-    assert (t_train.row == np.arange(len(t_train))).all() and (t_test.row == np.arange(len(t_test))).all()
-    assert t_only.label.isna().all() and t_only.run_id.nunique() == 4
-    # fixed for all seeds: a second call gives the same test windows
-    _, t_again = windows.prepare(cfg, meta)["test"]
-    assert t_again[["run_id", "capture_id", "start"]].equals(t_test[["run_id", "capture_id", "start"]])
-    # the same test windows as Zhao et al.'s call: train_test_split on a DataFrame of all windows in the
-    # order they are cut (captures in the order select() gives, windows from the start of each capture)
-    caps = windows.select(meta, cfg["split"]["captures"])[["run_id", "capture_id"]].assign(position=lambda c: range(len(c)))
-    all_windows = caps.merge(pd.concat([t_train, t_test]), on=["run_id", "capture_id"]).sort_values(["position", "start"])
-    _, zhao_test = train_test_split(all_windows.reset_index(drop=True), test_size=0.2, random_state=40,
-                                    stratify=all_windows.label)
-    key = lambda t: set(zip(t.run_id, t.capture_id, t.start))
-    assert len(all_windows) == n and key(zhao_test) == key(t_test)
-    # window samples equal the stored signal
-    r = t_test.iloc[5]
-    x = canonical.load_signal(cfg["data_root"], "cwru", r.run_id, r.capture_id, "FE", r.start, r.stop)
-    assert np.array_equal(X_test[5, :, 1], x)
-
-
 @pytest.mark.skipif(not os.path.exists("data/canonical/cwru/0097"), reason="converted CWRU data not available")
 def test_cwru_zhao_split():
     """D167: Zhao et al.'s ten files, drive end, 1,024-sample windows; the healthy file resampled (59 windows)."""
-    cfg = runs.load_config("configs/fft_cwru_zhao.yaml")
+    cfg = runs.load_config("configs/fft_cwru.yaml")  # the CWRU protocol (D240)
     parts = windows.prepare(cfg, canonical.load_metadata(cfg["data_root"], cfg["dataset"]))
     (X_train, t_train), (X_test, t_test), (X_only, _) = parts["train"], parts["test"], parts["pretrain_only"]
     assert X_train.shape[1:] == (1024, 1) and len(X_only) == 0

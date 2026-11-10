@@ -24,4 +24,4 @@ Block probes (D205): what each part of the representation contains, for all fini
 
     uv run --no-sync python studies/split_pilot/block_probes.py "runs/*_pilot_*" --seeds 0
 
-Still open: the MLP probe settings (D184).
+No MLP probe (D209). The pilot is parked (D215); results and next options in METHOD_IDEAS M1.

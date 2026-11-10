@@ -4,3 +4,6 @@
 *.out
 *.toc
 *.synctex.gz
+
+# The compiled report is rebuilt locally, not tracked (2026-11-05)
+results.pdf

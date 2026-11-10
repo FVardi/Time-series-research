@@ -1,0 +1,3 @@
+# Line endings (D238): text files are stored with LF in git, whatever the editor writes on Windows.
+# Git detects binary files (PDF, PNG, ...) itself and leaves them unchanged.
+* text=auto eol=lf

@@ -11,7 +11,7 @@ run_id: forda
 channels: [x]  # the official Load_Dataset keeps channel 0 only; the adapter stops on more channels
 data_root: data/canonical
 method: tfjepa
-seeds: [0, 1, 2]  # D26
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 tfjepa:

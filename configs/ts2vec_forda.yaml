@@ -5,7 +5,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: ts2vec
-seeds: [0, 1, 2]
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda  # the work computer has an NVIDIA GPU
 
 ts2vec:  # official defaults (D28)

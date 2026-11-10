@@ -107,3 +107,13 @@ evaluation: {probes: [logreg, floor], cv_groups: true, ...}
 **Decision:** In `.gitmodules`, `external/tstcc` and `external/frera` get `ignore = untracked`, as `external/tloss` and `external/minirocket` already have. Their only untracked content is Python's `__pycache__/` folders, which made `git status` report the tree as changed, so every run recorded `uncommitted_changes: true` (D99) even right after a commit. Changes to tracked files in these submodules are still reported.
 **Alternatives considered:** `ignore = dirty` (also hides edits to the official code, which would make git.json miss changes that affect results). Leaving it as it was.
 **Rationale:** User's decision (2026-10-29). The record of uncommitted changes (D99) should mean something; the narrower setting keeps real code changes visible.
+
+## 2026-11-05 — D237: FreRA and TF-JEPA save only the weights encode() uses
+**Decision:** `harness/methods/frera.py` saves the FCN encoder (`encoder_q` without its `logits` projector) and the FreRA frequency weights; `harness/methods/tfjepa.py` saves the online encoders and projectors (not the EMA targets and predictors). Representations, probes and results are unchanged; nothing in the harness loads these files. Earlier runs keep their full `model.pt`.
+**Alternatives considered:** Keep saving the whole model (FreRA on CWRU: 4.4 GB per seed, from the official `Linear(d, d)` projector on the 33,024-dimensional flattened FCN output; TF-JEPA on CWRU about 1 GB per seed). Not saving models at all (the encoder could then not be probed again later).
+**Rationale:** User's decision (2026-11-05), repo cleanup: disk space; the saved parts are all that is needed to encode again.
+
+## 2026-11-05 — D238: Text files stored with LF line endings (`.gitattributes`)
+**Decision:** `.gitattributes` with `* text=auto eol=lf`: git stores text files with LF, whatever line endings an editor or tool writes on Windows; binary files are detected and left alone.
+**Alternatives considered:** No rule (files rewritten with CRLF show as completely changed; about 60 such files on 2026-11-05). `core.autocrlf` per machine (not stored in the repo, so each computer must be set up).
+**Rationale:** User's decision (2026-11-05), repo cleanup: diffs and commits show only real changes.

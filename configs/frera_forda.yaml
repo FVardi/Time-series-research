@@ -10,7 +10,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: frera
-seeds: [0, 1, 2]  # D26
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 frera:

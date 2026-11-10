@@ -125,23 +125,40 @@ Details as stated on the source pages (checked 2026-11-05); "not stated" means t
 
 ### Unseen conditions / time-varying operation
 
-#### C20 — Paderborn run-to-failure under time-varying load and speed (KAt / Chair of Dynamics and Mechatronics, 2024)
-- 17 run-to-failure experiments (B01–B17) on ball bearings, no initiated defect (natural damage); time-varying load and speed. 152 GB as ZIP archives plus a PDF description. CC BY 4.0.
-- Sensors, sampling rates and profiles not stated on the record page (in the PDF description, not read).
-- Why: natural degradation under non-stationary operation; split by bearing possible. Different recordings from the Paderborn KAt fault data (D47), same university.
-- https://zenodo.org/records/10868257 ; paper: Javanmardi et al., PHM Society European Conference 2024, doi 10.36001/phme.2024.v8i1.4101
+#### C20 — Paderborn run-to-failure under time-varying load and speed (LDM, Paderborn University, 2024) — *Adopted as D234 (storage D235, conversion D236)*
+- Not the Paderborn KAt fault data in use (D47): different rig, chair and recordings.
+- Rig: shaft on two spherical roller bearings; static preload by lever and spring, dynamic load by an electrodynamic shaker. Test bearing 61806-2RS deep-groove ball bearing; no initiated defect (natural damage).
+- 17 run-to-failure experiments (B01–B17). Snapshots of 1.6 s about every 12 s. Three one-directional accelerometers on the rig (A, C horizontal on the housing; B vertical on the lever); the data set provides A and C, the paper analyses only A. **Vibration at 128 kHz for B01–B09, 64 kHz from B10** (storage issues). Pt100 bearing and ambient temperature at 10 Hz.
+- Operating conditions: speed constant within a snapshot, drawn uniformly per snapshot from a per-experiment interval (e.g. 2,400–3,000 rpm for B01–B03, 1,500–3,600 rpm for B06); static load e.g. 2,500–3,800 N; dynamic load sinusoidal at 2 Hz (B01–B06) or band-limited white noise up to 200 Hz (B07–B17), amplitude drawn per snapshot. OC vector: peak dynamic load, mean static load, mean speed.
+- Stop: vibration RMS above 8 × mean RMS (about 6–10 g) or housing at 110 °C (temperature triggered for B03, B07, B08, B15).
+- Lifetimes 377 (B01) to 22,567 (B15) snapshots, so very unbalanced across bearings.
+- Size: 152 GB as 48 ZIP parts (B06, B13 and B15 about 30 GB each) plus a 2.8 MB description PDF. CC BY 4.0.
+- **Authors' protocol** (Javanmardi et al. 2024): leave-one-bearing-out over all 17 bearings, results averaged; features = max FFT amplitude in 20 equal-width bands of accelerometer A; healthy/unhealthy transition from 2-means clustering on the training bearings (a minimum-cycle parameter Tc whose value in the main experiments is not stated); RUL target in % after the transition, trained on post-transition data only; MAE; GB and RF, 10 seeds. Which test cycles enter the MAE is not stated clearly. Code: https://github.com/alireza-javanmardi/bearing-RUL
+- Why: natural degradation under non-stationary operation, split by bearing; close to D191's XJTU-SY tasks.
+- Checked on B01 and the description PDF (v2, 2024-03-25), downloaded 2026-11-05:
+  - Only accelerometers A and C are in the data set (variables `accHorizRear_A`, `accHorizFrontal_C`, `measTime`), in volts (float64); V-to-g factors in each experiment's `Bxx_log.pdf`. B01: 204,800 samples per channel per file (1.6 s at 128 kHz). MAT v5, readable with `scipy.io.loadmat`.
+  - Accelerometers PCB 603C01: 100 mV/g, ±50 g, 0.5–10 kHz (3 dB), resonance 25 kHz.
+  - Per experiment: `vibrationData/` (one `.mat` per measurement), `Bxx_operatingConditions.csv` (set and measured dynamic load, static load, speed per measurement), `Bxx_meanTemperatures.csv` (T1, T2, ambient), `Bxx_log.pdf`. The PDF also names `Bxx_extractedFeatures.csv`, which is not in B01.zip.
+  - Files per experiment (Table 3): 377 (B01) to 22,567 (B15), 95,660 in total; durations 2–76 h. Defects found after dismantling per bearing (IR, OR, B, combinations).
+  - No threshold criterion was pre-set for B01, B05 was interrupted deliberately, and B16 has no criterion listed: not all runs end at a defined failure.
+  - B01 starts with a run-in: measurements 1–55 at 750 rpm, 2,500 N static load, no dynamic load, outside the Table 2 range. The measurement interval is not constant (about 12 s at the start, about 30 s around measurements 100–200 in B01).
+  - B01.zip: 0.97 GB packed, 1.09 GB unpacked (ratio 1.13); the full set would be roughly 170 GB unpacked if that ratio holds.
+  - Quantization (checked on B01 M0001 and M0377): both channels lie on a fixed grid of 16-bit ADC steps (A: 0.000323335 V, C: 0.000323356 V, each with its own offset; deviation from the grid below 1.2e-7 steps), and `measTime` is exactly regular. So the signals could be stored as int16 codes plus step and offset per channel, about 50 GB for all 17 experiments and both channels; not checked for B02–B17.
+- https://zenodo.org/records/10868257 ; paper https://papers.phmsociety.org/index.php/phme/article/view/4101 (doi 10.36001/phme.2024.v8i1.4101)
 
 #### C21 — HUST bearing (Huazhong University of Science and Technology; not the Hanoi HUST of C1)
 - ER-16K bearing on a SpectraQuest simulator; 9 health states (normal; inner, outer, ball, inner+outer, each medium/severe); 11 speed conditions (10 constant, 20–80 Hz, plus 0-40-0 Hz time-varying); one accelerometer, 25.6 kHz, 262,144 points per file; 99 Excel files.
-- Licence not stated ("public"). Download via Google Drive / Quark links on the GitHub page.
-- Why: many speed domains; used in a domain-generalization benchmark (Zhao, Zio & Shen 2024, RESS, doi 10.1016/j.ress.2024.109964), which may give a standard cross-domain split.
+- **Licence: none stated** (the GitHub page only says the data are public). Download via Google Drive / Quark links.
+- **No standard split found (checked 2026-11-05).** The Zhao, Zio & Shen (2024) DG benchmark (code MIT, https://github.com/CHAOZHAO-1/Domain-generalization-fault-diagnosis-benchmark) uses "M_HUST" only in its cross-machine tasks (as one of four machines, all conditions pooled), with 3 classes, 5 working conditions and 800 samples per class per condition, from preprocessed `.mat` files on the authors' Google Drive. Which HUST files/speeds those are could not be checked (supplementary PDF not reachable), so it is not certain it is this release; it is not a within-dataset protocol either. The cross-working-condition tasks use CWRU, not HUST.
 - Naming clash with C1: needs a distinct name in the harness if adopted.
 - https://github.com/CHAOZHAO-1/HUSTbearing-dataset
 
 #### C22 — MCC5-THU gearbox under variable working conditions (Tsinghua, 2024)
-- Two-stage parallel gearbox; faults on a gear and its adjacent support bearings: pitting, wear, tooth break, tooth crack, inner race, outer race, compound faults, several severities.
-- Two triaxial accelerometers (motor drive end, intermediate-shaft bearing seat), 12.8 kHz; speed and torque channels. 12 working conditions with speed and/or load varying over 60 s runs; 240 CSV files. MIT licence (GitHub).
-- Use Mendeley version 2 (version 1 has reversed torque signs; torque needs a scaling factor of about 6, per the repo).
+- Two-stage parallel gearbox. Classes per the Data in Brief paper: health, missing teeth, gear wear, pitting, tooth crack, tooth break (light/medium/high), and compound faults **tooth break + bearing inner race** or **tooth break + bearing outer race** (light/medium/high; raceway fault widths 0.1/0.3/0.5 mm). **No bearing-only fault class.** (The GitHub README lists inner and outer race faults among the fault types; the paper only has them in compounds.)
+- Two triaxial accelerometers (motor drive end, intermediate-shaft bearing seat), 12.8 kHz; speed and torque channels. 60 s per file, 240 CSV files.
+- Conditions: time-varying speed at 10 or 20 Nm, or time-varying load (0–10 or 0–20 Nm) at 1,000/2,000/3,000 rpm; the paper says 12 working conditions but does not list them all, and has inconsistent counts (e.g. 48 vs 112 transitional combinations).
+- **No official tasks or train/test splits:** the paper suggests building your own.
+- Licence: CC BY 4.0 on Mendeley; MIT on GitHub. Use Mendeley version 2 (version 1 has reversed torque signs; torque needs a scaling factor of about 6, per the repo).
 - https://github.com/liuzy0708/MCC5-THU-Gearbox-Benchmark-Datasets ; https://data.mendeley.com/datasets/p92gj2732w/2 ; paper doi 10.1016/j.dib.2024.110453
 
 #### C23 — KAIST rolling-bearing vibration and motor current under varying speed (2023)
@@ -157,8 +174,9 @@ Details as stated on the source pages (checked 2026-11-05); "not stated" means t
 ### Multimodal
 
 #### C25 — MaFaulDa (Machinery Fault Database, UFRJ)
-- SpectraQuest rig, two bearings; 8 accelerometer channels (radial, axial, tangential), tachometer, microphone; 50 kHz, 5 s per sequence; 1,951 sequences. Classes: normal (49), imbalance (333), underhang bearing faults (558), overhang bearing faults (513), horizontal (197) and vertical (301) misalignment; normal at 737–3,686 RPM.
-- Figures as reported in arXiv 2301.02243; the official page blocks automated access (not checked there). Licence not checked. A gated Hugging Face copy exists (AI4Manufacturing/MAFAULDA-rotor-perception).
+- SpectraQuest rig, two bearings; 8 accelerometer channels (radial, axial, tangential), tachometer, microphone; 50 kHz, 5 s per sequence; 1,951 sequences. Classes: normal (49), imbalance (333), underhang bearing faults (558), overhang bearing faults (513), horizontal (197) and vertical (301) misalignment; normal at 737–3,686 RPM. Bearing-fault recordings carry added imbalance masses (6, 10 or 20 g).
+- Figures as reported in arXiv 2301.02243 and 2412.01322; the official page blocks automated access. **Licence not found.** A gated Hugging Face copy exists (AI4Manufacturing/MAFAULDA-rotor-perception).
+- **No standard split found (checked 2026-11-05).** Example: arXiv 2412.01322 uses 10 classes, segments of 48 rotations (length from the tachometer speed), stratified random 70/15/15 split of segments, so segments of one recording can end up on both sides; no standard protocol cited.
 - https://www02.smt.ufrj.br/~offshore/mfs/page_01.html
 
 ### Lubrication
@@ -180,8 +198,9 @@ Still no open rolling-bearing dataset with labelled lubrication states (second s
 ### Anomaly detection (normal-only training)
 
 #### C28 — Airbus helicopter accelerometer dataset (Airbus SAS 2018, ETH Zurich)
-- Helicopter accelerometers; 1,024 Hz; 1-min sequences (61,440 samples). Train: 1,677 normal sequences; test: 594 (297 normal, 297 anomalous); labels per flight. Normal-only training.
-- Not bearings specifically. Figures from Garcia et al. (arXiv 2005.07031); licence not stated on the record ("open access", rights holder Airbus SAS).
+- Helicopter accelerometers; 1,024 Hz; 1-min sequences (61,440 samples). Train: 1,677 normal sequences; test: 594 (297 normal, 297 anomalous); labels per flight. Normal-only training. Official train/test split.
+- Not bearings specifically. Figures from Garcia et al. (arXiv 2005.07031).
+- **Licence: CC BY-NC-SA 4.0** (rights holder Airbus SAS; checked on the ETH record 2026-11-05). Non-commercial and share-alike.
 - https://doi.org/10.3929/ethz-b-000415151
 
 #### C29 — DCASE 2023–2025 Task 2, machine type "bearing" (development sets)

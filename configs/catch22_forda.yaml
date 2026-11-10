@@ -5,7 +5,7 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: catch22
-seeds: [0, 1, 2]  # the SSL runs' seeds, so the label subsets are the same (D78)
+seeds: [0]  # standard run: seed 0 (D239)
 device: cpu  # pycatch22 is CPU code (D79)
 
 catch22:

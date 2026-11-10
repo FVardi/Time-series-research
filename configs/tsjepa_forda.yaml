@@ -1,4 +1,4 @@
-# TS-JEPA on FordA (official code, wrapped). Same data, probes, label budgets and seeds as
+# TS-JEPA on FordA, official code with the masking bug fixed (D66). Identical to configs/tsjepa_forda_official_masking.yaml except name and masking. Same data, probes, label budgets and seeds as
 # configs/ts2vec_forda.yaml (D26, D27, D29, D40). Every setting is written out with its source.
 # 'null' = open placeholder (the paper is silent and the code versions disagree): the run refuses to start.
 # Sources: paper = arXiv 2509.25449; README = command in the repo README; code = config/config_pretrain.py
@@ -9,13 +9,13 @@ run_id: forda
 channels: [x]
 data_root: data/canonical
 method: tsjepa
-seeds: [0, 1, 2]  # D26 (the paper reports 10 runs)
+seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 tsjepa:
   n_patches: 10  # paper: "we segment each time series into 10 patches" (FordA: 10 x 50 samples)
   mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
-  masking: official  # D66: keeps the official bug (tokens from the first series of the batch); fixed version: configs/tsjepa_forda_fixed.yaml
+  masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'
   batch_size: 32  # paper, README, code
   epochs: 5000  # D66; paper silent; code 5001 (README evaluates the checkpoint saved at epoch index 5000); 1 epoch = 113 batches on FordA
   ema_momentum: 0.998  # paper, README, code; raised linearly per epoch (official schedule)

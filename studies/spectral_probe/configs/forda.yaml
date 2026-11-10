@@ -1,0 +1,44 @@
+# Spectral probe (D244) on FordA: standard runs (D239, D241; configs/compare/forda.yaml), TF-C variants,
+# catch24 and MiniRocket (reference rows), random-init encoders (D134).
+name: forda
+targets: [relative, centroid]  # FordA is z-normalised per series as distributed: total energy is constant (D244)
+n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
+label_fractions: [0.01, 0.1, 1.0]  # D244
+seed: 0  # seed_0 of every run; label subsets and folds drawn with it (D239, D244)
+alphas: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]  # as harness/evaluate.ridge (D58)
+cv_groups: false  # plain shuffled folds, as the benchmark (D26)
+cv_folds: 5
+fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+runs:
+  - runs/20261110_095303_ts2vec_forda  # TS2Vec standard (D242)
+  - runs/20261110_095353_tloss_forda  # T-Loss standard (D242)
+  - runs/20261027_151321_tstcc_forda
+  - runs/20261016_114616_tsjepa_forda_fixed  # TS-JEPA standard (D241)
+  - runs/20261019_154248_patchtst_forda_mean  # PatchTST standard (D241)
+  - runs/20261027_153543_tfjepa_forda
+  - runs/20261027_153657_simmtm_forda
+  - runs/20261027_153909_frera_forda
+  - runs/20261027_144405_tfc_forda  # TF-C (positives), standard
+  - runs/20261104_133233_tfc_forda_paper
+  - runs/20261104_133419_tfc_forda_left_out
+  - runs/20261104_133531_tfc_forda_left_out_x3
+  - runs/20261105_153158_tfc_forda_left_out_lambda0
+  - runs/20261105_153315_tfc_forda_positives_lambda0
+  - runs/20261020_144235_catch22_forda  # catch24 baseline
+  - runs/20261020_152809_minirocket_forda
+  # random-init encoders (D134): as initialised, and with batch-norm statistics from the training series (_bn)
+  - runs/20261027_155735_ts2vec_forda_random
+  - runs/20261027_155835_tloss_forda_random
+  - runs/20261027_155222_tstcc_forda_random
+  - runs/20261027_160419_tstcc_forda_random_bn
+  - runs/20261027_155950_tsjepa_forda_fixed_random
+  - runs/20261027_160214_patchtst_forda_random
+  - runs/20261027_160318_patchtst_forda_random_bn
+  - runs/20261027_160506_tfjepa_forda_random
+  - runs/20261027_160553_tfjepa_forda_random_bn
+  - runs/20261027_160636_simmtm_forda_random
+  - runs/20261027_160748_simmtm_forda_random_bn
+  - runs/20261027_160857_frera_forda_random
+  - runs/20261027_161133_frera_forda_random_bn
+  - runs/20261027_161419_tfc_forda_random
+  - runs/20261027_161503_tfc_forda_random_bn

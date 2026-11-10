@@ -9,6 +9,7 @@ Used by scripts/pretrain.py when the config has a 'split' section. Steps:
              optionally turn each capture's windows into per-window features (D165)
   cut_stored - or: read stored features (band features D172, MSSP statistics D181), one window per capture
   standardisation / standardise - one mean and SD per channel from given windows (D137)
+  standardise_per_window - or: each window by its own mean and SD (DSCN; XJTU-SY, D232)
   check_separate - no capture and no group (bearing) of the test set in the pretraining data (D33, D121)
   check_windows_separate - or, for split_windows: no test window in the pretraining data (D33, D176)
 prepare() runs these for the 'train', 'test' and 'pretrain_only' parts of a config.
@@ -107,6 +108,14 @@ def standardisation(X):
 def standardise(X, stats):
     """The same fixed change of units for every window: (x - mean) / std per channel (D137)."""
     return (X - stats["mean"]) / stats["std"]
+
+
+def standardise_per_window(X):
+    """Each window and channel z-scored with its own mean and SD (DSCN, Wang et al., 2019, Eq. 14;
+    XJTU-SY, D232 item 3). Done in place, to avoid a second copy of large inputs; returns X."""
+    X -= X.mean(axis=1, keepdims=True)
+    X /= X.std(axis=1, keepdims=True)
+    return X
 
 
 def check_separate(table):
