@@ -2,7 +2,7 @@
 
 Synthetic files in the dataset's folder layout, with values on an ADC grid as in the real files:
 the whole path .mat -> int32 codes -> HDF5 -> load_signal must stay within the allowed few ulp, and
-an off-grid value must stop the conversion. If two real files are present, they are checked too.
+a file with an off-grid value is stored as float64. If two real files are present, they are checked too.
 """
 
 import os
@@ -41,12 +41,17 @@ def test_synthetic_file(tmp_path):
     assert tables["channels"].iloc[0].sample_rate_hz == 8000.0 and notes == []
 
 
-def test_off_grid_value_stops(tmp_path):
+def test_off_grid_value_stored_as_float(tmp_path):
+    """A file with a value off the grid is stored as recorded (float64), with a note (D248 note)."""
     x = np.random.default_rng(1).integers(-1000, 1000, uos.EXPECTED_SAMPLES) * STEP
     x[7] += 0.3 * STEP
     path = _write(tmp_path, "H_H_16_6204_600", x)
-    with pytest.raises(ValueError, match="not on the ADC grid"):
-        uos.read(str(tmp_path), path, "H_H_16_6204_600")
+    tables, signals, notes = uos.read(str(tmp_path), path, "H_H_16_6204_600")
+    root = str(tmp_path / "canonical")
+    canonical.write_run(root, uos.DATASET, "H_H_16_6204_600", tables, signals)
+    assert tables["channels"].iloc[0]["dtype"] == "float64"
+    assert np.array_equal(canonical.load_signal(root, uos.DATASET, "H_H_16_6204_600", "capture_0", uos.CHANNEL), x)
+    assert len(notes) == 1 and "samples [7]" in notes[0]
 
 
 @pytest.mark.skipif(not os.path.isdir(REAL), reason="source files not available")

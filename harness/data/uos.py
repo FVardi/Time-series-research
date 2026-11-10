@@ -112,11 +112,21 @@ def read(folder, path, name):
     if np.isnan(x).any():
         raise ValueError(f"{name}.mat: NaN values")  # the grid check cannot handle them: stop
     step, offset = quantized.grid_constants(x)
-    codes = quantized.to_codes(x, step, offset, name, np.int32, MAX_ULP)
-    tiny = np.flatnonzero((x != 0) & (np.abs(x) < step / 2))  # e.g. -6.4e-302 in U1_IR_8_6204_600
-    if len(tiny):
-        notes.append(f"{len(tiny)} non-zero values smaller than half a step stored as code 0 (= 0.0): "
-                     f"samples {tiny[:5].tolist()}, values {x[tiny[:5]].tolist()}")
+    try:
+        values = quantized.to_codes(x, step, offset, name, np.int32, MAX_ULP)
+        dtype, scale, offset_stored = "int32", step, offset
+        tiny = np.flatnonzero((x != 0) & (np.abs(x) < step / 2))  # e.g. -6.4e-302 in U1_IR_8_6204_600
+        if len(tiny):
+            notes.append(f"{len(tiny)} non-zero values smaller than half a step stored as code 0 (= 0.0): "
+                         f"samples {tiny[:5].tolist()}, values {x[tiny[:5]].tolist()}")
+    except ValueError:
+        # Not every value on the grid (e.g. one sample 0.05 steps off in L_OR_8_30204_1400): the file is
+        # stored as recorded, 64-bit floats (D6: codes only for exactly quantized data; D248 note).
+        values, dtype, scale, offset_stored = x, "float64", 1.0, 0.0
+        k = (x - offset) / step
+        off = np.flatnonzero(np.abs(k - np.rint(k)) > quantized.GRID_TOLERANCE_STEPS)
+        notes.append(f"stored as float64: {len(off)} values off the ADC grid (step {step!r} g): "
+                     f"samples {off[:5].tolist()}, values {x[off[:5]].tolist()}")
 
     btype, pitch, roller, angle, n_el = MODELS[model]
     rid = run_id(name)
@@ -147,9 +157,9 @@ def read(folder, path, name):
     }])
     channels = pd.DataFrame([{
         "run_id": rid, "stream": STREAM, "channel": CHANNEL, "sensor_type": "accelerometer",
-        "sample_rate_hz": float(rate), "units": UNITS, "scale": step, "offset": offset,
-        "x_origin_s": np.nan, "dtype": "int32",
+        "sample_rate_hz": float(rate), "units": UNITS, "scale": scale, "offset": offset_stored,
+        "x_origin_s": np.nan, "dtype": dtype,
     }])
     tables = {"runs": runs, "captures": pd.DataFrame([capture]),
               "channels": channels, "telemetry": pd.DataFrame([telemetry])}
-    return tables, [("capture_0", CHANNEL, codes, step, offset, UNITS)], notes
+    return tables, [("capture_0", CHANNEL, values, scale, offset_stored, UNITS)], notes
