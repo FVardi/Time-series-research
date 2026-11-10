@@ -362,3 +362,19 @@ values stored as generated (D5).
 synthetic_crossed (log |FFT| per 1,024-sample window, logreg, random 80/20 windows, not a
 benchmark): speed 1.00, bearing 1.00, temperature 0.93, state 0.40 (chance 0.33), so the
 default is the hard case: operating point and nuisance strong, state subtle.
+
+---
+
+## M6 (2026-11-10) — Normalise each window, then give the level back as explicit features
+
+**Source.** User's question (2026-11-10) during the normalisation decisions (D253–D255). Related: RevIN (Kim et al., 2022; per-window normalisation of the input, statistics put back on the forecast; on by default in PatchTST's self-supervised code), catch24 (catch22 on z-normalised series plus mean and SD, D85).
+
+**Idea.** The encoder sees each window z-normalised by its own mean and SD (shape only: impulsiveness, spectral content, modulation), and the window's statistics (mean, log SD or log RMS, per channel) are appended to the representation as separate, explicit features, e.g. as their own block next to M1's blocks.
+
+**Why it might suit lubrication monitoring (Claude's suggestion, not a decision).** Signal level follows the film (AE energy and κ) but also load, speed, sensor coupling and gain; shape may separate lubrication state from these better than level. Keeping the two apart, with level as an explicit, interpretable block, fits M1's split into operating point / lubrication state / nuisance, and makes it testable how much each part contributes.
+
+**Risks.** The level features alone may already predict κ or degradation (as the RMS trend does on XJTU-SY), so gains must be measured against a "statistics only" baseline. The encoder cannot learn interactions between level and shape. Per-window normalisation is undefined or noisy on near-silent windows.
+
+**Not for the benchmark.** The benchmark keeps the published methods with the harness standard (D253, D255); this is an idea for the own method only.
+
+**Open questions.** Which statistics (mean, SD, RMS, kurtosis; per band?); appended at the probe only or used inside the training objective (e.g. predicted by `z_op`, or adversarially removed from `z_state`, M1); how it compares with global normalisation on Herning.

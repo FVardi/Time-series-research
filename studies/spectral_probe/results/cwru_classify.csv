@@ -1,0 +1,5 @@
+run,combination,features,n_features,label_fraction,n_labels,probe,accuracy,macro_f1
+20261105_153432_tfc_cwru,,spectral_targets,34,0.1,90,logreg,0.995575221238938,0.9957369614512472
+20261105_153432_tfc_cwru,,spectral_targets,34,0.1,90,floor,0.10619469026548672,0.019200000000000002
+20261105_153432_tfc_cwru,,spectral_targets,34,1.0,900,logreg,1.0,1.0
+20261105_153432_tfc_cwru,,spectral_targets,34,1.0,900,floor,0.10176991150442478,0.018473895582329317

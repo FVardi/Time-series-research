@@ -1,0 +1,32 @@
+# Baseline (D75 c, D76 item 2): one-sided linear |FFT| magnitude spectrum per channel, probed directly, on the XJTU-SY remaining useful life task, the DSCN protocol (Wang et al., 2019; D228, D231, D232, D247, D254).
+# Same data, split and evaluation as tfc_xjtu_sy.yaml; standardised as every input (D253, D255).
+#   uv run python scripts/pretrain.py configs/fft_xjtu_sy.yaml --seeds 0
+name: fft_xjtu_sy
+dataset: xjtu_sy
+data_root: data/canonical
+channels: [Horizontal_vibration_signals, Vertical_vibration_signals]  # both (D232 item 2)
+labels: xjtu_sy_rul  # (N - n) / N, linear from the start (harness/labels.py; D228); group = bearing
+task: regression
+windows:  # D254 (supersedes D247 item 1 and D232 item 3)
+  length: 32768  # one window = one whole one-minute sample (1.28 s), as recorded (D232 item 1, restored by D254)
+  sample_rate_hz: 25600  # as recorded (D224)
+  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253, extended to baselines by D255)
+split:  # DSCN Table 1 (D231): bearings 1-4 of each condition train, bearing 5 test; pretraining = training windows
+  train: {bearing: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing2_1, Bearing2_2, Bearing2_3, Bearing2_4, Bearing3_1, Bearing3_2, Bearing3_3, Bearing3_4]}
+  test: {bearing: [Bearing1_5, Bearing2_5, Bearing3_5]}
+  pretrain_only: {bearing: []}  # selects no captures: every non-test bearing is a training bearing (D231 item 3)
+method: fft
+seeds: [0]  # standard run: seed 0 (D239)
+device: cpu  # numpy only (D79)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+
+fft: {}  # nothing to set
+
+evaluation:  # D231 item 4, D232 items 4-6
+  label_fractions: [0.01, 0.1, 1.0]  # drawn unstratified over the embedded minutes (D170)
+  probes: [ridge, floor_mean]  # one probe pooled over the three conditions (D231 item 2)
+  cv_groups: true  # ridge's alpha on folds grouped by bearing, shuffled per seed (D232 item 5)
+  cv_folds: 4  # as DSCN's 4-fold cross-validation (Section 4.1.4)
+  time_window: 5  # DSCN Eq. 16, S = 5, on the representations; minutes 1-4 of each bearing left out (D232 item 4)
+  rul_metrics: true  # DSCN score + RMSE (minutes), MAE + R², minutes n >= N/2 of each test bearing (D232 item 6)
+  published_accuracy: null  # DSCN is a supervised network; no probe result to compare with

@@ -3,22 +3,23 @@
 name: xjtu_sy
 targets: [relative, centroid]  # windows standardised per window (D232): total energy is constant (D244)
 n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
-label_fractions: [0.01, 0.1, 1.0]  # D244
+label_fractions: [1.0]  # all training windows: the targets need no labelling (D246, supersedes D244's 1/10/100 %)
 seed: 0  # seed_0 of every run; label subsets and folds drawn with it (D239, D244)
-alphas: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]  # as harness/evaluate.ridge (D58)
+alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0, 1.0e+5, 1.0e+6, 1.0e+7, 1.0e+8]  # 10^-6..10^8 (D246; wider than D58's 10^-4..10^4)
 cv_groups: true  # folds grouped by bearing (as D232 item 5)
 cv_folds: 4  # as DSCN's 4-fold cross-validation (D232 item 5)
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
-runs:
-  - runs/20261105_151243_tfc_xjtu_sy
-  - runs/20261105_160034_tfc_xjtu_sy_paper
-  - runs/20261105_161136_tfc_xjtu_sy_left_out
-  - runs/20261105_162137_tfc_xjtu_sy_left_out_x3
-  - runs/20261105_163138_tfc_xjtu_sy_left_out_lambda0
-  - runs/20261105_164139_tfc_xjtu_sy_positives_lambda0
-  - runs/20261105_165203_tfc_xjtu_sy_stage
-  - runs/20261105_170230_tfc_xjtu_sy_stage_paper
-  - runs/20261105_171339_tfc_xjtu_sy_stage_left_out
-  - runs/20261105_172325_tfc_xjtu_sy_stage_left_out_x3
-  - runs/20261105_173310_tfc_xjtu_sy_stage_left_out_lambda0
-  - runs/20261105_174309_tfc_xjtu_sy_stage_positives_lambda0
+runs: []  # the 2026-11-05 runs (whole-minute windows) are superseded by D247 (2,560-point windows) and archived;
+# add the new tfc_xjtu_sy* runs here when they exist. Probed on 2026-11-10 (results/xjtu_sy.csv, now superseded):
+#   runs/archive/20261105_151243_tfc_xjtu_sy
+#   runs/archive/20261105_160034_tfc_xjtu_sy_paper
+#   runs/archive/20261105_161136_tfc_xjtu_sy_left_out
+#   runs/archive/20261105_162137_tfc_xjtu_sy_left_out_x3
+#   runs/archive/20261105_163138_tfc_xjtu_sy_left_out_lambda0
+#   runs/archive/20261105_164139_tfc_xjtu_sy_positives_lambda0
+#   runs/archive/20261105_165203_tfc_xjtu_sy_stage
+#   runs/archive/20261105_170230_tfc_xjtu_sy_stage_paper
+#   runs/archive/20261105_171339_tfc_xjtu_sy_stage_left_out
+#   runs/archive/20261105_172325_tfc_xjtu_sy_stage_left_out_x3
+#   runs/archive/20261105_173310_tfc_xjtu_sy_stage_left_out_lambda0
+#   runs/archive/20261105_174309_tfc_xjtu_sy_stage_positives_lambda0

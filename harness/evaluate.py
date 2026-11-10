@@ -130,7 +130,8 @@ def ridge_grouped(Z, y, groups, seed, n_splits):
     """ridge() with alpha chosen on folds grouped by 'groups' (bearing), shuffled with the run's seed
     (XJTU-SY: 4 folds as DSCN's 4-fold cross-validation, grouped by bearing as D129; D232 item 5)."""
     pipe = make_pipeline(StandardScaler(), Ridge())
-    grid = {"ridge__alpha": [10.0**k for k in range(-4, 5)]}
+    # 1e-6 .. 1e8, as the spectral probe (D246): on XJTU-SY the earlier grid's largest value (1e4) was chosen every time (D247)
+    grid = {"ridge__alpha": [10.0**k for k in range(-6, 9)]}
     folds = list(GroupKFold(n_splits=n_splits, shuffle=True, random_state=seed).split(Z, y, groups))
     return GridSearchCV(pipe, grid, cv=folds).fit(Z, y).best_estimator_
 

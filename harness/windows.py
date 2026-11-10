@@ -5,7 +5,7 @@ Used by scripts/pretrain.py when the config has a 'split' section. Steps:
   random_parts - or: a random split of the labelled captures into train and test (D169)
   split_windows - or: the windows of the labelled captures split at random, stratified by class (D163, D171, D174)
   cut      - load, resample to one rate if needed (D136), cut consecutive windows (D137),
-             or overlapping windows with a hop (D226);
+             or overlapping windows with a hop (D226); optionally only the first n per capture (D247);
              optionally turn each capture's windows into per-window features (D165)
   cut_stored - or: read stored features (band features D172, MSSP statistics D181), one window per capture
   standardisation / standardise - one mean and SD per channel from given windows (D137)
@@ -56,13 +56,15 @@ def select(meta, filters):
     return caps[keep].reset_index(drop=True)
 
 
-def cut(root, dataset, captures, channels, length, rate_hz, transform=None, hop=None):
+def cut(root, dataset, captures, channels, length, rate_hz, transform=None, hop=None, max_windows=None):
     """Load each capture, resample it to rate_hz if it has another rate (D136), and cut
     consecutive windows of 'length' samples from its first sample; the incomplete last
     window is dropped (D137). With hop, a window starts every 'hop' samples, so windows
     overlap when hop < length (D226); without, hop = length (no overlap, D137). If given, transform maps each capture's windows
     (n, length, channels) to what is kept instead, e.g. per-window band features (D165);
     it runs capture by capture, so the raw samples of all captures are never in memory at once.
+    With max_windows, only the first max_windows windows of each capture are kept (XJTU-SY: the first
+    2,560 points of each one-minute sample, DSCN Section 4.1.4; D247).
 
     Returns X (n_windows, length, n_channels) and a table with one row per window:
     run_id, capture_id, start and stop (samples of the signal at rate_hz, stop exclusive)
@@ -77,6 +79,8 @@ def cut(root, dataset, captures, channels, length, rate_hz, transform=None, hop=
             ratio = Fraction(int(rate_hz), int(c.sample_rate_hz))
             x = resample_poly(x, ratio.numerator, ratio.denominator, axis=0)
         n = (len(x) - length) // hop + 1 if len(x) >= length else 0  # equals len(x) // length when hop = length
+        if max_windows is not None:
+            n = min(n, max_windows)  # D247
         idx = np.arange(n)[:, None] * hop + np.arange(length)  # sample indices of each window
         w = x[idx]  # (n, length, channels)
         X.append(transform(w) if transform else w)
@@ -248,7 +252,7 @@ def prepare(cfg, meta):
             X, table = cut_stored(w["features_file"], w["features"], caps, cfg["channels"], w["length"], w["sample_rate_hz"])
         else:
             X, table = cut(cfg["data_root"], cfg["dataset"], caps, cfg["channels"], w["length"], w["sample_rate_hz"],
-                           transform, w.get("hop"))
+                           transform, w.get("hop"), w.get("max_windows_per_capture"))
         # class and group of each window's capture (a lookup keeps the rows in the order of X)
         key = list(zip(caps.run_id, caps.capture_id))
         label, group = dict(zip(key, caps.label)), dict(zip(key, caps.group))

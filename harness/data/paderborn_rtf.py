@@ -37,6 +37,8 @@ import numpy as np
 import pandas as pd
 import scipy.io
 
+from harness.data import quantized
+
 DATASET = "paderborn_rtf"
 STREAM = "accel"
 CHANNELS = ("accHorizRear_A", "accHorizFrontal_C")  # variable names in the .mat files (description 2.2)
@@ -92,7 +94,6 @@ SENSORS = ("PCB 603C01 accelerometers (100 mV/g, +-50 g, 0.5-10,000 Hz at 3 dB, 
 STOP_CRITERION = ("experiment ends when T_vibration (within [6, 10] g) or T_temperature (110 degC) is exceeded; "
                   "no criterion pre-set for B01, B05 interrupted deliberately (description Section 1)")
 
-GRID_TOLERANCE_STEPS = 1e-6  # a value further than this from the ADC grid stops the conversion
 MAX_ULP = 2  # reconstructed values (code * scale + offset) must lie within 2 ulp of the file's largest |value|
 _MAT = re.compile(r"^(B\d\d)/vibrationData/data_\1_M(\d+)\.mat$")  # on normalised names
 _TOP = re.compile(r"^(B\d\d)(_part\d+)?/")  # top folder: B06/ or B06_part1/
@@ -160,36 +161,9 @@ def _load_mat(members, name):
     return scipy.io.loadmat(io.BytesIO(z.read(member)))
 
 
-def grid_constants(x):
-    """Step and offset of the ADC grid that the values x lie on.
-
-    The step is estimated from the smallest difference between distinct values and refined by a
-    least-squares fit of value against grid index; the offset is taken as the grid point nearest
-    zero, so that codes are centred on 0. Among the fitted constants and their roundings to 4-12
-    significant digits (the instrument stores round decimals, e.g. 0.000323335 V), the pair whose
-    reconstruction matches x exactly most often is returned.
-    """
-    u = np.unique(x)
-    k = np.rint((u - u[0]) / np.min(np.diff(u)))
-    c0, step = np.linalg.lstsq(np.vstack([np.ones_like(k), k]).T, u, rcond=None)[0]
-    offset = c0 - np.rint(c0 / step) * step
-    candidates = [(step, offset)] + [(float(f"{step:.{p}g}"), float(f"{offset:.{p}g}")) for p in range(4, 13)]
-    return max(candidates, key=lambda c: int(np.sum(np.rint((x - c[1]) / c[0]) * c[0] + c[1] == x)))
-
-
 def to_codes(x, step, offset, where):
-    """int16 codes of x on the given grid; stops if x is off the grid or not reconstructible."""
-    k = (x - offset) / step
-    codes = np.rint(k)
-    if np.max(np.abs(k - codes)) > GRID_TOLERANCE_STEPS:
-        raise ValueError(f"{where}: values not on the ADC grid (step {step!r}, offset {offset!r})")
-    if codes.min() < -32768 or codes.max() > 32767:
-        raise ValueError(f"{where}: codes outside int16")
-    rebuilt = codes * step + offset
-    # float64 resolution of the file's values: one ulp of its largest magnitude
-    if np.max(np.abs(rebuilt - x)) > MAX_ULP * np.spacing(np.max(np.abs(x))):
-        raise ValueError(f"{where}: reconstruction differs from the source by more than {MAX_ULP} ulp")
-    return codes.astype(np.int16)
+    """int16 codes of x on the given grid (harness/data/quantized.py, D236 item 3)."""
+    return quantized.to_codes(x, step, offset, where, np.int16, MAX_ULP)
 
 
 def read_tables(paths, experiment, members):
@@ -247,7 +221,7 @@ def read_tables(paths, experiment, members):
 
     # Grid constants per channel from the first measurement; every file is checked against them.
     first = _load_mat(members, mats[numbers[0]])
-    grid = {ch: grid_constants(first[ch].ravel()) for ch in CHANNELS}
+    grid = {ch: quantized.grid_constants(first[ch].ravel()) for ch in CHANNELS}
     for ch in CHANNELS:  # the chosen constants must pass the checks on the file they came from
         to_codes(first[ch].ravel(), *grid[ch], f"{mats[numbers[0]]}/{ch}")
 

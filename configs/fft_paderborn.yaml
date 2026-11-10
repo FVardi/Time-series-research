@@ -7,7 +7,7 @@ labels: paderborn_lessmeier  # healthy / OR / IR for the 15 bearings of Table 10
 windows:  # D222
   length: 5120  # 80 ms at 64 kHz, as TF-C's FD-A/FD-B windows (D39)
   sample_rate_hz: 64000
-  standardise: false  # baselines on raw values (D76, D137)
+  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253, extended to baselines by D255)
 split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9: pretrain.py --combination k, or scripts/run_combinations.py (D220, D225)
 method: fft
 seeds: [0]  # standard run: seed 0 (D239)

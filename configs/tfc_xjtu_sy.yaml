@@ -8,10 +8,10 @@ data_root: data/canonical
 channels: [Horizontal_vibration_signals, Vertical_vibration_signals]  # both (D232 item 2)
 labels: xjtu_sy_rul  # (N - n) / N, linear from the start (harness/labels.py; D228); group = bearing
 task: regression
-windows:  # D232 items 1 and 3
-  length: 32768  # one window = one whole one-minute sample (1.28 s), as DSCN
+windows:  # D254 (supersedes D247 item 1 and D232 item 3)
+  length: 32768  # one window = one whole one-minute sample (1.28 s), as recorded (D232 item 1, restored by D254)
   sample_rate_hz: 25600  # as recorded (D224)
-  standardise: per_window  # each window and channel by its own mean and SD (DSCN Eq. 14)
+  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253)
 split:  # DSCN Table 1 (D231): bearings 1-4 of each condition train, bearing 5 test; pretraining = training windows
   train: {bearing: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing2_1, Bearing2_2, Bearing2_3, Bearing2_4, Bearing3_1, Bearing3_2, Bearing3_3, Bearing3_4]}
   test: {bearing: [Bearing1_5, Bearing2_5, Bearing3_5]}
@@ -22,7 +22,7 @@ device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tfc:
-  encoder:  # both branches; sized from the data; on 32,768 samples each encoder ends much longer than on CWRU (no setting changes, as D151)
+  encoder:  # both branches; sized from the data (no setting changes, as D151)
     channels: [32, 64, 128]  # paper (as the ablation, D124)
     kernel_size: 8  # paper (as the ablation, D124); official FD_A config 32
     strides: [8, 1, 1]  # paper (as the ablation, D124)

@@ -2,9 +2,9 @@
 name: hust
 targets: [absolute, relative, total, centroid]  # D244
 n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
-label_fractions: [0.01, 0.1, 1.0]  # D244
+label_fractions: [1.0]  # all training windows: the targets need no labelling (D246, supersedes D244's 1/10/100 %)
 seed: 0  # seed_0 of every run; label subsets and folds drawn with it (D239, D244)
-alphas: [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0]  # as harness/evaluate.ridge (D58)
+alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 10000.0, 1.0e+5, 1.0e+6, 1.0e+7, 1.0e+8]  # 10^-6..10^8 (D246; wider than D58's 10^-4..10^4)
 cv_groups: false  # windows split at random: plain shuffled folds (as D175)
 cv_folds: 5
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
