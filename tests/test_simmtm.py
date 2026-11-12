@@ -7,6 +7,7 @@ import pytest
 import torch
 import yaml
 
+from harness import runs  # load_config resolves 'defaults:' (D260)
 from harness.methods.external import EXTERNAL
 
 CODE = os.path.join(EXTERNAL, "simmtm", "SimMTM_Classification", "code")
@@ -20,8 +21,7 @@ CONFIG = os.path.join(os.path.dirname(__file__), "..", "configs", "simmtm_forda.
 
 def settings():
     """The 'simmtm' section of the FordA config, with the open batch size filled in for testing."""
-    with open(CONFIG) as f:
-        s = yaml.safe_load(f)["simmtm"]
+    s = runs.load_config(CONFIG)["simmtm"]
     s["changed"]["batch_size"] = 16  # test value only
     return s
 

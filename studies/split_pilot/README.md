@@ -1,5 +1,7 @@
 # Split-representation pilot (METHOD_IDEAS M1; D182-D185, D196-D198)
 
+Status: parked (D215); results and the options for picking it up again in METHOD_IDEAS.md M1.
+
 Does a block of the representation that is pushed to be free of the operating point help?
 TS2Vec backbone (`harness/methods/ts2vec_split.py`), on synthetic data (D196) and CWRU.
 

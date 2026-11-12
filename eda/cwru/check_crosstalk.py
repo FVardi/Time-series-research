@@ -1,7 +1,7 @@
 """Diagnostic: does a bearing fault at one end of the CWRU motor show in the other end's channel?
 
 Usage:
-    uv run python eda/cwru/check_crosstalk.py configs/crosstalk_cwru.yaml
+    uv run python eda/cwru/check_crosstalk.py eda/cwru/configs/crosstalk_cwru.yaml
 
 Each 12 kHz fault file holds a drive-end (DE) and a fan-end (FE) channel. For every fault file,
 the squared envelope spectrum (high-pass, Hilbert envelope squared, |FFT|) of

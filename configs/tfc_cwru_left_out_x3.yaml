@@ -2,22 +2,10 @@
 # Everything else exactly as configs/tfc_cwru.yaml (the 'positives' arm, CWRU protocol D218).
 # CWRU literature protocol (Zhao et al. 2020; D167, D177-D179): 10 classes, drive end, 0 hp, 1,024-sample windows.
 # TF-C (positives) on CWRU (D167, D151, D158): FordA settings unchanged (sized from the data).
+defaults: [datasets/cwru.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_cwru_left_out_x3
-dataset: cwru
-data_root: data/canonical
-channels: [DE]  # drive end only, as Zhao et al. (D167)
-labels: cwru_zhao  # healthy + fault location x size, 10 classes (harness/labels.py; D167)
-windows:  # D136, D137
-  length: 1024  # as Zhao et al. (D167)
-  sample_rate_hz: 12000  # healthy file 97 (48 kHz) resampled to 12 kHz (D167)
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # windows split at random (D167, D174); pretraining = training windows (D164)
-  captures: {source_file: [97, 105, 118, 130, 169, 185, 197, 209, 222, 234]}  # Zhao et al.'s files: 0 hp, healthy + 9 drive-end faults (D167)
-  random_windows: {test_fraction: 0.2, random_state: 40}  # stratified by class, fixed for all seeds, as Zhao et al. (D171, D174)
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tfc:
   encoder:  # both branches; on 1024 samples each encoder ends at 128 x 18 (h = 2,304 per branch; FordA 1,280)
@@ -49,10 +37,3 @@ tfc:
     betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
     weight_decay: 0.0005  # paper (as the ablation, D124)
   eval_chunk: 512  # series per forward pass when encoding; does not change results
-
-evaluation:  # D26, D133, D178, D179
-  label_fractions: [0.1, 1.0]  # 1 % dropped: fewer labels than classes (D178)
-  probes: [logreg, floor]
-  cv_groups: false  # plain stratified 5-fold, not grouped (D179)
-  per_class: true  # test accuracy per class, logreg probe (D168, D179)
-  published_accuracy: null  # Zhao et al. train each network end to end; no probe result to compare with

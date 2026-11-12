@@ -18,12 +18,15 @@ For every run listed in a config (one config per dataset, in studies/spectral_pr
      subset of the training windows (harness/evaluate.label_subset, as for regression, D170).
      Score: R² on all test windows, per target.
   4. Reference (config fft_reference: true): the |rfft| spectrum of the same windows
-     (harness/methods/fft.py, the FFT baseline) probed in the same way.
+     (harness/baselines/fft.py, the FFT baseline) probed in the same way.
+  5. Per test bearing (config per_bearing: true; run-to-failure data, XJTU-SY, D265): Pearson's correlation
+     between the ridge probe's predictions and the targets within each test bearing, so a constant offset
+     between bearings does not count; written to results/<config name>_per_bearing.csv.
 
 Usage (from the repo root):
     uv run --no-sync python studies/spectral_probe/probe_spectral.py studies/spectral_probe/configs/forda.yaml
 Writes studies/spectral_probe/results/<config name>.csv, one row per run (or reference), label fraction,
-probe, channel and target.
+probe, channel and target (and <config name>_per_bearing.csv with per_bearing: true).
 """
 
 import hashlib
@@ -41,7 +44,7 @@ from sklearn.preprocessing import StandardScaler
 
 from harness import evaluate, runs, windows
 from harness.data import canonical
-from harness.methods import fft
+from harness.baselines import fft
 
 OUT = os.path.join(os.path.dirname(__file__), "results")
 CHUNK = 256  # windows per FFT call (keeps memory low on long windows); does not change any value
@@ -116,6 +119,12 @@ def encoder_inputs(folder):
     return X, groups, cfg
 
 
+def test_bearings(folder):
+    """Bearing (group) of each test window, in the row order of Z_test (D33)."""
+    table = pd.read_csv(os.path.join(folder, "windows.csv"), dtype={"run_id": str, "capture_id": str, "group": str})
+    return table[table.split == "test"].sort_values("row").group.to_numpy()
+
+
 # ---------------------------------------------------------------- targets
 
 def spectral_targets(X, n_bands, kinds, channels, rate_hz):
@@ -183,9 +192,23 @@ def ridge_per_target(Z, Y, Z_test, folds, alphas):
     return np.asarray(alphas)[best], pred
 
 
-def probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about):
-    """Result rows of one representation (a run's Z or the reference) at every label fraction."""
+def per_bearing_rows(pred, Y_test, bearings, info, about):
+    """Pearson's correlation between the predictions and the targets within each test bearing (D265):
+    does the representation follow how a bearing's spectrum changes over its life, whatever its level?"""
     rows = []
+    for b in pd.unique(bearings[pd.notna(bearings)]):  # windows without a bearing (e.g. CWRU's healthy file) are left out
+        m = bearings == b
+        for j, target in enumerate(info):
+            y, p = Y_test[m, j], pred[m, j]
+            r = np.corrcoef(y, p)[0, 1] if y.std() > 0 and p.std() > 0 else np.nan  # undefined if either is constant
+            rows.append({**about, **target, "probe": "ridge", "test_bearing": b, "n_windows": int(m.sum()), "pearson_r": r})
+    return rows
+
+
+def probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about, bearings=None):
+    """Result rows of one representation (a run's Z or the reference) at every label fraction, and the
+    per-bearing rows (D265) when the test bearings are given."""
+    rows, bearing_rows = [], []
     seed = study["seed"]
     for fraction in study["label_fractions"]:
         idx = evaluate.label_subset(Y_train[:, 0], fraction, seed, stratify=False)  # unstratified (D170)
@@ -193,6 +216,8 @@ def probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about):
         alpha, pred = ridge_per_target(Z_train[idx], Y_train[idx], Z_test, folds, study["alphas"])
         r2 = r2_score(Y_test, pred, multioutput="raw_values")
         floor = r2_score(Y_test, np.tile(Y_train[idx].mean(axis=0), (len(Y_test), 1)), multioutput="raw_values")
+        if bearings is not None:
+            bearing_rows += per_bearing_rows(pred, Y_test, bearings, info, {**about, "label_fraction": fraction})
         for j, target in enumerate(info):
             common = {**about, "label_fraction": fraction, "n_labels": len(idx), **target}
             rows.append({**common, "probe": "ridge", "alpha": alpha[j], "r2": r2[j]})
@@ -200,7 +225,7 @@ def probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about):
         banded = [t["band"] is not None for t in info]  # the band targets (absolute, relative)
         print(f"  {about['name']}, {fraction:.0%} of the labels: mean R² over the band targets "
               f"{np.mean(r2[banded]):.3f}", flush=True)
-    return rows
+    return rows, bearing_rows
 
 
 # ---------------------------------------------------------------- main
@@ -209,7 +234,7 @@ def main(config_path):
     study = runs.load_config(config_path)
     if not set(study["targets"]) <= set(KINDS):
         raise ValueError(f"targets must be among {KINDS}")
-    rows, key = [], None
+    rows, bearing_rows, key = [], [], None
     for folder in study["runs"]:
         folder = folder.rstrip("/")
         print(folder, flush=True)
@@ -224,11 +249,13 @@ def main(config_path):
             if os.path.exists(split_path):
                 with open(split_path) as f:
                     combination = json.load(f)["combination"]
+            bearings = test_bearings(folder) if study["per_bearing"] else None  # D265
             if study["fft_reference"]:  # the FFT baseline's features of the same windows, in chunks
                 F_train, F_test = (np.concatenate([fft.encode(None, X[p][i:i + CHUNK]) for i in range(0, len(X[p]), CHUNK)])
                                    for p in ("train", "test"))
                 about = {"run": os.path.basename(folder), "name": "fft_reference", "combination": combination}
-                rows += probe_rows(F_train, F_test, Y_train, Y_test, info, groups, study, about)
+                r, b = probe_rows(F_train, F_test, Y_train, Y_test, info, groups, study, about, bearings)
+                rows, bearing_rows = rows + r, bearing_rows + b
                 del F_train, F_test
             del X  # only the targets are needed from here on
         cfg = run_config(folder)
@@ -237,12 +264,17 @@ def main(config_path):
         if (len(Z_train), len(Z_test)) != (len(Y_train), len(Y_test)):
             raise ValueError(f"{folder}: Z has {len(Z_train)} / {len(Z_test)} rows, the windows {len(Y_train)} / {len(Y_test)}")
         about = {"run": os.path.basename(folder), "name": cfg["name"], "combination": combination}
-        rows += probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about)
+        r, b = probe_rows(Z_train, Z_test, Y_train, Y_test, info, groups, study, about, bearings)
+        rows, bearing_rows = rows + r, bearing_rows + b
 
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, f"{study['name']}.csv")
     pd.DataFrame(rows).to_csv(path, index=False)
     print(f"Done: {path}")
+    if bearing_rows:  # D265
+        path = os.path.join(OUT, f"{study['name']}_per_bearing.csv")
+        pd.DataFrame(bearing_rows).to_csv(path, index=False)
+        print(f"Done: {path}")
 
 
 if __name__ == "__main__":

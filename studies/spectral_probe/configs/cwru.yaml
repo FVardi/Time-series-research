@@ -8,6 +8,7 @@ alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 100
 cv_groups: false  # windows split at random: plain shuffled folds (as D179)
 cv_folds: 5
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+per_bearing: false  # Pearson's r per test bearing (D265): bearings in fixed states, no life trajectory
 runs:
   - runs/20261105_153432_tfc_cwru
   - runs/20261105_153502_tfc_cwru_paper

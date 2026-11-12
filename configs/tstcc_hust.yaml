@@ -1,52 +1,11 @@
 # TS-TCC (permutation fixed) on HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
 # Settings as tstcc_cwru.yaml; only the values the input shape forces are changed (D151, D256).
 #   uv run python scripts/pretrain.py configs/tstcc_hust.yaml --seeds 0
+defaults: [datasets/hust.yaml, methods/tstcc.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tstcc_hust
-dataset: hust
-data_root: data/canonical
-channels: [vibration]  # the only channel (D223)
-labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
-windows:  # D226
-  length: 2048  # as Thuan & Hong (D226)
-  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
-  sample_rate_hz: 51200  # as recorded (D223)
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # windows split at random (D226); pretraining = training windows (as D164)
-  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
-  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
-method: tstcc
-seeds: [0]  # standard run: seed 0 (D239)
-device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
-  weight_decay: 0.0003  # hard-coded in the official main.py for both Adam optimisers
-  # lambda1 = 1 and lambda2 = 0.7 are hard-coded in the official model_train (not settable here)
-  official_config:  # external/tstcc/config_files/HAR_Configs.py; checked by the adapter, a difference stops the run
-    kernel_size: 8
-    stride: 1
-    dropout: 0.35
-    num_epoch: 40
-    batch_size: 128  # also the TS2Vec paper's batch size for UCR datasets
-    beta1: 0.9
-    beta2: 0.99
-    lr: 0.0003
-    drop_last: true
-    augmentation.jitter_scale_ratio: 1.1  # σ of the weak view's scaling (D107 item 2)
-    augmentation.jitter_ratio: 0.8  # σ of the strong view's jitter
-    augmentation.max_seg: 8  # strong view: 1..7 segments (D107 item 4)
-    TC.hidden_dim: 100
-    TC.timesteps: 6
-    Context_Cont.temperature: 0.2
-    Context_Cont.use_cosine_similarity: true
   changed:  # HAR values changed for the input shape (D105, D156); the HAR value in the comment
     input_channels: 1  # HAR 9; the only channel (D223)
-    final_out_channels: 320  # HAR 128; TS2Vec paper: representation dimension 320 for every baseline
     features_len: 258  # HAR 18; encoder output length for 2,048 samples; only sizes the unused classifier layer
     num_classes: 7  # HAR 6; only sizes the unused classifier layer
-
-evaluation:  # D26, D40, D133, D226
-  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
-  probes: [logreg, floor]
-  cv_groups: false  # plain stratified 5-fold, random split (as D175)
-  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

@@ -1,0 +1,11 @@
+# SimMTM on XJTU-SY health stage, healthy before the FPT and degrading from it (D191 task 3; D230, D231, D232 item 7); inputs D266.
+# Settings as simmtm_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+#   uv run python scripts/pretrain.py configs/simmtm_xjtu_sy_stage.yaml --seeds 0
+defaults: [datasets/xjtu_sy_stage.yaml, methods/simmtm.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: simmtm_xjtu_sy_stage
+
+simmtm:
+  changed:  # SleepEEG values changed for the input shape (D159); the SleepEEG value in the comment
+    TSlength_aligned: 2560  # 178; window length (D266; the decoder outputs input_channels x this many values, D159)
+    CNNoutput_channel: 109  # 10; encoder output length for 2,560 samples (checked by the adapter)
+    input_channels: 2  # 1; both accelerometers, all encoded and rebuilt (D159, D232 item 2)

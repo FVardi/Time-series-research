@@ -22,7 +22,7 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Alternatives considered:** Poetry (mature and widespread, but does not install Python versions itself and its PyTorch package-index setup is fiddly). conda (handles CUDA, but slower and with clumsier lock files). pip + venv (no lock file).
 **Rationale:** Exact reproducible versions, one-command installation of older Python versions for old method repositories, straightforward PyTorch installation, and speed.
 
-## 2026-10-06 — D16: One plain YAML config file per experiment
+## 2026-10-06 — D16: One plain YAML config file per experiment (amended by D260)
 **Decision:** Each experiment is described by one YAML file, read by a few lines of code with no merging or override machinery. Every parameter is written in the file; nothing is filled in implicitly.
 **Alternatives considered:** Hydra (powerful composition and sweeps, but more to learn to read a config). Python dataclasses as configs (type-checked, but less readable).
 **Rationale:** Easiest to read and check (code-style rule in CLAUDE.md); no hidden defaults. Can be revisited if configs start to repeat heavily.
@@ -32,7 +32,7 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Alternatives considered:** MLflow (local web interface for comparing runs; can be added later). Weights & Biases (cloud-based; results leave the machine).
 **Rationale:** Nothing extra to install; every result can be inspected in a text editor.
 
-## 2026-10-06 — D18: Package layout
+## 2026-10-06 — D18: Package layout (extended by D262)
 **Decision:** Flat layout: `harness/` (library: `data/` with one reader per dataset and `canonical.py`, `windows.py`, `targets.py`, `methods/` with one file per method, `evaluate.py`, `runs.py`), `scripts/` (small entry points), `configs/` (YAML), `external/` (official method repositories, D19), `studies/<name>/` (D11), `tests/`, `runs/` and `data/` (`raw/`, `canonical/`; both not committed). Files and folders are created only when first needed.
 **Alternatives considered:** The "src layout" (`src/harness/`): guards against some import mistakes, but adds a folder level with little gain for a single-user project.
 **Rationale:** Small, flat and readable; each file has one clear job.
@@ -79,7 +79,7 @@ Repository structure and project conventions. Index: `../DECISIONS.md`.
 **Alternatives considered:** (2) Leaving both out of the timing table with a note in the caption. (3) The masking-fixed run as the reproduction row; no row, with the explanation in the text only.
 **Rationale:** User's decision (2026-10-21), following Claude's recommendations. The missing timing stays visible in the table. The reproduction check asks whether the wrapping of the paper's code works, which is separate from which variant is compared.
 
-## 2026-10-27 — D130: STATUS.md: living status list at the repository root
+## 2026-10-27 — D130: STATUS.md: living status list at the repository root (superseded by D261)
 **Decision:** `STATUS.md` at the repository root lists what is done, ready to run and open (benchmark runs per dataset, methods, datasets, loose ends, deferred items) and is updated as things change. Decisions stay in `decisions/`, supervisor questions in `QUESTIONS.md`. It takes over the role of `HANDOFF.md`, which dates from early October and no longer describes the repository (whether to delete it is up to the user).
 **Alternatives considered:** Rewriting `HANDOFF.md`; a section in `README` or `CLAUDE.md`.
 **Rationale:** User's request (2026-10-27).
@@ -117,3 +117,40 @@ evaluation: {probes: [logreg, floor], cv_groups: true, ...}
 **Decision:** `.gitattributes` with `* text=auto eol=lf`: git stores text files with LF, whatever line endings an editor or tool writes on Windows; binary files are detected and left alone.
 **Alternatives considered:** No rule (files rewritten with CRLF show as completely changed; about 60 such files on 2026-11-05). `core.autocrlf` per machine (not stored in the repo, so each computer must be set up).
 **Rationale:** User's decision (2026-11-05), repo cleanup: diffs and commits show only real changes.
+
+## 2026-11-12 — D258: Every chat keeps the checklist up to date itself
+**Decision:** The project to-do list (claude.ai Project doc `claude/CHECKLIST.md`) is updated by the chat that does the work: when a chat finishes a task, starts or finishes runs, records a decision or hits a new open problem, it reads the checklist, changes only the lines about its own work and writes the whole doc back (re-reading and redoing the edit if another chat changed it meanwhile). Rule in `CLAUDE.md`, in the checklist's header and (by the user) in the Project instructions. The dedicated checklist chat tidies up and catches what was missed.
+**Alternatives considered:** Only the checklist chat edits the checklist, with other chats reporting to the user (the setup since 2026-11-04; the user has to relay every change by hand).
+**Rationale:** User's decision (2026-11-12): relaying every change to the checklist chat was cumbersome.
+
+*Note (2026-11-12): the dedicated checklist chat is retired (user); the chats that do the work keep the checklist up to date, and any chat may tidy it.*
+
+## 2026-11-12 — D257: Standard choices without asking; the user decides only what has no standard
+**Decision:** Where a choice has a standard, Claude takes it without asking, in this order: an existing rule of the harness (`docs/protocol.md`, the `docs/` cards), the paper or official code or the dataset authors' protocol, then common practice in the field. Claude asks only when there is no standard, sources disagree, a choice would depart from a standard, or it is costly or cannot be undone. D-entries are written for the user's decisions and for departures from a standard; standard choices are recorded in the configs and the cards, with their source. Rule in `CLAUDE.md`.
+**Alternatives considered:** The user decides every choice and Claude asks each time (the rule until now: many questions, slow progress, many branches of decisions).
+**Rationale:** User's decision (2026-11-12): asking every time creates bloat and slows progress; industry and literature standards are used wherever they exist.
+
+## 2026-11-12 — D259: Current rules in `docs/` cards; the decision log stays the history
+**Decision:** The rules in force are kept in `docs/`: `docs/protocol.md` (rules for every dataset and method, each citing its D-entries), `docs/methods/<method>.md` and `docs/datasets/<dataset>.md` (one card each: what is used, settings, departures from the source, status). `docs/README.md` is the index and says when a card is updated (with the decision that changes it). `decisions/` stays the dated, never-deleted record of why.
+**Alternatives considered:** Reading the current rule out of the log (a rule is often spread over several entries that amend each other).
+**Rationale:** User's request (2026-11-12), applying the restructuring proposed on 2026-11-03: what is in force can be found in one place.
+
+## 2026-11-12 — D260: Configs composed from dataset and method parts (amends D16)
+**Decision:** Settings shared by every config of a dataset are in `configs/datasets/<dataset>.yaml`, settings shared by every config of a method in `configs/methods/<method>.yaml`. A config lists its parts under `defaults:` (paths relative to the file); `harness/runs.py:load_config` merges them in order (mappings key by key, everything else replaced) and the file's own keys last. The run folder gets the merged config as `config.yaml` and copies of the source files in `config_sources/`. All configs were checked to resolve to exactly the settings they had before. `configs/tsjepa_paderborn.yaml` stays as it is until the running GPU queue has finished.
+**Alternatives considered:** One complete file per experiment (D16; the same dataset and method settings repeated in up to 137 files). Hydra (more machinery than needed).
+**Rationale:** User's request (2026-11-12), applying the restructuring proposed on 2026-11-03; D16 anticipated revisiting it if configs repeat heavily. Every setting is still written in a file, and the run folder still holds the full config.
+
+## 2026-11-12 — D261: `STATUS.md` generated by `scripts/status.py` (supersedes D130)
+**Decision:** `STATUS.md` is written by `scripts/status.py` from the configs, the run folders, the queue logs, `docs/datasets/` and the `Status:` line of each study README; it is not edited by hand. Run it after runs finish (`uv run python scripts/status.py`). What is still to do stays in the project checklist (D258).
+**Alternatives considered:** The hand-kept `STATUS.md` of D130 (it fell behind the runs).
+**Rationale:** User's request (2026-11-12), applying the restructuring proposed on 2026-11-03: keeping track of what is done was the hardest part.
+
+## 2026-11-12 — D262: Layout: baselines and feature sets in their own packages; study and EDA scripts with their study (extends D18, D68, D91)
+**Decision:** Methods without training (`raw`, `fft`, `envelope`, `catch22`, `minirocket`, `mssp`, `mssp_features`, `pooled`) moved from `harness/methods/` to `harness/baselines/`; the stored feature sets (`band_features`, `subband_power`, `mssp_stats`, `stored_features`) from `harness/` to `harness/features/`. The TF-C reproduction scripts and configs moved to `studies/tfc_reproduction/`, two one-off method checks to `studies/method_checks/`, and EDA configs to `eda/<dataset>/configs/`. References in code, configs, notebooks and `docs/` were updated; `decisions/` and `report/` are left as written. Each study README starts with a `Status:` line; `studies/README.md` and a root `README.md` index the repository.
+**Alternatives considered:** Keeping the layout (`harness/methods/` mixing SSL methods with baselines; study scripts among the entry points in `scripts/`).
+**Rationale:** User's request (2026-11-12), applying the restructuring proposed on 2026-11-03.
+
+## 2026-11-12 — D263: Experiments start simple and grow step by step; every extension applies to all methods or none
+**Decision:** (1) *Simple first, then build.* An experiment or study starts in its simplest form that answers its question; refinements (extra measures, reweightings, extra targets, finer settings) are added one at a time, only after the simple version has run and been looked at, and only when the user asks for them. Proposed refinements are noted as options (study README or checklist), not built. (2) *Methods treated alike.* Any extra beyond the standard runs (longer training, extra checkpoints, more seeds, extra variants or diagnostics) is done for every method in the comparison or for none; one method is not given a special case. Existing one-method diagnostics (e.g. the FordA longer-training runs of D142) stay as the record but are not used as extra points in comparisons. Rule in `CLAUDE.md` and `docs/protocol.md` (P28).
+**Alternatives considered:** Adding refinements as they come up (e.g. relevance-weighted R² in the spectral probe, D245 (b)); using the D142 longer-training runs as extra points for TF-JEPA, SimMTM and TF-C only.
+**Rationale:** User's request (2026-11-12): keep experiments simple and then build; either all methods get more detail or none.

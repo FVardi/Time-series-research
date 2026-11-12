@@ -1,0 +1,19 @@
+# Shared settings of every tloss config (D260): the method's settings that do not depend on the dataset.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this method: docs/methods/. Taken from configs/tloss_forda.yaml on 2026-11-12.
+method: tloss
+device: cuda
+tloss:  # official settings (D32)
+  compared_length: null  # null = compare full-length series
+  nb_random_samples: 10  # K = 10, the setting of the published FordA result
+  negative_penalty: 1
+  batch_size: 10
+  nb_steps: 2000  # paper: 2000 steps for K >= 10 (the shipped default file says 1500)
+  lr: 0.001
+  penalty: null  # only for T-Loss's own classifier, not used
+  early_stopping: null
+  channels: 40
+  depth: 10
+  reduced_size: 160  # internal size before pooling (README: the paper swaps 160 and 320)
+  out_channels: 320  # representation size
+  kernel_size: 3

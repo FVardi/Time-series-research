@@ -1,0 +1,6 @@
+# TS2Vec on XJTU-SY remaining useful life, the DSCN protocol (Wang et al., 2019; D228, D231, D232); inputs D266.
+# Settings as ts2vec_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+# 2,560-sample windows: under max_train_length 3,000, not cropped; n_iters 600 by TS2Vec's rule (D266).
+#   uv run python scripts/pretrain.py configs/ts2vec_xjtu_sy.yaml --seeds 0
+defaults: [datasets/xjtu_sy.yaml, methods/ts2vec.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: ts2vec_xjtu_sy

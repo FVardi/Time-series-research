@@ -1,0 +1,23 @@
+# Shared settings of every xjtu_sy_stage config (D260): dataset, split, windows and evaluation.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this dataset: docs/datasets/. Taken from configs/tfc_xjtu_sy_stage.yaml on 2026-11-12.
+dataset: xjtu_sy
+data_root: data/canonical
+channels: [Horizontal_vibration_signals, Vertical_vibration_signals]  # both (D232 item 2)
+labels: xjtu_sy_health_stage  # FPT of D230 (harness/fpt.py); group = bearing
+windows:  # D266 (supersedes D254 item 1); standardisation D254 item 2
+  length: 2560  # DSCN's input length (Section 4.1.4): 12 non-overlapping windows per one-minute sample, last 2,048 points unused (D266)
+  pool_per_capture: mean  # probes see one row per minute: the mean of its 12 window representations (our choice, D266)
+  sample_rate_hz: 25600  # as recorded (D224)
+  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253)
+split:  # DSCN Table 1 (D231), without the bearings left out by D230 item 5
+  train: {bearing: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing2_1, Bearing2_2, Bearing2_3, Bearing3_1, Bearing3_3]}
+  test: {bearing: [Bearing1_5, Bearing2_5]}  # Bearing3_5 left out (no FPT, D230)
+  pretrain_only: {bearing: [Bearing2_4, Bearing3_2, Bearing3_4]}  # no labels (D230), still pretraining data (D231 item 3)
+seeds: [0]  # standard run: seed 0 (D239)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+evaluation:  # D26, D129, D232 item 7
+  label_fractions: [0.01, 0.1, 1.0]
+  probes: [logreg, floor]
+  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
+  published_accuracy: null  # no published result for this task

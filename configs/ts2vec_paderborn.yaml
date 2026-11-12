@@ -2,33 +2,5 @@
 # Settings as ts2vec_cwru.yaml; only the values the input shape forces are changed (D151, D256).
 # All 10 combinations, seed 0 (D239):
 #   uv run python scripts/run_combinations.py configs/ts2vec_paderborn.yaml --seeds 0
+defaults: [datasets/paderborn.yaml, methods/ts2vec.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: ts2vec_paderborn
-dataset: paderborn
-data_root: data/canonical
-channels: [vibration_1]  # vibration only (D222)
-labels: paderborn_lessmeier  # healthy / OR / IR for the 15 bearings of Table 10; group = bearing (harness/labels.py; D220)
-windows:  # D222
-  length: 5120  # 80 ms at 64 kHz, as TF-C's FD-A/FD-B windows (D39)
-  sample_rate_hz: 64000
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9 (D220, D225)
-method: ts2vec
-seeds: [0]  # standard run: seed 0 (D239)
-device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
-
-ts2vec:  # official defaults (D28), unchanged (D151)
-  repr_dims: 320
-  hidden_dims: 64
-  depth: 10
-  lr: 0.001
-  batch_size: 8
-  max_train_length: 3000  # windows are 5,120 samples: 5,120 // 3,000 = 1 section, so not split (official code splits from 2 sections)
-  temporal_unit: 0
-  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (here: about 9,000 training windows x 5,120 x 1)
-
-evaluation:  # D26, D40, D129, D133, D138
-  label_fractions: [0.01, 0.1, 1.0]
-  probes: [logreg, floor]
-  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
-  published_accuracy: null  # Lessmeier et al. report accuracies of their own feature classifiers, not of a probe

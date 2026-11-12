@@ -1,0 +1,10 @@
+# TS-JEPA (masking fixed, channels flattened per patch) on XJTU-SY remaining useful life, the DSCN protocol (Wang et al., 2019; D228, D231, D232); inputs D266.
+# Settings as tsjepa_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+# 2,560-sample windows: 10 patches of 256 samples x 2 channels, flattened per patch (D154, D266).
+#   uv run python scripts/pretrain.py configs/tsjepa_xjtu_sy.yaml --seeds 0
+defaults: [datasets/xjtu_sy.yaml, methods/tsjepa.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: tsjepa_xjtu_sy
+
+tsjepa:
+  epochs: 173  # D256: FordA's optimiser steps (D66: 5,000 epochs x 113 batches = 565,000); here 104,532 windows = 3,267 batches
+               # per epoch: 565,000 / 3,267 = 173 epochs (D266). LR and EMA schedules run over these epochs

@@ -10,11 +10,12 @@ import pytest
 import yaml
 from sklearn.linear_model import RidgeClassifierCV
 
+from harness import runs  # load_config resolves 'defaults:' (D260)
 from harness import evaluate
 import pycatch22
 
-from harness.methods import catch22, envelope, fft, minirocket, mssp, raw
-from harness.methods.mssp_features import FEATURE_NAMES
+from harness.baselines import catch22, envelope, fft, minirocket, mssp, raw
+from harness.baselines.mssp_features import FEATURE_NAMES
 from scripts import convert_forda
 from scripts import evaluate as evaluate_script
 from scripts import pretrain
@@ -117,8 +118,7 @@ def test_baseline_end_to_end(tmp_path, monkeypatch, name):
     write_fake_forda(raw_dir, n=200, length=128)  # catch24 needs >= 100 samples (D90)
     convert_forda.convert(str(raw_dir), str(tmp_path / "canonical"))
 
-    with open(f"configs/{name}_forda.yaml") as f:
-        cfg = yaml.safe_load(f)
+    cfg = runs.load_config(f"configs/{name}_forda.yaml")
     cfg["data_root"] = str(tmp_path / "canonical")
     cfg["seeds"] = [0, 1]
     cfg["evaluation"]["label_fractions"] = [0.1, 1.0]  # 1 % of 200 is too few for 5-fold cross-validation

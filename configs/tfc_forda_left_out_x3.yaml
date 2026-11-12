@@ -3,14 +3,10 @@
 # TF-C, our implementation (D41) with the benchmark loss (D122), on FordA in the harness's
 # frozen-probe pipeline (D123): scripts/pretrain.py + scripts/evaluate.py, same data, probes and
 # seeds as configs/ts2vec_forda.yaml (D26, D27). Representation [z_T; z_F] (D123).
-# TF-C settings as in the FordA ablation (= configs/tfc_fd.yaml), D124; source of each value in its comment.
+# TF-C settings as in the FordA ablation (= studies/tfc_reproduction/configs/tfc_fd.yaml), D124; source of each value in its comment.
+defaults: [datasets/forda.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_forda_left_out_x3
-dataset: forda
-run_id: forda
-channels: [x]
-data_root: data/canonical
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 
 tfc:
@@ -45,6 +41,5 @@ tfc:
   eval_chunk: 512  # series per forward pass when encoding; does not change results
 
 evaluation:  # D26, D40
-  label_fractions: [0.01, 0.1, 1.0]
   probes: [svm_ts2vec, logreg]
   published_accuracy: null  # none: no published TF-C result on FordA

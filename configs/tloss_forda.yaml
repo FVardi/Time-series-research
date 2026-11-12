@@ -1,31 +1,9 @@
 # T-Loss on FordA (D32). Same data, probes and seeds as configs/ts2vec_forda.yaml (D26, D27).
 # Every setting is written out; nothing is filled in by the code.
+defaults: [datasets/forda.yaml, methods/tloss.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tloss_forda
-dataset: forda
-run_id: forda
-channels: [x]
-data_root: data/canonical
-method: tloss
-seeds: [0]  # standard run: seed 0 (D239)
-device: cuda
-
-tloss:  # official settings (D32)
-  compared_length: null  # null = compare full-length series
-  nb_random_samples: 10  # K = 10, the setting of the published FordA result
-  negative_penalty: 1
-  batch_size: 10
-  nb_steps: 2000  # paper: 2000 steps for K >= 10 (the shipped default file says 1500)
-  lr: 0.001
-  penalty: null  # only for T-Loss's own classifier, not used
-  early_stopping: null
-  channels: 40
-  depth: 10
-  reduced_size: 160  # internal size before pooling (README: the paper swaps 160 and 320)
-  out_channels: 320  # representation size
-  kernel_size: 3
 
 evaluation:  # D26
-  label_fractions: [0.01, 0.1, 1.0]
   probes: [svm_ts2vec, logreg]  # svm_ts2vec is also exactly T-Loss's own SVM protocol
   reproduction_probe: svm_ts2vec  # the probe compared with the published accuracy (was fixed in scripts/evaluate.py)
   published_accuracy: 0.928  # T-Loss paper, FordA, K = 10

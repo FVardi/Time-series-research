@@ -22,7 +22,7 @@ import pandas as pd
 from scipy.signal import resample_poly
 from sklearn.model_selection import train_test_split
 
-from harness import band_features, mssp_stats, stored_features, subband_power
+from harness.features import band_features, mssp_stats, stored_features, subband_power
 from harness.data import canonical
 from harness.labels import LABELS
 

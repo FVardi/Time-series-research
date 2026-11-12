@@ -2,20 +2,10 @@
 # Loss comparison (D202): variant 'left_out_x3', pairs left out, C = 3 S_TF (ablation stage F).
 # FordA/CWRU settings unchanged (sized from the data). Run with --seeds 0 (D201, D227):
 #   uv run python scripts/run_combinations.py configs/tfc_paderborn_left_out_x3.yaml --seeds 0
+defaults: [datasets/paderborn.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_paderborn_left_out_x3
-dataset: paderborn
-data_root: data/canonical
-channels: [vibration_1]  # vibration only (D222)
-labels: paderborn_lessmeier  # healthy / OR / IR for the 15 bearings of Table 10; group = bearing (harness/labels.py; D220)
-windows:  # D222
-  length: 5120  # 80 ms at 64 kHz, as TF-C's FD-A/FD-B windows (D39)
-  sample_rate_hz: 64000
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split: {protocol: paderborn_lessmeier}  # one run per combination k = 0..9 (D220, D225)
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tfc:
   encoder:  # both branches; sized from the data; on 5,120 samples each encoder ends longer than on CWRU (no setting changes, as D151)
@@ -47,9 +37,3 @@ tfc:
     betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
     weight_decay: 0.0005  # paper (as the ablation, D124)
   eval_chunk: 512  # series per forward pass when encoding; does not change results
-
-evaluation:  # D26, D40, D129, D133, D138
-  label_fractions: [0.01, 0.1, 1.0]
-  probes: [logreg, floor]
-  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
-  published_accuracy: null  # no TF-C result published for this protocol

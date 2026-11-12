@@ -1,0 +1,9 @@
+# Diagnostic (D239: suffixed name, not a standard run): FFT baseline on the first 2,560 points of each
+# one-minute sample instead of the whole 32,768 (D247 item 1 inputs), to see whether the rest of the
+# minute carries information a linear probe can use. Compared (2026-11-12) with fft_xjtu_sy_stage.yaml at D254's whole minutes; see D266.
+#   uv run python scripts/pretrain.py configs/fft_xjtu_sy_stage_first2560.yaml --seeds 0
+defaults: [datasets/xjtu_sy_stage.yaml, methods/fft.yaml]  # shared settings (D260); keys below override them
+name: fft_xjtu_sy_stage_first2560
+windows:
+  length: 2560  # DSCN Section 4.1.4 input length (D247 item 1)
+  max_windows_per_capture: 1  # the first 2,560 points of each minute (D247 item 1)

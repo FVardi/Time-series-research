@@ -2,23 +2,10 @@
 # Everything else exactly as configs/tfc_hust.yaml (the 'positives' arm); D243.
 # HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
 # TF-C (positives) on HUST (D123): settings as on CWRU and FordA (sized from the data).
+defaults: [datasets/hust.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_hust_paper
-dataset: hust
-data_root: data/canonical
-channels: [vibration]  # the only channel (D223)
-labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
-windows:  # D226
-  length: 2048  # as Thuan & Hong (D226)
-  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
-  sample_rate_hz: 51200  # as recorded (D223)
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # windows split at random (D226); pretraining = training windows (as D164)
-  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
-  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tfc:
   encoder:  # both branches, as on CWRU (D123)
@@ -32,7 +19,7 @@ tfc:
     projector: [256, 128]  # paper (as the ablation, D124)
   loss:
     variant: paper  # D202
-    delta: 1.0  # paper's L_C margin (D41 item 4), as configs/tfc_fd.yaml and ablation stage E
+    delta: 1.0  # paper's L_C margin (D41 item 4), as studies/tfc_reproduction/configs/tfc_fd.yaml and ablation stage E
     temperature: 0.2  # paper (as the ablation, D124)
     lambda: 0.5  # paper (as the ablation, D124)
   freq_aug:
@@ -51,9 +38,3 @@ tfc:
     betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
     weight_decay: 0.0005  # paper (as the ablation, D124)
   eval_chunk: 512  # series per forward pass when encoding; does not change results
-
-evaluation:  # D26, D40, D133, D226
-  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
-  probes: [logreg, floor]
-  cv_groups: false  # plain stratified 5-fold, random split (as D175)
-  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

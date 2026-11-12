@@ -3,7 +3,7 @@ recorded at 12 kHz? (Decides whether a healthy class cut from the 48 kHz normal 
 by how it was recorded and resampled instead of by the bearing's condition; D163, D167.)
 
 Usage:
-    uv run python eda/cwru/check_resampling.py configs/resampling_cwru.yaml
+    uv run python eda/cwru/check_resampling.py eda/cwru/configs/resampling_cwru.yaml
 
 CWRU recorded every drive-end fault condition (location, size, clock hour) at every load twice: at
 12 kHz and at 48 kHz. The two are separate recordings (different lengths and levels), so differences

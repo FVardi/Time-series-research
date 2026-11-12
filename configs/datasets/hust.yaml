@@ -1,0 +1,22 @@
+# Shared settings of every hust config (D260): dataset, split, windows and evaluation.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this dataset: docs/datasets/. Taken from configs/ts2vec_hust.yaml on 2026-11-12.
+dataset: hust
+data_root: data/canonical
+channels: [vibration]  # the only channel (D223)
+labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
+windows:  # D226
+  length: 2048  # as Thuan & Hong (D226)
+  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
+  sample_rate_hz: 51200  # as recorded (D223)
+  standardise: true  # per channel, statistics of the pretraining windows (D137)
+split:  # windows split at random (D226); pretraining = training windows (as D164)
+  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
+  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
+seeds: [0]  # standard run: seed 0 (D239)
+rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
+evaluation:  # D26, D40, D133, D226
+  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
+  probes: [logreg, floor]
+  cv_groups: false  # plain stratified 5-fold, random split (as D175)
+  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

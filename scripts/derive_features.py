@@ -10,7 +10,7 @@ Feature sets (harness/windows.py, FEATURE_SETS): band = per-window band features
 statistics per band over the whole capture (D181), subbands = per-window 1/12-octave sub-band power,
 stored as float32 (D186). Reads the canonical signals (read-only, D5)
 capture by capture and writes the features, with the settings used, into one HDF5 file
-(harness/stored_features.py). Configs read it with windows: features_file. Every capture is stored,
+(harness/features/stored_features.py). Configs read it with windows: features_file. Every capture is stored,
 labelled or not, so the split and labels can change without recomputing. Rerun after any change to
 the feature definitions (loading stops if the settings differ).
 """
@@ -18,7 +18,7 @@ the feature definitions (loading stops if the settings differ).
 import os
 import sys
 
-from harness import stored_features
+from harness.features import stored_features
 from harness.data import canonical
 from harness.windows import FEATURE_SETS
 

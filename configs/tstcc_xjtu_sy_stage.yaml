@@ -1,0 +1,11 @@
+# TS-TCC (permutation fixed) on XJTU-SY health stage, healthy before the FPT and degrading from it (D191 task 3; D230, D231, D232 item 7); inputs D266.
+# Settings as tstcc_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+#   uv run python scripts/pretrain.py configs/tstcc_xjtu_sy_stage.yaml --seeds 0
+defaults: [datasets/xjtu_sy_stage.yaml, methods/tstcc.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: tstcc_xjtu_sy_stage
+
+tstcc:  # D105: the TS2Vec paper's setup (Appendix C.3) = official HAR config, 320 output channels, batch 128
+  changed:  # HAR values changed for the input shape (D105, D156); the HAR value in the comment
+    input_channels: 2  # HAR 9; both accelerometers (D232 item 2)
+    features_len: 322  # HAR 18; encoder output length for 2,560 samples; only sizes the unused classifier layer
+    num_classes: 2  # HAR 6; only sizes the unused classifier layer (healthy, degrading)

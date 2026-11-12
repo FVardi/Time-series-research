@@ -26,9 +26,9 @@ import sys
 import numpy as np
 import pandas as pd
 
-from harness.band_features import BANDS, WINDOW
+from harness.features.band_features import BANDS, WINDOW
 from harness.data import canonical
-from harness.methods.mssp_features import bandpass_filter
+from harness.baselines.mssp_features import bandpass_filter
 
 ROOT, DATASET = "data/canonical", "herning"
 

@@ -1,5 +1,7 @@
 # studies/tsjepa_epochs — does TS-JEPA need 5,000 epochs? (D200)
 
+Status: deferred (D200); needs the GPU to itself.
+
 TS-JEPA is the slowest method (about 195 min per seed on the main CWRU task) because of its
 5,000 epochs (D66). Its loss cannot tell when the representation stops changing (on CWRU it
 drops within 10 epochs, rises to about 0.5 by epoch 500 and drifts down to about 0.41), so this

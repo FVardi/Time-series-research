@@ -1,6 +1,6 @@
-# Spectral probe (D244) on Paderborn (Lessmeier 7.3, D220): five TF-C variants x 10 combinations.
-# positives_lambda0 is left out until its rerun (only c0-c4 exist). Listed by combination, so the
-# windows of each combination are rebuilt once.
+# Spectral probe (D244) on Paderborn (Lessmeier 7.3, D220): the six TF-C variants and the other methods'
+# standard runs (D256) x 10 combinations. Listed by combination, so the windows of each combination are
+# rebuilt once. Not yet: TS-JEPA and FreRA (their 10 combinations are not all finished).
 name: paderborn
 targets: [absolute, relative, total, centroid]  # D244
 n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
@@ -10,6 +10,7 @@ alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 100
 cv_groups: true  # folds grouped by bearing, as the benchmark (D129)
 cv_folds: 5  # as D129
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+per_bearing: false  # Pearson's r per test bearing (D265): bearings in fixed states, no life trajectory
 runs:
   # combination 0
   - runs/20261105_175732_tfc_paderborn_c0
@@ -17,57 +18,117 @@ runs:
   - runs/20261105_184912_tfc_paderborn_left_out_c0
   - runs/20261105_191258_tfc_paderborn_left_out_x3_c0
   - runs/20261105_193603_tfc_paderborn_left_out_lambda0_c0
+  - runs/20261110_162617_tfc_paderborn_positives_lambda0_c0
+  - runs/20261110_195731_ts2vec_paderborn_c0
+  - runs/20261111_095315_tloss_paderborn_c0
+  - runs/20261110_201537_tstcc_paderborn_c0
+  - runs/20261111_020720_patchtst_paderborn_c0
+  - runs/20261110_234457_simmtm_paderborn_c0
   # combination 1
   - runs/20261105_180003_tfc_paderborn_c1
   - runs/20261105_182514_tfc_paderborn_paper_c1
   - runs/20261105_185135_tfc_paderborn_left_out_c1
   - runs/20261105_191516_tfc_paderborn_left_out_x3_c1
   - runs/20261105_193833_tfc_paderborn_left_out_lambda0_c1
+  - runs/20261110_162847_tfc_paderborn_positives_lambda0_c1
+  - runs/20261110_195927_ts2vec_paderborn_c1
+  - runs/20261111_103924_tloss_paderborn_c1
+  - runs/20261110_203500_tstcc_paderborn_c1
+  - runs/20261111_023550_patchtst_paderborn_c1
+  - runs/20261110_235901_simmtm_paderborn_c1
   # combination 2
   - runs/20261105_180233_tfc_paderborn_c2
   - runs/20261105_182746_tfc_paderborn_paper_c2
   - runs/20261105_185353_tfc_paderborn_left_out_c2
   - runs/20261105_191728_tfc_paderborn_left_out_x3_c2
   - runs/20261105_194056_tfc_paderborn_left_out_lambda0_c2
+  - runs/20261110_163109_tfc_paderborn_positives_lambda0_c2
+  - runs/20261110_200115_ts2vec_paderborn_c2
+  - runs/20261111_112450_tloss_paderborn_c2
+  - runs/20261110_205401_tstcc_paderborn_c2
+  - runs/20261111_030414_patchtst_paderborn_c2
+  - runs/20261111_001325_simmtm_paderborn_c2
   # combination 3
   - runs/20261105_180511_tfc_paderborn_c3
   - runs/20261105_183026_tfc_paderborn_paper_c3
   - runs/20261105_185616_tfc_paderborn_left_out_c3
   - runs/20261105_191945_tfc_paderborn_left_out_x3_c3
   - runs/20261105_194316_tfc_paderborn_left_out_lambda0_c3
+  - runs/20261110_163330_tfc_paderborn_positives_lambda0_c3
+  - runs/20261110_200301_ts2vec_paderborn_c3
+  - runs/20261111_121019_tloss_paderborn_c3
+  - runs/20261110_211318_tstcc_paderborn_c3
+  - runs/20261111_033240_patchtst_paderborn_c3
+  - runs/20261111_002755_simmtm_paderborn_c3
   # combination 4
   - runs/20261105_180740_tfc_paderborn_c4
   - runs/20261105_183305_tfc_paderborn_paper_c4
   - runs/20261105_185845_tfc_paderborn_left_out_c4
   - runs/20261105_192203_tfc_paderborn_left_out_x3_c4
   - runs/20261105_194529_tfc_paderborn_left_out_lambda0_c4
+  - runs/20261110_163553_tfc_paderborn_positives_lambda0_c4
+  - runs/20261110_200447_ts2vec_paderborn_c4
+  - runs/20261111_125552_tloss_paderborn_c4
+  - runs/20261110_213222_tstcc_paderborn_c4
+  - runs/20261111_040055_patchtst_paderborn_c4
+  - runs/20261111_004154_simmtm_paderborn_c4
   # combination 5
   - runs/20261105_181006_tfc_paderborn_c5
   - runs/20261105_183549_tfc_paderborn_paper_c5
   - runs/20261105_190114_tfc_paderborn_left_out_c5
   - runs/20261105_192420_tfc_paderborn_left_out_x3_c5
   - runs/20261105_194746_tfc_paderborn_left_out_lambda0_c5
+  - runs/20261110_163816_tfc_paderborn_positives_lambda0_c5
+  - runs/20261110_200633_ts2vec_paderborn_c5
+  - runs/20261111_134059_tloss_paderborn_c5
+  - runs/20261110_215730_tstcc_paderborn_c5
+  - runs/20261111_042922_patchtst_paderborn_c5
+  - runs/20261111_005602_simmtm_paderborn_c5
   # combination 6
   - runs/20261105_181231_tfc_paderborn_c6
   - runs/20261105_183836_tfc_paderborn_paper_c6
   - runs/20261105_190341_tfc_paderborn_left_out_c6
   - runs/20261105_192638_tfc_paderborn_left_out_x3_c6
   - runs/20261105_194959_tfc_paderborn_left_out_lambda0_c6
+  - runs/20261110_164038_tfc_paderborn_positives_lambda0_c6
+  - runs/20261110_200820_ts2vec_paderborn_c6
+  - runs/20261111_142558_tloss_paderborn_c6
+  - runs/20261110_222231_tstcc_paderborn_c6
+  - runs/20261111_045749_patchtst_paderborn_c6
+  - runs/20261111_011040_simmtm_paderborn_c6
   # combination 7
   - runs/20261105_181503_tfc_paderborn_c7
   - runs/20261105_184110_tfc_paderborn_paper_c7
   - runs/20261105_190558_tfc_paderborn_left_out_c7
   - runs/20261105_192852_tfc_paderborn_left_out_x3_c7
   - runs/20261105_195216_tfc_paderborn_left_out_lambda0_c7
+  - runs/20261110_164259_tfc_paderborn_positives_lambda0_c7
+  - runs/20261110_201006_ts2vec_paderborn_c7
+  - runs/20261111_151110_tloss_paderborn_c7
+  - runs/20261110_224309_tstcc_paderborn_c7
+  - runs/20261111_052607_patchtst_paderborn_c7
+  - runs/20261111_012425_simmtm_paderborn_c7
   # combination 8
   - runs/20261105_181733_tfc_paderborn_c8
   - runs/20261105_184346_tfc_paderborn_paper_c8
   - runs/20261105_190813_tfc_paderborn_left_out_c8
   - runs/20261105_193107_tfc_paderborn_left_out_x3_c8
   - runs/20261105_195434_tfc_paderborn_left_out_lambda0_c8
+  - runs/20261110_164522_tfc_paderborn_positives_lambda0_c8
+  - runs/20261110_201153_ts2vec_paderborn_c8
+  - runs/20261111_155648_tloss_paderborn_c8
+  - runs/20261110_230401_tstcc_paderborn_c8
+  - runs/20261111_055441_patchtst_paderborn_c8
+  - runs/20261111_013849_simmtm_paderborn_c8
   # combination 9
   - runs/20261105_182003_tfc_paderborn_c9
   - runs/20261105_184622_tfc_paderborn_paper_c9
   - runs/20261105_191027_tfc_paderborn_left_out_c9
   - runs/20261105_193325_tfc_paderborn_left_out_x3_c9
   - runs/20261105_195654_tfc_paderborn_left_out_lambda0_c9
+  - runs/20261110_164746_tfc_paderborn_positives_lambda0_c9
+  - runs/20261110_201340_ts2vec_paderborn_c9
+  - runs/20261111_164235_tloss_paderborn_c9
+  - runs/20261110_232422_tstcc_paderborn_c9
+  - runs/20261111_062316_patchtst_paderborn_c9
+  - runs/20261111_015315_simmtm_paderborn_c9

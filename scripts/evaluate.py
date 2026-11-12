@@ -17,6 +17,8 @@ S consecutive minutes of a bearing (DSCN Eq. 16); cv_groups with task: regressio
 on cv_folds folds grouped by bearing; rul_metrics: true reports DSCN's score and RMSE (minutes) and
 MAE and R² over the second half of each test bearing's life: their mean over the test bearings in
 results.csv, the values per test bearing in per_bearing.csv.
+Configs with windows: pool_per_capture: mean (XJTU-SY, D266) probe one row per capture (minute): the
+mean of its windows' representations; the stored Z stay one row per window.
 """
 
 import glob
@@ -59,6 +61,17 @@ def main(folder):
         min_tr, lifetime = minutes_of(cfg, t_tr)
         min_te, _ = minutes_of(cfg, t_te)
         run_tr, run_te = t_tr.run_id.to_numpy(), t_te.run_id.to_numpy()
+    pool = cfg.get("windows", {}).get("pool_per_capture")  # D266; absent = every window is one row
+    if pool:  # one row per capture (XJTU-SY: per minute): bookkeeping taken from each capture's first window
+        if pool != "mean":
+            raise ValueError(f"windows.pool_per_capture must be 'mean', not {pool!r}")
+        table = pd.read_csv(os.path.join(folder, "windows.csv"))
+        codes_tr, first_tr = evaluate.capture_codes(table[table.split == "train"].sort_values("row"))
+        codes_te, first_te = evaluate.capture_codes(table[table.split == "test"].sort_values("row"))
+        if grouped:
+            groups_train, groups_test = groups_train[first_tr], groups_test[first_te]
+        if S or rul:
+            run_tr, run_te, min_tr, min_te = run_tr[first_tr], run_te[first_te], min_tr[first_tr], min_te[first_te]
     if (grouped or per_class) and not regression:
         with open(os.path.join(folder, "classes.json")) as f:
             class_names = json.load(f)  # class k = class_names[k]
@@ -69,6 +82,10 @@ def main(folder):
         seed = int(seed_dir.rsplit("_", 1)[1])
         Z_train, y_train = np.load(f"{seed_dir}/Z_train.npy"), np.load(f"{seed_dir}/y_train.npy")
         Z_test, y_test = np.load(f"{seed_dir}/Z_test.npy"), np.load(f"{seed_dir}/y_test.npy")
+        if pool:  # D266: mean of each capture's window representations; its label is the same for all its windows
+            assert (y_train == y_train[first_tr][codes_tr]).all() and (y_test == y_test[first_te][codes_te]).all()
+            Z_train, Z_test = evaluate.mean_per_capture(Z_train, codes_tr), evaluate.mean_per_capture(Z_test, codes_te)
+            y_train, y_test = y_train[first_tr], y_test[first_te]
         g_tr, g_te = (groups_train, groups_test) if grouped else (None, None)
         r_tr, r_te, m_tr, m_te = (run_tr, run_te, min_tr, min_te) if (S or rul) else (None,) * 4
         if S:  # D232 item 4: [z_(n-S+1); ...; z_n]; minutes without S - 1 earlier ones are left out

@@ -21,9 +21,9 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D13 | 2026-10-06 | Tests chosen per question and dataset; full grid within a study; built incrementally | [decisions/evaluation.md](decisions/evaluation.md) |
 | D14 | 2026-10-06 | Python environments with uv; Python 3.12 (Python version superseded by D132) | [decisions/repo.md](decisions/repo.md) |
 | D15 | 2026-10-06 | Plain PyTorch; scikit-learn for probes and simple baselines | [decisions/training.md](decisions/training.md) |
-| D16 | 2026-10-06 | One plain YAML config file per experiment | [decisions/repo.md](decisions/repo.md) |
+| D16 | 2026-10-06 | One plain YAML config file per experiment (amended by D260) | [decisions/repo.md](decisions/repo.md) |
 | D17 | 2026-10-06 | Run results as plain files | [decisions/repo.md](decisions/repo.md) |
-| D18 | 2026-10-06 | Package layout | [decisions/repo.md](decisions/repo.md) |
+| D18 | 2026-10-06 | Package layout (extended by D262) | [decisions/repo.md](decisions/repo.md) |
 | D19 | 2026-10-06 | Official method code as pinned git submodules; modified versions as separate, named methods | [decisions/training.md](decisions/training.md) |
 | D20 | 2026-10-06 | Herning scope data stored as 16-bit integer codes | [decisions/data.md](decisions/data.md) |
 | D21 | 2026-10-06 | HDF5 chunk size of 16,384 samples | [decisions/data.md](decisions/data.md) |
@@ -135,7 +135,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D127 | 2026-10-27 | CWRU split: both ends pooled, five fault classes; one size per class and end held out; repeated random draws (count open) (superseded by D128) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) (sampling rate clarified by D140) (superseded as the main split by D163) (superseded by D218) | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class (reproduction-probe point settled by D133) (guard narrowed by D148) | [decisions/evaluation.md](decisions/evaluation.md) |
-| D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`) | [decisions/repo.md](decisions/repo.md) |
+| D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`; superseded by D261) | [decisions/repo.md](decisions/repo.md) |
 | D131 | 2026-10-27 | CWRU input: DE and FE as one two-channel series; base plate not used; MiniRocket open | [decisions/datasets/cwru.md](decisions/datasets/cwru.md) |
 | D132 | 2026-10-27 | Harness on Python 3.14, the version the environment runs (supersedes the Python version in D14) | [decisions/repo.md](decisions/repo.md) |
 | D133 | 2026-10-27 | logreg is the standard probe (reported everywhere); svm_ts2vec only for reproduction of published numbers; ridge_minirocket only as MiniRocket's FordA reproduction check | [decisions/evaluation.md](decisions/evaluation.md) |
@@ -262,6 +262,16 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D254 | 2026-11-10 | XJTU-SY: whole one-minute windows again (supersedes D247 item 1; DSCN's 2,560 points come from another recording scheme, per RCNN) and D253 standardisation instead of DSCN's per-sample z-score (supersedes D232 item 3); 2026-11-10 runs archived | [decisions/datasets/xjtu-sy.md](decisions/datasets/xjtu-sy.md) |
 | D255 | 2026-11-10 | D253's normalisation also for all baselines (supersedes D76 item 1's raw values and D253's baseline exception); 12 configs; Paderborn FFT and Herning MSSP runs to redo; FordA as distributed | [decisions/training.md](decisions/training.md) |
 | D256 | 2026-11-10 | Configs for the other methods on Paderborn and HUST (7 SSL each) and baselines for HUST and XJTU-SY stage (22 files, shape-forced values only, D151); TS-JEPA epochs = FordA's 565,000 steps capped at 5,000 epochs (Paderborn 2,004, HUST 1,290); mixed precision not used; TF-JEPA and XJTU-SY SSL configs not now | [decisions/training.md](decisions/training.md) |
+| D257 | 2026-11-12 | Standard choices (harness rule → paper/official code → common practice) taken without asking; the user decides what has no standard; D-entries for user decisions and departures | [decisions/repo.md](decisions/repo.md) |
+| D258 | 2026-11-12 | Every chat updates the checklist (`claude/CHECKLIST.md`) itself when it finishes work; rule in CLAUDE.md, checklist header, Project instructions | [decisions/repo.md](decisions/repo.md) |
+| D259 | 2026-11-12 | Current rules in `docs/` (protocol, method and dataset cards); the decision log stays the history | [decisions/repo.md](decisions/repo.md) |
+| D260 | 2026-11-12 | Configs composed from `configs/datasets/` and `configs/methods/` parts via `defaults:` (amends D16) | [decisions/repo.md](decisions/repo.md) |
+| D261 | 2026-11-12 | `STATUS.md` generated by `scripts/status.py` (supersedes D130) | [decisions/repo.md](decisions/repo.md) |
+| D262 | 2026-11-12 | Layout: `harness/baselines/`, `harness/features/`; TF-C reproduction and method checks in `studies/`; EDA configs in `eda/` (extends D18, D68, D91) | [decisions/repo.md](decisions/repo.md) |
+| D263 | 2026-11-12 | Experiments start simple and grow one refinement at a time, when asked; any extra beyond the standard runs (longer training, checkpoints, seeds, variants) for all methods or none | [decisions/repo.md](decisions/repo.md) |
+| D264 | 2026-11-12 | FreRA skipped where its official model does not fit on the GPU: Paderborn (projector Linear(d, d), d = 82,176, 6.75 B weights) and XJTU-SY, as TF-JEPA (D256) | [decisions/training.md](decisions/training.md) |
+| D265 | 2026-11-12 | Spectral probe on XJTU-SY (run-to-failure, `per_bearing: true`): Pearson's r between predictions and targets within each test bearing, besides the overall R² | [decisions/evaluation.md](decisions/evaluation.md) |
+| D266 | 2026-11-12 | XJTU-SY: 12 windows of 2,560 points per minute (DSCN's length), representation averaged per minute for the probes (`pool_per_capture: mean`); supersedes D254 item 1; all methods but FreRA fit; TS-JEPA 173 epochs | [decisions/datasets/xjtu-sy.md](decisions/datasets/xjtu-sy.md) |
 
 <!--
 Entry template:

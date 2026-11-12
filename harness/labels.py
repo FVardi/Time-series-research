@@ -42,7 +42,7 @@ def cwru_zhao(captures):
     return labels, groups
 
 
-# Herning operating point and kappa as the MSSP code (D55), the same values as configs/band_check_herning.yaml.
+# Herning operating point and kappa as the MSSP code (D55), the same values as eda/herning/configs/band_check_herning.yaml.
 # Viscosities: the MSSP fallback (the file's lubricant metadata has none); d_pw: the bearing's pitch diameter.
 HERNING = {"rpm_per_cmd_hz": 59.5, "rpm_min": 50, "rpm_max": 3600, "temp_min_c": 38,
            "not_rotating_rpm_target": 100, "cooldown_temp_target": 25,

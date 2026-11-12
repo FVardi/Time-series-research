@@ -378,3 +378,72 @@ default is the hard case: operating point and nuisance strong, state subtle.
 **Not for the benchmark.** The benchmark keeps the published methods with the harness standard (D253, D255); this is an idea for the own method only.
 
 **Open questions.** Which statistics (mean, SD, RMS, kurtosis; per band?); appended at the probe only or used inside the training objective (e.g. predicted by `z_op`, or adversarially removed from `z_state`, M1); how it compares with global normalisation on Herning.
+
+---
+
+## M7 (2026-11-12) — Spectral information inside the SSL objective
+
+**Source.** Chat 2026-11-12 (user asked for ways to build spectral information and burst awareness into SSL methods). All items are Claude's suggestions unless marked as the user's; none are decisions. Extends M4's time-frequency item.
+
+**Stance.** If spectral shape carries lubrication information, it should be a *target* (predicted) or an *equivariance*, not something the augmentations teach the encoder to ignore.
+
+- *Spectral auxiliary targets:* predict log band energies (absolute and relative) and spectral centroid of the window, or of masked windows, from the representation. Free labels; the same quantities as the spectral probing study (2026-11-09). If that study shows the spectrum is not linearly readable from a method's representation, this is the direct fix.
+- *Cross-band masking:* on the band-energy feature sequence, mask whole bands (not only time steps) and predict them from the remaining bands, so the encoder learns how energy is distributed across bands (where a lubrication-regime change should show).
+- *Equivariance instead of invariance:* apply spectral transforms (random EQ, spectral tilt, band-stop filtering) and have the model predict the transform parameters (E-SSL, Dangovski et al. 2022), instead of using them as invariance augmentations.
+- *TF-C-style consistency on compressed spectra:* time-frequency consistency on band energies or order spectra instead of the raw FFT; avoids the very-high-sampling-rate problem.
+- *Order-domain spectra:* after order tracking, rpm effects sit in fixed orders; orders could feed or supervise `z_op`, the residual spectrum `z_state` (M1).
+- *Envelope-spectrum targets:* envelope-spectrum energy near bearing characteristic frequencies as targets (extends M4's periodicity item).
+- *Spectral reconstruction losses:* see M9 (multi-resolution STFT loss).
+
+**Risks.** Spectral targets may mostly encode the operating point (speed, load move the spectrum); measure against a "spectral features only" baseline. Band choice is a free parameter (fixed pre-chosen bands as in the probing study).
+
+---
+
+## M8 (2026-11-12) — Burst awareness: input structure, pooling, augmentations
+
+**Source.** Same chat. Claude's suggestions unless marked. Extends M4's burst-target item.
+
+- *Background / impulsive decomposition before encoding:* continuous background (rolling median or RMS floor) vs impulsive part (wavelet thresholding, spectral kurtosis / kurtogram band, Teager-Kaiser energy operator), fed as separate channels or into separate blocks. Hypothesis (not established): continuous AE level relates to film / asperity interaction, bursts to discrete contact events.
+- *Burst statistics as auxiliary targets (adds to M4):* kurtosis, crest factor, burst count above a robust threshold (median + k·MAD), energy fraction in bursts, inter-burst interval statistics, and the shape parameter of a generalised-Gaussian fit to the window's amplitudes (a single number for impulsiveness).
+- *Pooling that keeps rare events:* mean pooling dilutes bursts; use attention, max or high-quantile pooling. Window features for the compressed representation should include max and upper percentiles, not only RMS.
+- *Burst-aware masking and cropping:* mask burst regions preferentially and predict them from context; sample crops weighted by energy so views do not miss the events.
+- *Burst-rate-preserving positives:* keep the background and resample burst positions to form positive pairs (invariance to where bursts occur, sensitivity to how often and how strong); or mix hits into other backgrounds (Fonseca et al. 2021, sound events). Needs the decomposition above; easiest on synthetic data first (M5).
+- *Hit-level tokens:* detect hits, embed each hit's waveform or spectrum, model the window as a marked point process (embedding plus inter-arrival time); shaft angle of each burst (from order tracking) as an extra mark.
+
+**Risks.** Thresholds and decomposition parameters are free choices with no standard; electrical spikes, knocks and clipping look like bursts.
+
+---
+
+## M9 (2026-11-12) — Losses that react to bursts
+
+**Source.** User's ideas (2026-11-12): (a) reconstruction with squared or cubed (higher-power) error; (b) a contrastive loss that only looks at the parts of the signal above a relative threshold. Notes and variants are Claude's suggestions.
+
+**(a) Higher-power reconstruction error (user).** L_p with p > 2 (|e|^3, e^4) weights large residuals more, so missed bursts dominate the loss; p -> infinity approaches the max error.
+- MSE already weights large errors quadratically, but bursts occupy few samples, so the per-sample average is still dominated by background; raising p shifts the weight further towards bursts.
+- Risks: gradients scale as |e|^(p-1) (instability, likely needs clipping); very sensitive to non-lubrication spikes; scale-dependent, so it interacts with normalisation (D253, M6).
+- Phase problem: burst arrival times and phase within a window are close to random, so waveform reconstruction with any L_p punishes phase errors hard and the model learns to output a blur. Apply it to the envelope, the log band-energy sequence or STFT magnitudes instead of raw samples (the own method uses compressed feature sequences anyway).
+- Variants with the same intent and more control:
+  - *Weight by the signal, not the error:* energy-weighted MSE with w_t = (envelope_t / median envelope)^alpha, normalised; alpha is the knob. More stable than error-based weighting.
+  - *Balanced two-term loss:* mean error over background samples + lambda * mean error over burst samples (threshold mask), each averaged over its own count, so bursts get equal say however rare (class-balancing analogue).
+  - *Focal-style:* weights from the error magnitude with stop-gradient on the weights.
+  - *Multi-resolution STFT loss* (spectral convergence + log magnitude, as in neural vocoders, e.g. Parallel WaveGAN): phase-insensitive and spectral (links to M7).
+  - *Upper-quantile targets:* predict the 95th / 99th percentile of the envelope in masked windows (quantile / expectile loss), directly targeting the burst amplitude distribution.
+
+**(b) Contrastive loss on supra-threshold parts (user).**
+- Implementation: encoder with per-timestep outputs (TS2Vec-style). Mask m_t = 1 where envelope > k x rolling median (or median + k·MAD). Burst embedding = masked mean (or attention) over timesteps; contrast burst embeddings between two views; contrast background embeddings (complement mask) separately. Two embeddings fit M1's blocks (burst block / background block).
+- Soft version: weights softmax(energy / tau) instead of a hard threshold; never empty, tau sets the focus (tau -> 0 approaches max pooling).
+- Compute masks on the original signal and carry them through the augmentations (crop alignment), so both views use consistent masks.
+- Windows without bursts (e.g. good lubrication) are informative: "no bursts" must be representable (fallback embedding, or burst count as a feature). Do not drop them, or training is biased towards bad-lubrication windows.
+- Relative threshold (per window) is scale-invariant but turns noise into "bursts" in quiet windows; use a relative threshold with an absolute floor (from the training-set noise level).
+- Any amplitude-scaling augmentation would erase burst amplitude information under this loss.
+- Non-contrastive version (VICReg / Barlow Twins) avoids the negatives problem (M4).
+- JEPA variant: choose latent-prediction target blocks preferentially on bursts (predict a burst's latent from surrounding context), and the reverse (predict background from bursts); fits TS-JEPA / TF-JEPA already in the harness.
+
+---
+
+## M10 (2026-11-12) — How to test M7-M9 cheaply
+
+**Source.** Same chat; Claude's suggestions.
+- Add burst targets (kurtosis, burst rate, burst energy fraction) to the spectral probing study, to see whether current methods already capture bursts before building anything.
+- Synthetic test bed (M5): bursts at controlled rates in a stationary background with varying spectral tilt; check whether each method's representation tracks both.
+- Suggested first experiment: simple backbone (TS2Vec) on the background / impulsive split with auxiliary heads for band energies and burst statistics, then ablate each head (working approach above).

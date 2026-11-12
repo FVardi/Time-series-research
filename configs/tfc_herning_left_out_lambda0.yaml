@@ -1,23 +1,9 @@
 # Consistency term only (D217 arm a): 'left_out' with lambda = 0, loss S_TF.
 # Everything else exactly as configs/tfc_herning.yaml (the 'positives' arm); D243.
 # TF-C (positives) on Herning (D151 as on CWRU, D158, D173): FordA settings unchanged (sized from the data).
+defaults: [datasets/herning.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_herning_left_out_lambda0
-dataset: herning
-data_root: data/canonical
-channels: [AE, UL]
-labels: herning  # kappa of the sweep's operating point; excluded sweeps have none (harness/labels.py; D55)
-task: regression  # kappa is a number (D58)
-windows:  # D165, D172
-  length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
-  sample_rate_hz: 2500000  # as recorded; the band features need the full rate (D165 item 2)
-  features: band  # 1 ms windows, 12 octave bands x 4 features: (200, 48) per sweep (harness/band_features.py)
-  features_file: data/derived/herning/band_features.h5  # stored features (D172; scripts/derive_features.py, feature set band)
-  standardise: true  # each of the 48 channels with the mean and SD of the training sweeps (D165 item 5)
-split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw
-  captures: {}  # no filter: every sweep with a label
-  random: {test_fraction: 0.2, seed: 0}
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
 rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
@@ -51,9 +37,3 @@ tfc:
     betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
     weight_decay: 0.0005  # paper (as the ablation, D124)
   eval_chunk: 512  # series per forward pass when encoding; does not change results
-
-
-evaluation:  # D40, D58, D59, D170
-  label_fractions: [0.01, 0.1, 1.0]
-  probes: [ridge, floor_mean]
-  published_accuracy: null  # nothing published

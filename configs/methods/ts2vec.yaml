@@ -1,0 +1,14 @@
+# Shared settings of every ts2vec config (D260): the method's settings that do not depend on the dataset.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this method: docs/methods/. Taken from configs/ts2vec_forda.yaml on 2026-11-12.
+method: ts2vec
+device: cuda  # the work computer has an NVIDIA GPU
+ts2vec:  # official defaults (D28)
+  repr_dims: 320
+  hidden_dims: 64
+  depth: 10
+  lr: 0.001
+  batch_size: 8
+  max_train_length: 3000
+  temporal_unit: 0
+  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (600 on every dataset so far)

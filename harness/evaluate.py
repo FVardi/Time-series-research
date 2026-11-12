@@ -180,6 +180,20 @@ def per_bearing(clf, Z, y, groups, class_names):
     return rows
 
 
+def capture_codes(table):
+    """Capture of each row of a window table (rows in Z order): codes 0..n-1 numbered in order of
+    first appearance, and the row index of each capture's first window (D266: XJTU-SY minutes)."""
+    keys = (table.run_id.astype(str) + "/" + table.capture_id.astype(str)).to_numpy()
+    codes, _ = pd.factorize(keys)  # numbered in order of first appearance
+    first = np.unique(codes, return_index=True)[1]  # first row of capture 0, 1, ...
+    return codes, first
+
+
+def mean_per_capture(Z, codes):
+    """Mean representation of each capture's windows (D266): row k of the result is capture k."""
+    return pd.DataFrame(np.asarray(Z, dtype=np.float64)).groupby(codes).mean().to_numpy()
+
+
 def time_window_embedding(Z, runs, minutes, S):
     """DSCN's time-window embedding (Wang et al., 2019, Eq. 16) applied to frozen representations
     (D232 item 4): the input of minute n is [z_(n-S+1); ...; z_n] of the same run, in time order.

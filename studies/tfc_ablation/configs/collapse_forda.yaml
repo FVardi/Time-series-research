@@ -10,7 +10,7 @@ data_root: data/canonical
 seeds: [0]  # D94: one seed for the validation run
 device: cuda
 
-tfc:  # our TF-C (D41, D42), settings as in configs/tfc_fd.yaml; pretraining only, so no classifier/finetune
+tfc:  # our TF-C (D41, D42), settings as in studies/tfc_reproduction/configs/tfc_fd.yaml; pretraining only, so no classifier/finetune
   encoder:  # D41 item 1: the paper's CNN, both branches
     channels: [32, 64, 128]  # paper
     kernel_size: 8  # paper

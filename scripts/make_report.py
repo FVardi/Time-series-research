@@ -185,7 +185,7 @@ def number(name, text):
 
 
 def reproduction(acc, published):
-    """Reproduction criterion as implemented in scripts/evaluate.py and scripts/tfc_official.py
+    """Reproduction criterion as implemented in scripts/evaluate.py and studies/tfc_reproduction/tfc_official.py
     (D26 item 6): |published - mean| <= max(2 SD, 0.01). SD over seeds with ddof = 1 (pandas)."""
     mean, sd = acc.mean(), acc.std()
     allowed = max(2 * sd, 0.01)

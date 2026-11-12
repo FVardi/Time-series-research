@@ -1,0 +1,6 @@
+# Shared settings of every fft config (D260): the method's settings that do not depend on the dataset.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this method: docs/methods/. Taken from configs/fft_forda.yaml on 2026-11-12.
+method: fft
+device: cpu  # numpy only (D79)
+fft: {}  # nothing to set

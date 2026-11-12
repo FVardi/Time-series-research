@@ -2,9 +2,9 @@
 
 import numpy as np
 
-from harness import band_features as bf
-from harness import stored_features
-from harness import subband_power as sp
+from harness.features import band_features as bf
+from harness.features import stored_features
+from harness.features import subband_power as sp
 
 FS = 2.5e6
 

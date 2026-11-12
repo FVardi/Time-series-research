@@ -1,73 +1,11 @@
 # SimMTM on HUST, the dataset authors' 7-class classification protocol (Thuan & Hong, arXiv 2302.12533; D226).
 # Settings as simmtm_cwru.yaml; only the values the input shape forces are changed (D151, D256).
 #   uv run python scripts/pretrain.py configs/simmtm_hust.yaml --seeds 0
+defaults: [datasets/hust.yaml, methods/simmtm.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: simmtm_hust
-dataset: hust
-data_root: data/canonical
-channels: [vibration]  # the only channel (D223)
-labels: hust  # fault code, 7 classes: N, I, O, B, IO, IB, OB (harness/labels.py; D226)
-windows:  # D226
-  length: 2048  # as Thuan & Hong (D226)
-  hop: 512  # 75 % overlap, as Thuan & Hong (D226)
-  sample_rate_hz: 51200  # as recorded (D223)
-  standardise: true  # per channel, statistics of the pretraining windows (D137)
-split:  # windows split at random (D226); pretraining = training windows (as D164)
-  captures: {}  # all 99 recordings: five bearing types, three loads (D226; loads not stated in the paper)
-  random_windows: {per_class: 2500, test_fraction: 0.2, random_state: 0}  # 2,500 per class, stratified 80/20, fixed for all seeds (D226)
-method: simmtm
-seeds: [0]  # standard run: seed 0 (D239)
-device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 simmtm:
-  main_args:  # main.py argument defaults (run.sh does not change them for pretraining)
-    pretrain_lr: 1.0e-4  # code; paper Table 10 (classification): 1e-4
-    pretrain_epoch: 10  # code; paper Table 10: 10
-    masking_ratio: 0.5  # code; paper: 50 % "throughout this paper"
-    positive_nums: 3  # M, masked copies per series: code; paper: 3
-    lm: 3  # mean length of a masked stretch (geometric masks): code only; paper compares geometric and random masking
-    temperature: 0.2  # τ, contrastive loss and aggregation: code only (paper gives no classification value)
-  adam:  # main.py: Adam(lr=pretrain_lr, betas=(beta1, beta2), weight_decay=0)
-    weight_decay: 0.0  # code (hard-coded)
-    eps: 1.0e-8  # PyTorch Adam default (code does not set it)
-  official_config:  # SimMTM_Classification/code/config_files/SleepEEG_Configs.py; checked by the adapter,
-                    # a difference stops the run. "unused" = not read during pretraining.
-    input_channels: 1
-    increased_dim: 1  # unused
-    final_out_channels: 128  # encoder channels
-    num_classes: 5  # unused
-    num_classes_target: 8  # unused (fine-tuning classifier)
-    dropout: 0.2  # dropout after the first convolution block
-    masking_ratio: 0.5  # unused (main.py's argument is used)
-    lm: 3  # unused (main.py's argument is used)
-    kernel_size: 25  # first convolution
-    stride: 3  # first convolution
-    features_len: 127  # unused
-    features_len_f: 127  # unused
-    num_epoch: 40  # unused (main.py's pretrain_epoch is used)
-    optimizer: adam  # unused (main.py builds Adam itself)
-    beta1: 0.9
-    beta2: 0.99
-    lr: 3.0e-8  # unused (main.py's pretrain_lr is used)
-    lr_f: 3.0e-8  # unused
-    drop_last: true
-    target_batch_size: 32  # unused (fine-tuning)
-    Context_Cont.temperature: 0.2  # unused
-    Context_Cont.use_cosine_similarity: true  # unused
-    TC.hidden_dim: 64  # unused
-    TC.timesteps: 50  # unused
-    augmentation.jitter_scale_ratio: 1.5  # unused
-    augmentation.jitter_ratio: 2  # unused
-    augmentation.max_seg: 12  # unused
   changed:  # SleepEEG values changed for the input shape (D159); the SleepEEG value in the comment
     TSlength_aligned: 2048  # 178; window length (D226; the decoder outputs input_channels x this many values, D159)
     CNNoutput_channel: 87  # 10; encoder output length for 2,048 samples (checked by the adapter)
     input_channels: 1  # 1; the only channel (D223)
-    batch_size: 128  # D111: paper Table 10 (classification pretraining); code (SleepEEG config): 32
-  encode_batch_size: 256  # series per forward pass when encoding; does not change results
-
-evaluation:  # D26, D40, D133, D226
-  label_fractions: [0.01, 0.1, 1.0]  # 14,000 training windows: 1 % = 140 (20 per class)
-  probes: [logreg, floor]
-  cv_groups: false  # plain stratified 5-fold, random split (as D175)
-  published_accuracy: null  # Thuan & Hong train hand-crafted-feature classifiers and CNNs; no probe result to compare with

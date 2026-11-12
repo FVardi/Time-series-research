@@ -13,6 +13,7 @@ import pandas as pd
 import pytest
 import yaml
 
+from harness import runs  # load_config resolves 'defaults:' (D260)
 from harness.data import canonical, forda
 from scripts import convert_forda, evaluate, pretrain
 
@@ -46,8 +47,7 @@ def test_slice_end_to_end(tmp_path, monkeypatch, method):
     assert np.allclose(x0, np.loadtxt(raw / "FordA_TRAIN.tsv")[0, 1:])
 
     # A config like configs/ts2vec_forda.yaml, but tiny.
-    with open(f"configs/{method}_forda.yaml") as f:
-        cfg = yaml.safe_load(f)
+    cfg = runs.load_config(f"configs/{method}_forda.yaml")
     cfg["data_root"] = str(tmp_path / "canonical")
     cfg["seeds"] = [0, 1]
     cfg["device"] = "cpu"

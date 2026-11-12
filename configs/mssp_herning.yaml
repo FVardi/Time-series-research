@@ -9,7 +9,7 @@ task: regression  # kappa is a number (D58)
 windows:  # D181
   length: 500000  # one window = one whole sweep (0.2 s at 2.5 MHz)
   sample_rate_hz: 2500000  # as recorded
-  features: mssp  # broadband + octave bands per sensor, 14 statistics each: (1, 196) per sweep (harness/mssp_stats.py)
+  features: mssp  # broadband + octave bands per sensor, 14 statistics each: (1, 196) per sweep (harness/features/mssp_stats.py)
   features_file: data/derived/herning/mssp_stats.h5  # stored (D181; scripts/derive_features.py, feature set mssp)
   standardise: true  # each MSSP statistic with the mean and SD of the training sweeps (D253, D255; as D165 item 5)
 split:  # D169: the sweeps with kappa, 80/20 at random, one fixed draw

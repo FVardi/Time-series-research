@@ -10,6 +10,7 @@ import pytest
 import torch
 import yaml
 
+from harness import runs  # load_config resolves 'defaults:' (D260)
 from harness.methods.external import EXTERNAL
 
 HAVE_OFFICIAL = os.path.isdir(os.path.join(EXTERNAL, "tstcc", "models"))
@@ -22,8 +23,7 @@ CONFIG = os.path.join(os.path.dirname(__file__), "..", "configs", "tstcc_forda.y
 
 def settings():
     """The 'tstcc' section of the FordA config."""
-    with open(CONFIG) as f:
-        return yaml.safe_load(f)["tstcc"]
+    return runs.load_config(CONFIG)["tstcc"]
 
 
 def all_names(obj, prefix=""):

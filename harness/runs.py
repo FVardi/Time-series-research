@@ -13,9 +13,42 @@ import yaml
 
 
 def load_config(path):
-    """Read a YAML config. No defaults are filled in: every setting must be in the file."""
-    with open(path) as f:
-        return yaml.safe_load(f)
+    """Read a YAML config. No defaults are filled in by the code: every setting is in the file
+    or in the shared part files it names under 'defaults:' (D260), e.g.
+
+        defaults: [datasets/cwru.yaml, methods/ts2vec.yaml]
+
+    Parts (paths relative to the file) are merged in the order listed, then the file's own keys
+    on top; mappings are merged key by key, any other value is replaced.
+    """
+    with open(path, encoding="utf-8") as f:
+        cfg = yaml.safe_load(f) or {}
+    merged = {}
+    for part in cfg.pop("defaults", []):
+        merged = merge(merged, load_config(os.path.join(os.path.dirname(path), part)))
+    return merge(merged, cfg)
+
+
+def merge(base, override):
+    """Deep merge of two config dicts (D260): mappings key by key, everything else replaced."""
+    out = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(out.get(key), dict):
+            out[key] = merge(out[key], value)
+        else:
+            out[key] = value
+    return out
+
+
+def config_files(path):
+    """The config file and the part files it uses (recursively), as (path, path relative to the file's folder)."""
+    with open(path, encoding="utf-8") as f:
+        parts = (yaml.safe_load(f) or {}).get("defaults", [])
+    out = [(path, os.path.basename(path))]
+    for part in parts:
+        for p, rel in config_files(os.path.join(os.path.dirname(path), part)):
+            out.append((p, os.path.join(os.path.dirname(part), rel)))
+    return out
 
 
 def set_seed(seed):
@@ -37,15 +70,26 @@ def git_commit():
 
 
 def new_run_dir(config_path, config):
-    """Create runs/<date_time>_<name>/ with a copy of the config and the git commit.
+    """Create runs/<date_time>_<name>/ with the config and the git commit.
 
+    config.yaml in the run folder is the config file with its shared parts merged in (D260), so
+    it holds every setting of the run in one place; the files it was merged from are copied,
+    comments included, into config_sources/.
     Warns when the working tree has uncommitted changes (D99): runs meant for the report
     are made from a committed tree, because the commit alone then reproduces the code.
     The run still starts; git.json records the state either way.
     """
     folder = os.path.join("runs", f"{datetime.now():%Y%m%d_%H%M%S}_{config['name']}")
     os.makedirs(folder)
-    shutil.copy(config_path, os.path.join(folder, "config.yaml"))
+    with open(os.path.join(folder, "config.yaml"), "w", encoding="utf-8") as f:
+        f.write(f"# {config_path} with its 'defaults:' parts merged in (D260); sources in config_sources/\n")
+        # flow style for lists, so e.g. 'seeds: [0, 1, 2]' stays on one line (scripts/pretrain.py edits it)
+        resolved = load_config(config_path)
+        resolved = {"name": resolved.pop("name"), **resolved} if "name" in resolved else resolved  # name first
+        yaml.safe_dump(resolved, f, sort_keys=False, default_flow_style=None, width=120)
+    for source, rel in config_files(config_path):
+        os.makedirs(os.path.dirname(os.path.join(folder, "config_sources", rel)), exist_ok=True)
+        shutil.copy(source, os.path.join(folder, "config_sources", rel))
     git = git_commit()
     save_json(os.path.join(folder, "git.json"), git)
     if git["uncommitted_changes"]:

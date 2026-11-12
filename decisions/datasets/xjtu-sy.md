@@ -101,7 +101,7 @@ Open (next step): windows and input. DSCN feeds each whole one-minute sample, bo
 **Alternatives considered:** Keeping the whole minute and recording the departure from DSCN; several 2,560-point windows per minute; the last or a centred 2,560-point segment. Keeping the old alpha grid. Baselines on raw values (D76) instead of the per-window z-score.
 **Rationale:** User's decision (2026-11-10): approved Claude's proposals as given ("go ahead"). Follow DSCN where it is explicit; the grid edge and the missing reference point were the two open questions of the investigation.
 
-## 2026-11-10 — D254: XJTU-SY inputs: whole one-minute samples, global per-channel standardisation (supersedes D247 item 1 and D232 item 3)
+## 2026-11-10 — D254: XJTU-SY inputs: whole one-minute samples, global per-channel standardisation (supersedes D247 item 1 and D232 item 3) (item 1 superseded by D266)
 **Decision:**
 1. *Windows:* one window per one-minute sample, the whole 32,768 points (D232 item 1 restored); `max_windows_per_capture` is no longer used.
 2. *Normalisation:* method inputs standardised per channel with the statistics of the pretraining windows (D137; harness standard D253), instead of DSCN's per-sample z-score (Eq. 14). Baselines on raw values (D76), as on the other datasets.
@@ -110,3 +110,14 @@ Open (next step): windows and input. DSCN feeds each whole one-minute sample, bo
 **Departure from DSCN, documented:** DSCN z-scores each sample by its own mean and standard deviation, which removes the amplitude; on the first runs with that input, the FFT baseline was no better than the floor (RMSE 96.6 vs 95.9 min at 100 % labels) and TF-C slightly better (86.6 min). Other XJTU-SY remaining-useful-life work keeps the amplitude (RCNN: raw signals; GNN survey benchmark: max-min normalisation).
 **Alternatives considered:** Keeping DSCN's per-sample normalisation (D232 item 3); keeping the first 2,560 points (D247 item 1); per-sample normalisation for methods only.
 **Rationale:** User's decision (2026-11-10): the harness standard (D253), closer to the literature at large; whole minutes as recorded.
+
+## 2026-11-12 — D266: XJTU-SY inputs: 12 windows of 2,560 points per minute, averaged per minute for the probes (supersedes D254 item 1)
+**Decision:**
+1. *Windows:* each one-minute sample (32,768 points, 1.28 s) is cut into 12 non-overlapping windows of 2,560 points, DSCN's input length (Section 4.1.4); the last 2,048 points are unused. Both channels; standardisation unchanged (D253, D254 item 2). Pretraining uses every window of the pretraining bearings: 8,711 minutes = 104,532 windows, the same bearings for both tasks.
+2. *Probes:* one row per minute, the mean of its 12 window representations (our choice: no reference specifies an aggregation). Config `windows: pool_per_capture: mean`; done in `scripts/evaluate.py` (`harness/evaluate.py`: `capture_codes`, `mean_per_capture`), so the stored `Z_train`/`Z_test` stay one row per window. Labels, bearing and minute are taken per minute; DSCN's time-window embedding (RUL, D232 item 4) and all metrics are unchanged.
+3. *Scope:* every XJTU-SY config through the dataset parts `configs/datasets/xjtu_sy.yaml` and `xjtu_sy_stage.yaml`: methods, TF-C variants and baselines alike (D263).
+4. *Methods:* 2,560 points fit every method except FreRA (D264); TF-JEPA stays skipped (D256). New configs for TS2Vec, T-Loss, TS-TCC, TS-JEPA, PatchTST and SimMTM on both tasks, only shape-forced values changed (D151): TS-TCC `features_len` 322, SimMTM `CNNoutput_channel` 109, two channels; TS-JEPA 173 epochs by D256's step rule (104,532 windows = 3,267 batches; 565,000 / 3,267).
+**Evidence (diagnostic runs, 2026-11-12, FFT baseline, seed 0; `runs/20261112_11*_fft_xjtu_sy*_first2560`, whole-minute runs in `runs/archive/`):** first 2,560 points against the whole minute: health stage, logreg at 100 % labels 0.711 vs 0.824 (floor 0.450); RUL, ridge RMSE 40.5 vs 21.7 min at 10 % labels and 21.5 vs 20.0 min at 100 % (floor 96–105). The rest of the minute carries information a linear probe uses.
+**Alternatives considered:** Whole minutes (D254 item 1; only TS2Vec, T-Loss, TS-TCC, TS-JEPA and TF-C fit). The first 2,560 points of each minute (D247 item 1; a twelfth of the windows, noisier per the test). 32 windows of 1,024 points, as the Zhao et al. (2020) benchmark cuts XJTU-SY (FreRA would fit too; 2.7 times more windows, and shorter than DSCN's input).
+**Rationale:** User's decision (2026-11-12): use (almost) all of each minute while every method that fits gets the same inputs.
+

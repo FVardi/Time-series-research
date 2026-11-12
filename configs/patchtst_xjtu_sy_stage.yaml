@@ -1,0 +1,6 @@
+# PatchTST on XJTU-SY health stage, healthy before the FPT and degrading from it (D191 task 3; D230, D231, D232 item 7); inputs D266.
+# Settings as patchtst_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+# 2,560-sample windows: 213 patches of 12 per channel, the first 4 samples unused (official create_patch; D266).
+#   uv run python scripts/pretrain.py configs/patchtst_xjtu_sy_stage.yaml --seeds 0
+defaults: [datasets/xjtu_sy_stage.yaml, methods/patchtst.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: patchtst_xjtu_sy_stage

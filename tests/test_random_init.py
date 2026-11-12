@@ -8,6 +8,7 @@ import pytest
 import torch
 import yaml
 
+from harness import runs  # load_config resolves 'defaults:' (D260)
 from harness import random_init
 from harness.methods import tfc, tfc_frozen
 from tests.test_diagnostics import TFC_SETTINGS
@@ -16,8 +17,7 @@ CONFIGS = os.path.join(os.path.dirname(__file__), "..", "configs")
 
 
 def load(path):
-    with open(path) as f:
-        return yaml.safe_load(f)
+    return runs.load_config(path)  # resolves 'defaults:' (D260)
 
 
 def test_random_init_configs_match_trained():

@@ -17,7 +17,7 @@ evaluation:  # frozen probes, D26 / D29 protocol on FordA; label budgets D40
   label_fractions: [0.01, 0.1, 1.0]
   probes: [svm_ts2vec, logreg]
 
-tfc:  # our TF-C (D41, D42), settings as in configs/tfc_fd.yaml; held fixed across stages (D96)
+tfc:  # our TF-C (D41, D42), settings as in studies/tfc_reproduction/configs/tfc_fd.yaml; held fixed across stages (D96)
   encoder:  # D41 item 1: the paper's CNN, both branches
     channels: [32, 64, 128]  # paper
     kernel_size: 8  # paper

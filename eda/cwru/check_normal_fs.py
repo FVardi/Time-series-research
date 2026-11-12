@@ -1,7 +1,7 @@
 """Diagnostic: sampling rate of the CWRU normal-baseline files (97-100).
 
 Usage:
-    uv run python eda/cwru/check_normal_fs.py configs/normal_fs_cwru.yaml
+    uv run python eda/cwru/check_normal_fs.py eda/cwru/configs/normal_fs_cwru.yaml
 
 The data center does not state the rate of the normal files; papers disagree (12 or 48 kHz).
 Test: read each file's DE channel as if sampled at 12 kHz. If the true rate is 48 kHz, every

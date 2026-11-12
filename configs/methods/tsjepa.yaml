@@ -1,0 +1,31 @@
+# Shared settings of every tsjepa config (D260): the method's settings that do not depend on the dataset.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this method: docs/methods/. Taken from configs/tsjepa_forda.yaml on 2026-11-12.
+method: tsjepa
+device: cuda
+tsjepa:
+  n_patches: 10  # paper: "we segment each time series into 10 patches" (FordA: 10 x 50 samples)
+  mask_ratio: 0.7  # paper, README, code (int(10 * 0.7) = 7 patches masked, 3 context)
+  masking: per_sample  # D66: official bug fixed (each series uses its own tokens); reported as 'TS-JEPA (masking fixed)'
+  batch_size: 32  # paper, README, code
+  ema_momentum: 0.998  # paper, README, code; raised linearly per epoch (official schedule)
+  ipe_scale: 1.25  # code (only source); sets how far the EMA momentum rises towards 1
+  encoder:
+    embed_dim: 128  # paper, README (code: 384; downstream config: 256)
+    nhead: 2  # paper, README (code: 6; downstream config: 4)
+    num_layers: 1  # D66: README (the only source consistent with the paper's 128 dims / 2 heads); code 3, downstream config 2; paper silent
+    kernel_size: 3  # code (all configs agree); paper only says "1D-CNN" tokenizer
+    embed_bias: true  # code; passed to the tokenizer but not used by it
+  predictor:  # paper: "encoder and predictor share the same architecture: 2 attention heads, embedding dimension 128"
+    embed_dim: 128  # paper, README, code
+    nhead: 2  # paper, README, code
+    num_layers: 1  # README, code, downstream config all 1; paper silent
+  optimizer:
+    lr: 6.0e-5  # D69: the official pretraining config's value (what pretrain.py uses without arguments); no tuning, as TS2Vec/T-Loss (README 1e-7 is from their weather run; paper searched 1e-3..1e-6)
+    lr_end_factor: 0.5  # code: LinearLR from 1.0 to 0.5 x lr over the epochs (code's end_lr 1e-4 is never used)
+    betas: [0.9, 0.999]  # code uses PyTorch's AdamW defaults
+    eps: 1.0e-8  # PyTorch AdamW default (code)
+    weight_decay: 0.01  # PyTorch AdamW default (code)
+  pooling: mean  # D66: mean over the 10 patch vectors (downstream config's pooling: "Mean"); paper silent
+  encode_batch_size: 256  # series per forward pass when encoding; does not change results
+  print_every: 10  # epochs between loss prints (code prints every 10)

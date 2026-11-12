@@ -1,0 +1,8 @@
+# Shared settings of every catch22 config (D260): the method's settings that do not depend on the dataset.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this method: docs/methods/. Taken from configs/catch22_forda.yaml on 2026-11-12.
+method: catch22
+device: cpu  # pycatch22 is CPU code (D79)
+catch22:
+  catch24: true  # D85: add mean and SD (on FordA constant, 0 and 1, as the archive z-normalised every series)
+  mask_nans: false  # D90: a feature that cannot be estimated gives NaN and the run stops (no silent fixed value)

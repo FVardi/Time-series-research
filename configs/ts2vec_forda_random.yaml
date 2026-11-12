@@ -3,25 +3,14 @@
 # tests/test_random_init.py checks that everything else still matches.
 
 # First slice: TS2Vec on FordA (D26, D27, D28). Every setting is written out; nothing is filled in by the code.
+defaults: [methods/ts2vec.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: ts2vec_forda_random
 dataset: forda
 run_id: forda
 channels: [x]
 data_root: data/canonical
-method: ts2vec
 random_init: as_initialised  # D134
 seeds: [0, 1, 2]
-device: cuda  # the work computer has an NVIDIA GPU
-
-ts2vec:  # official defaults (D28)
-  repr_dims: 320
-  hidden_dims: 64
-  depth: 10
-  lr: 0.001
-  batch_size: 8
-  max_train_length: 3000
-  temporal_unit: 0
-  n_iters: 600  # TS2Vec's rule: 200 if the training data has <= 100,000 values, else 600 (FordA: 3601 x 500)
 
 evaluation:  # D26
   label_fractions: [0.01, 0.1, 1.0]

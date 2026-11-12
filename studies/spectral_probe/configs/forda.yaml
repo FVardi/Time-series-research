@@ -9,6 +9,7 @@ alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 100
 cv_groups: false  # plain shuffled folds, as the benchmark (D26)
 cv_folds: 5
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+per_bearing: false  # Pearson's r per test bearing (D265): no bearings
 runs:
   - runs/20261110_095303_ts2vec_forda  # TS2Vec standard (D242)
   - runs/20261110_095353_tloss_forda  # T-Loss standard (D242)

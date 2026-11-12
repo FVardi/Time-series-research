@@ -41,8 +41,9 @@ import torch
 
 from harness import diagnostics, protocols, random_init, runs, windows
 from harness.data import canonical
-from harness.methods import (catch22, envelope, fft, frera, minirocket, mssp, patchtst, pooled, raw, simmtm, tfc_frozen,
-                             tfjepa, tloss, ts2vec, ts2vec_split, tsjepa, tstcc)
+from harness.baselines import catch22, envelope, fft, minirocket, mssp, pooled, raw
+from harness.methods import (frera, patchtst, simmtm, tfc_frozen, tfjepa, tloss, ts2vec, ts2vec_split, tsjepa,
+                             tstcc)
 
 METHODS = {"ts2vec": ts2vec, "tloss": tloss, "tsjepa": tsjepa, "patchtst": patchtst, "tstcc": tstcc,
            "tfjepa": tfjepa, "simmtm": simmtm, "frera": frera, "tfc": tfc_frozen,  # tfc: our TF-C (D122, D123)

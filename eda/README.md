@@ -29,13 +29,13 @@ Contents
 - `herning/spectra_herning.py` — average spectra per operating point (moved from `scripts/`).
 - `herning/check_vfd_lines.py` — frequency-converter line comb test, QUESTIONS.md Q3 (moved from `scripts/`).
   The three scripts are run from the repo root, e.g.
-  `uv run python eda/herning/check_bands.py configs/band_check_herning.yaml`.
+  `uv run python eda/herning/check_bands.py eda/herning/configs/band_check_herning.yaml`.
 - `cwru/check_normal_fs.py` — sampling rate of the CWRU normal files (48 kHz, not 12 kHz; D126, D136).
 - `cwru/check_crosstalk.py` — does a fault at one end show in the other end's channel? (it does; D125).
 - `cwru/check_resampling.py` — 48 kHz recordings resampled to 12 kHz against 12 kHz recordings of the same
   bearings: band-edge difference recognisable on unseen bearings (D168).
   The three are run from the repo root with their configs, e.g.
-  `uv run python eda/cwru/check_resampling.py configs/resampling_cwru.yaml`.
+  `uv run python eda/cwru/check_resampling.py eda/cwru/configs/resampling_cwru.yaml`.
 - `jim-tec/butter_cannon_eda.ipynb` — interactive examination of the Jim-Tec / Arla butter cannon CSV logs
   (file table, one file up close, block statistics over all files, RPM, spectra per operating point,
   spectrogram, envelope spectrum placeholder, open questions).

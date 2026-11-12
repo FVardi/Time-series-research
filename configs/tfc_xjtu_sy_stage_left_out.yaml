@@ -4,23 +4,10 @@
 # TF-C (positives) on XJTU-SY (D123): settings as on CWRU, FordA and Paderborn (sized from the data).
 # Run with --seeds 0 while exploring (D201):
 #   uv run python scripts/pretrain.py configs/tfc_xjtu_sy_stage.yaml --seeds 0
+defaults: [datasets/xjtu_sy_stage.yaml]  # shared settings (D260), merged in this order; keys below override them
 name: tfc_xjtu_sy_stage_left_out
-dataset: xjtu_sy
-data_root: data/canonical
-channels: [Horizontal_vibration_signals, Vertical_vibration_signals]  # both (D232 item 2)
-labels: xjtu_sy_health_stage  # FPT of D230 (harness/fpt.py); group = bearing
-windows:  # D254 (supersedes D247 item 1 and D232 item 3)
-  length: 32768  # one window = one whole one-minute sample (1.28 s), as recorded (D232 item 1, restored by D254)
-  sample_rate_hz: 25600  # as recorded (D224)
-  standardise: true  # per channel, statistics of the pretraining windows (D137; harness standard D253)
-split:  # DSCN Table 1 (D231), without the bearings left out by D230 item 5
-  train: {bearing: [Bearing1_1, Bearing1_2, Bearing1_3, Bearing1_4, Bearing2_1, Bearing2_2, Bearing2_3, Bearing3_1, Bearing3_3]}
-  test: {bearing: [Bearing1_5, Bearing2_5]}  # Bearing3_5 left out (no FPT, D230)
-  pretrain_only: {bearing: [Bearing2_4, Bearing3_2, Bearing3_4]}  # no labels (D230), still pretraining data (D231 item 3)
 method: tfc
-seeds: [0]  # standard run: seed 0 (D239)
 device: cuda
-rankme_epsilon: 1.0e-7  # D152 (as D94): RankMe of the final training representations, diagnostic only
 
 tfc:
   encoder:  # both branches; sized from the data (no setting changes, as D151)
@@ -52,9 +39,3 @@ tfc:
     betas: [0.9, 0.99]  # code, paper silent (as the ablation, D124)
     weight_decay: 0.0005  # paper (as the ablation, D124)
   eval_chunk: 512  # series per forward pass when encoding; does not change results
-
-evaluation:  # D26, D129, D232 item 7
-  label_fractions: [0.01, 0.1, 1.0]
-  probes: [logreg, floor]
-  cv_groups: true  # logreg folds grouped by bearing, shuffled per seed (D129)
-  published_accuracy: null  # no published result for this task

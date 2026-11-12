@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from harness import band_features as bf
-from harness import mssp_stats, stored_features
-from harness.methods import pooled
-from harness.methods.mssp_features import FEATURE_NAMES, bandpass_filter, extract_features
+from harness.features import band_features as bf
+from harness.features import mssp_stats, stored_features
+from harness.baselines import pooled
+from harness.baselines.mssp_features import FEATURE_NAMES, bandpass_filter, extract_features
 
 FS = 2.5e6
 

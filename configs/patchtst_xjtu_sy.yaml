@@ -1,0 +1,6 @@
+# PatchTST on XJTU-SY remaining useful life, the DSCN protocol (Wang et al., 2019; D228, D231, D232); inputs D266.
+# Settings as patchtst_cwru.yaml; only the values the input shape forces are changed (D151, D256, D266).
+# 2,560-sample windows: 213 patches of 12 per channel, the first 4 samples unused (official create_patch; D266).
+#   uv run python scripts/pretrain.py configs/patchtst_xjtu_sy.yaml --seeds 0
+defaults: [datasets/xjtu_sy.yaml, methods/patchtst.yaml]  # shared settings (D260), merged in this order; keys below override them
+name: patchtst_xjtu_sy

@@ -9,6 +9,7 @@ alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 100
 cv_groups: true  # folds grouped by bearing (as D232 item 5)
 cv_folds: 4  # as DSCN's 4-fold cross-validation (D232 item 5)
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+per_bearing: true  # Pearson's r per test bearing (D265): run-to-failure: each test bearing is a trajectory over its life
 runs: []  # the 2026-11-05 runs (whole-minute windows) are superseded by D247 (2,560-point windows) and archived;
 # add the new tfc_xjtu_sy* runs here when they exist. Probed on 2026-11-10 (results/xjtu_sy.csv, now superseded):
 #   runs/archive/20261105_151243_tfc_xjtu_sy

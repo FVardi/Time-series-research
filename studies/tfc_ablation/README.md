@@ -1,5 +1,7 @@
 # studies/tfc_ablation — TF-C study (D95)
 
+Status: FordA ablation stages A–H done (seed 0). Open: which TF-C variant the benchmark uses (D122 vs the D202/D217 arms, see docs/methods/tfc.md); collapse on FD-A (`configs/collapse_fd.yaml` placeholders); more seeds (D96).
+
 Two parts, both built on our TF-C (`harness/methods/tfc.py`, D41, D42), which is
 imported but never changed here (D11, D91):
 

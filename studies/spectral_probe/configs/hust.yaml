@@ -1,4 +1,4 @@
-# Spectral probe (D244) on HUST (D226 protocol): the TF-C variants (the other methods' standard runs come later).
+# Spectral probe (D244) on HUST (D226 protocol): the TF-C variants and the other methods' standard runs (D256).
 name: hust
 targets: [absolute, relative, total, centroid]  # D244
 n_bands: 16  # equal-width bands from 0 to Nyquist (D244)
@@ -8,6 +8,7 @@ alphas: [1.0e-6, 1.0e-5, 0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0, 100
 cv_groups: false  # windows split at random: plain shuffled folds (as D175)
 cv_folds: 5
 fft_reference: true  # |rfft| of the same windows, probed the same way (D244)
+per_bearing: false  # Pearson's r per test bearing (D265): bearings in fixed states, no life trajectory
 runs:
   - runs/20261105_150730_tfc_hust
   - runs/20261105_153747_tfc_hust_paper
@@ -15,3 +16,11 @@ runs:
   - runs/20261105_155109_tfc_hust_left_out_x3
   - runs/20261105_155410_tfc_hust_left_out_lambda0
   - runs/20261105_155715_tfc_hust_positives_lambda0
+  # the other methods' standard runs (D256)
+  - runs/20261110_165020_ts2vec_hust
+  - runs/20261110_193315_tloss_hust
+  - runs/20261110_165216_tstcc_hust
+  - runs/20261111_065149_tsjepa_hust
+  - runs/20261110_171649_patchtst_hust
+  - runs/20261110_165941_simmtm_hust
+  - runs/20261110_173118_frera_hust

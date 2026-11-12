@@ -1,5 +1,7 @@
 # Spectral probe (D244; checklist task A)
 
+Status: active (checklist task A). Probes and premise tests (a) and (c) run on FordA, CWRU, HUST and Paderborn; XJTU-SY rerun, premise test (b) and the rows of new runs are open.
+
 Do the SSL representations hold the spectrum of their input, in a form a linear probe can read?
 Nothing is retrained: the stored representations (`seed_0/Z_*.npy`) of existing runs are probed for
 spectral targets computed from the windows each encoder received (rebuilt with the run's own config
@@ -28,4 +30,5 @@ Premise test (b) and the figures: `spectral_probe.ipynb` (run from the repo root
 
 `probe_spectral.py` writes `results/<config name>.csv`: one row per run (or `fft_reference`), label fraction, probe
 (`ridge`, `floor_mean`), channel and target, with the band edges (cycles per sample, and Hz where
-the sample rate is known), the chosen alpha and the test R².
+the sample rate is known), the chosen alpha and the test R². With `per_bearing: true` (XJTU-SY, D265) also `results/<config name>_per_bearing.csv`:
+Pearson's r between predictions and targets within each test bearing.

@@ -1,0 +1,10 @@
+# Shared settings of every forda config (D260): dataset, split, windows and evaluation.
+# Configs name this file under 'defaults:'; their own keys override it (deep merge).
+# Current rules for this dataset: docs/datasets/. Taken from configs/ts2vec_forda.yaml on 2026-11-12.
+dataset: forda
+run_id: forda
+channels: [x]
+data_root: data/canonical
+seeds: [0]  # standard run: seed 0 (D239)
+evaluation:  # D26
+  label_fractions: [0.01, 0.1, 1.0]
