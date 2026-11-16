@@ -1,0 +1,53 @@
+%% Description of the FordA (UCR archive) dataset.
+%% Covers dimensions, combinations of faults/bearings/conditions, EDA findings,
+%% supported tests and splits; the test rig is not described here.
+%% Build (from eda/forda/):   pdflatex forda && pdflatex forda
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{FordA (UCR archive)}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Source}
+
+\section{Dimensions of the time series}
+
+\section{Combinations of faults, bearings and operating conditions}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lrrl}
+\toprule
+Split & Series & Length & Classes \\
+\midrule
+Train & 3,601 & 500 & $-1$, $1$ \\
+Test  & 1,320 & 500 & $-1$, $1$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Univariate engine-noise series; the archive z-normalised each series.
+  \item No faults, bearings, operating conditions or recording IDs: only the class label.
+  \item Official train/test split (UCR archive).
+\end{itemize}
+
+\section{Findings from EDA}
+
+\section{Tests the data support}
+
+\section{Splits}
+
+\end{document}

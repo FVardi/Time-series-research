@@ -1,0 +1,57 @@
+%% Description of the DCASE 2022 Task 2, bearing dataset.
+%% Covers dimensions, combinations of faults/bearings/conditions, EDA findings,
+%% supported tests and splits; the test rig is not described here.
+%% Build (from eda/dcase2022_bearing/):   pdflatex dcase2022_bearing && pdflatex dcase2022_bearing
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{DCASE 2022 Task 2, bearing}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Source}
+
+\section{Dimensions of the time series}
+
+\section{Combinations of faults, bearings and operating conditions}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lllcc}
+\toprule
+Section & Shift between domains & Train (normal): source / target & Test: normal / anomaly \\
+\midrule
+00 & rotation velocity   & 990 / 10 & 100 / 100 \\
+01 & microphone location & 990 / 9  & 100 / 100 \\
+02 & factory noise       & 990 / 10 & 100 / 100 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Each number counts 10\,s clips: 16\,kHz mono, 160,000 samples, int16; 3,599 clips.
+  \item Training holds normal clips only; anomalies appear only in test (anomaly detection).
+  \item Test clips come from both domains; the split per domain is in the captures table.
+  \item Per-clip attributes (e.g.\ velocity, microphone location) are in the file name and
+        the attribute CSVs. No bearing IDs and no fault types.
+  \item Source: \texttt{harness/data/dcase2022\_bearing.py}, D251.
+\end{itemize}
+
+\section{Findings from EDA}
+
+\section{Tests the data support}
+
+\section{Splits}
+
+\end{document}

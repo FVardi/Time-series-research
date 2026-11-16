@@ -1,0 +1,77 @@
+%% Description of the Paderborn run-to-failure data (LDM) dataset.
+%% Covers dimensions, combinations of faults/bearings/conditions, EDA findings,
+%% supported tests and splits; the test rig is not described here.
+%% Build (from eda/paderborn_rtf/):   pdflatex paderborn_rtf && pdflatex paderborn_rtf
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{Paderborn run-to-failure data (LDM)}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Source}
+
+\section{Dimensions of the time series}
+
+\section{Combinations of faults, bearings and operating conditions}
+
+\begin{table}[h]
+\centering
+\footnotesize
+\begin{tabular}{l r r l l l l}
+\toprule
+Exp. & Rate (kHz) & Files & Duration & Stop & Defects & Speed (rpm) / static load (N) \\
+\midrule
+B01 & 128 & 377   & 2 h  & --    & IR, OR, B & [2400, 3000] / [3300, 3800] \\
+B02 & 128 & 1116  & 6 h  & vib.  & IR        & [2400, 3000] / [3300, 3800] \\
+B03 & 128 & 614   & 3 h  & temp. & IR        & [2400, 3000] / [3300, 3800] \\
+B04 & 128 & 1114  & 6 h  & vib.  & IR, B     & [1500, 3000] / [2500, 3800] \\
+B05 & 128 & 572   & 3 h  & --    & B         & [1500, 3000] / [2500, 3800] \\
+B06 & 128 & 12965 & 67 h & vib.  & IR, B     & [1500, 3600] / [3300, 3800] \\
+B07 & 128 & 6393  & 37 h & temp. & IR        & [1500, 3000] / [3250, 4000] \\
+B08 & 128 & 1827  & 11 h & temp. & IR, B     & [1500, 3000] / [3250, 4000] \\
+B09 & 128 & 1813  & 13 h & vib.  & OR, B     & [1500, 3000] / [2500, 3800] \\
+B10 & 64  & 3224  & 19 h & vib.  & OR, B     & [1500, 2700] / [2000, 3250] \\
+B11 & 64  & 1953  & 8 h  & vib.  & IR, OR, B & [1500, 2700] / 3000 \\
+B12 & 64  & 767   & 3 h  & vib.  & IR, B     & [1500, 2700] / 3000 \\
+B13 & 64  & 19417 & 66 h & vib.  & IR, B     & [1500, 2700] / 3000 \\
+B14 & 64  & 12317 & 41 h & vib.  & B         & 2700 / 2500 \\
+B15 & 64  & 22567 & 76 h & temp. & IR, B     & 2700 / 2500 \\
+B16 & 64  & 5891  & 20 h & --    & IR, OR, B & 2700 / 2500 \\
+B17 & 64  & 2733  & 17 h & vib.  & B         & 2700 / [1500, 2500] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Each row is one new 61806-2RS bearing run to failure; Files = number of measurements.
+  \item One measurement: 1.6\,s (204,800 samples at 128\,kHz, 102,400 at 64\,kHz), two
+        accelerometers (A, C), stored as int16 ADC codes in V (D236).
+  \item Speed and load are drawn at random per measurement within the ranges (description
+        Table 2); bracketed = range, single value = constant. The dynamic load amplitude is
+        sinusoidal for B01--B06 and Gaussian noise for B07--B17.
+  \item Stop: vib.\ = $T_\text{vibration}$ (within [6, 10]\,g), temp.\ = $T_\text{temperature}$
+        (110\,\textdegree C), -- = none given (B01 no criterion pre-set, B05 interrupted
+        deliberately).
+  \item Defects are those found after the test; most bearings have several.
+  \item Source: \texttt{TABLE2}, \texttt{TABLE3} in \texttt{harness/data/paderborn\_rtf.py}
+        (description Tables 2 and 3).
+\end{itemize}
+
+\section{Findings from EDA}
+
+\section{Tests the data support}
+
+\section{Splits}
+
+\end{document}

@@ -1,0 +1,60 @@
+%% Description of the UOS multi-domain vibration data dataset.
+%% Covers dimensions, combinations of faults/bearings/conditions, EDA findings,
+%% supported tests and splits; the test rig is not described here.
+%% Build (from eda/uos/):   pdflatex uos && pdflatex uos
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{UOS multi-domain vibration data}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Source}
+
+\section{Dimensions of the time series}
+
+\section{Combinations of faults, bearings and operating conditions}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lp{9cm}c}
+\toprule
+Factor & Levels & $n$ \\
+\midrule
+Bearing type (subset) & deep groove ball 6204; cylindrical roller N204 (NJ204 for IR); tapered roller 30204 & 3 \\
+Bearing condition     & healthy, ball, inner raceway, outer raceway & 4 \\
+Machine condition     & healthy, looseness, misalignment 0.6/0.8/1.0\,mm, unbalance 3/4/5\,g & 8 \\
+Speed                 & 600, 800, 1000, 1200, 1400, 1600\,rpm & 6 \\
+Sampling rate         & 8\,kHz, 16\,kHz & 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Full crossing: $3 \times 4 \times 8 \times 6 \times 2 = 1152$ recordings, all present
+        (D248). The 8 and 16\,kHz files are separate recordings.
+  \item One recording: 1,280,000 samples (160\,s at 8\,kHz, 80\,s at 16\,kHz), one channel in g.
+  \item Every bearing condition is combined with every machine condition (compound faults).
+  \item Bearing faults are ground defects. Whether the same physical bearing is reused across
+        machine conditions and speeds is not recorded in the repo.
+  \item Source: \texttt{harness/data/uos.py}.
+\end{itemize}
+
+\section{Findings from EDA}
+
+\section{Tests the data support}
+
+\section{Splits}
+
+\end{document}

@@ -1,0 +1,64 @@
+%% Description of the University of Ottawa UODS-VAFDC dataset.
+%% Covers dimensions, combinations of faults/bearings/conditions, EDA findings,
+%% supported tests and splits; the test rig is not described here.
+%% Build (from eda/ottawa_vafdc/):   pdflatex ottawa_vafdc && pdflatex ottawa_vafdc
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage[hidelinks]{hyperref}
+
+\title{University of Ottawa UODS-VAFDC}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Source}
+
+\section{Dimensions of the time series}
+
+\section{Combinations of faults, bearings and operating conditions}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lllll}
+\toprule
+Fault & Bearings & Model & Load & Stages per bearing \\
+\midrule
+Inner race & 1--5   & NSK 6203ZZ   & 400\,N & 0, 1, 2 \\
+Outer race & 6--10  & FAFNIR 203KD & 400\,N & 0, 1, 2 \\
+Ball       & 11--15 & FAFNIR 203KD & 0\,N (stage 0: 400\,N) & 0, 1, 2 \\
+Cage       & 16--20 & FAFNIR 203KD & 400\,N & 0, 1, 2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}
+  \item Each bearing has three recordings: stage 0 healthy, 1 fault developing, 2 faulty;
+        60 recordings. The healthy class is stage 0 of every bearing.
+  \item Stages chosen from 50 files per bearing: healthy 1--5, developing 25--30,
+        faulty 45--50 (data note).
+  \item One recording: 10\,s at 42\,kHz (420,000 samples), two channels (accelerometer,
+        microphone).
+  \item Speed 1700--1948\,rpm against 1750 nominal; it differs between bearings.
+  \item Confounds: all inner-race bearings are NSK, all others FAFNIR; ball-fault stages 1--2
+        have no load.
+  \item C\_19\_1 and C\_19\_2 are identical (D249).
+  \item Source: \texttt{FAULT\_OF\_BEARING}, \texttt{BEARING\_MODEL} in
+        \texttt{harness/data/ottawa\_vafdc.py}; quirks D249.
+\end{itemize}
+
+\section{Findings from EDA}
+
+\section{Tests the data support}
+
+\section{Splits}
+
+\end{document}
