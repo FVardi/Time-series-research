@@ -1,0 +1,289 @@
+# Decision log, D1–D269 (archive, frozen 2026-11-17)
+
+Frozen: no new entries and no edits. New decisions go in `../DECISIONS.md`, from D270.
+The current rules are in `../docs/`.
+
+Index of approved design decisions. Full entries live in this folder, one file per topic;
+dataset-specific decisions in `datasets/`. Numbers are unique across files.
+Entries are never deleted; a changed decision is marked "Superseded by Dn".
+
+| ID | Date | Decision | File |
+|---|---|---|---|
+| D1 | 2026-09-30 | Data hierarchy run → capture → stream → channel; windowing downstream | [data.md](data.md) |
+| D2 | 2026-09-30 | Metadata as four tables | [data.md](data.md) |
+| D3 | 2026-09-30 | Canonical format — Parquet metadata, HDF5 signals, one file per run | [data.md](data.md) |
+| D4 | 2026-09-30 | Minimal adapter interface | [data.md](data.md) |
+| D5 | 2026-09-30 | No transformation at ingestion; immutable canonical data | [data.md](data.md) |
+| D6 | 2026-09-30 | Store raw integer codes for quantized sources | [data.md](data.md) |
+| D7 | 2026-09-30 | Dataset status field | [data.md](data.md) |
+| D8 | 2026-09-30 | Data is never committed | [repo.md](repo.md) |
+| D9 | 2026-10-02 | Decision log split by topic | [repo.md](repo.md) |
+| D10 | 2026-10-03 | Two ways to integrate a method, one shared encoder boundary | [training.md](training.md) |
+| D11 | 2026-10-03 | One repository; studies in `studies/`; one-way imports | [repo.md](repo.md) |
+| D12 | 2026-10-03 | κ computed as in the MSSP paper | [datasets/herning.md](datasets/herning.md) |
+| D13 | 2026-10-06 | Tests chosen per question and dataset; full grid within a study; built incrementally | [evaluation.md](evaluation.md) |
+| D14 | 2026-10-06 | Python environments with uv; Python 3.12 (Python version superseded by D132) | [repo.md](repo.md) |
+| D15 | 2026-10-06 | Plain PyTorch; scikit-learn for probes and simple baselines | [training.md](training.md) |
+| D16 | 2026-10-06 | One plain YAML config file per experiment (amended by D260) | [repo.md](repo.md) |
+| D17 | 2026-10-06 | Run results as plain files | [repo.md](repo.md) |
+| D18 | 2026-10-06 | Package layout (extended by D262) | [repo.md](repo.md) |
+| D19 | 2026-10-06 | Official method code as pinned git submodules; modified versions as separate, named methods | [training.md](training.md) |
+| D20 | 2026-10-06 | Herning scope data stored as 16-bit integer codes | [data.md](data.md) |
+| D21 | 2026-10-06 | HDF5 chunk size of 16,384 samples | [data.md](data.md) |
+| D22 | 2026-10-07 | Herning conversion details | [datasets/herning.md](datasets/herning.md) |
+| D23 | 2026-10-07 | Compression and loaded data type | [data.md](data.md) |
+| D24 | 2026-10-07 | Source files identified by name, size and modification time (supersedes checksum part of D5) | [data.md](data.md) |
+| D25 | 2026-10-07 | Only AE and ultrasound converted for now (supersedes part of D22) | [datasets/herning.md](datasets/herning.md) |
+| D26 | 2026-10-07 | Evaluation protocol for the first slice (TS2Vec on FordA) | [evaluation.md](evaluation.md) |
+| D27 | 2026-10-07 | FordA used as distributed | [datasets/forda.md](datasets/forda.md) |
+| D28 | 2026-10-07 | TS2Vec training settings for the first slice | [training.md](training.md) |
+| D29 | 2026-10-07 | Label subsets and probe cross-validation details | [evaluation.md](evaluation.md) |
+| D30 | 2026-10-07 | FordA metadata | [datasets/forda.md](datasets/forda.md) |
+| D31 | 2026-10-07 | Datasets may add per-capture columns to the captures table | [data.md](data.md) |
+| D32 | 2026-10-08 | T-Loss on FordA | [training.md](training.md) |
+| D33 | 2026-10-08 | Representations saved with a window table; overlap check before pretraining | [repo.md](repo.md) |
+| D34 | 2026-10-08 | Change detection is not used as a test | [evaluation.md](evaluation.md) |
+| D35 | 2026-10-08 | TF-C study sequence: reproduce, full Paderborn, own corrected version, possibly FordA | [training.md](training.md) |
+| D36 | 2026-10-08 | Official TF-C reference = 2023 code (commit 9667582); our own corrected TF-C alongside | [training.md](training.md) |
+| D37 | 2026-10-08 | Official TF-C run without debugging subset; official and clean protocol reported | [training.md](training.md) |
+| D38 | 2026-10-08 | TF-C reproduction target (FD-A → FD-B, 0.8934) and 5 seeds | [training.md](training.md) |
+| D39 | 2026-10-08 | FD-A and FD-B used as distributed by the TF-C authors | [datasets/fd.md](datasets/fd.md) |
+| D40 | 2026-10-08 | Label budgets 1 %, 10 % and 100 % throughout Part 1 | [evaluation.md](evaluation.md) |
+| D41 | 2026-10-08 | Design of our own TF-C (paper CNN and loss, corrected symmetric frequency augmentation, selection by validation F1); time-augmentation parameters open | [training.md](training.md) |
+| D42 | 2026-10-08 | Our TF-C time augmentations: jitter, scaling, permutation (no time shift) | [training.md](training.md) |
+| D43 | 2026-10-08 | Official TF-C clean protocol selects by validation macro-F1 (supersedes part of D37) | [training.md](training.md) |
+| D44 | 2026-10-08 | Official TF-C divergence recorded per seed; extra run with the debugging subset | [training.md](training.md) |
+| D45 | 2026-10-08 | Frozen-probe diagnostic of our TF-C encoders on FD-B (100 % labels, untrained reference) | [evaluation.md](evaluation.md) |
+| D46 | 2026-10-08 | Baseline: harness probes on the plain FFT magnitude spectra of FD-B | [evaluation.md](evaluation.md) |
+| D47 | 2026-10-08 | Download all 32 Paderborn bearing archives into data/raw/paderborn | [datasets/paderborn.md](datasets/paderborn.md) |
+| D48 | 2026-10-08 | Paderborn: convert vibration and both motor currents (64 kHz) | [datasets/paderborn.md](datasets/paderborn.md) |
+| D49 | 2026-10-09 | Feature baseline: MSSP statistics per octave band (details open) | [evaluation.md](evaluation.md) |
+| D50 | 2026-10-09 | Feature baseline: third-octave bands, order-5 zero-phase Butterworth, broadband set kept | [evaluation.md](evaluation.md) |
+| D51 | 2026-10-09 | Rig input: band-limit and downsample per sensor; cut-offs after an information check (superseded by D165) | [datasets/herning.md](datasets/herning.md) |
+| D52 | 2026-10-09 | Herning: per-band check of signal vs noise and dependence on operating point, before downsampling | [datasets/herning.md](datasets/herning.md) |
+| D53 | 2026-10-09 | Feature baseline: full-octave bands, base 10, standard edges (supersedes D50 spacing) | [evaluation.md](evaluation.md) |
+| D54 | 2026-10-09 | Feature baseline: four US bands (lowest four dropped); features over whole sweeps | [evaluation.md](evaluation.md) |
+| D55 | 2026-10-09 | Herning rpm, temperature, exclusions and κ as in the MSSP code; target κ; no classification yet | [datasets/herning.md](datasets/herning.md) |
+| D56 | 2026-10-09 | Herning split: temperature hold-out (details open) | [datasets/herning.md](datasets/herning.md) |
+| D57 | 2026-10-09 | Feature baseline: seven US bands 1.0–63.1 kHz (supersedes D54 US bands) | [evaluation.md](evaluation.md) |
+| D58 | 2026-10-09 | Ridge probe for regression, regularisation on a grid; label budgets apply | [evaluation.md](evaluation.md) |
+| D59 | 2026-10-09 | Ridge probe: standardised, grid 1e-4..1e4, folds grouped by hold, MAE and R² | [evaluation.md](evaluation.md) |
+| D60 | 2026-10-09 | Feature bands after band check: AE 63.1/126/251 kHz (≥50 kHz, top band out); US 1.0–126 kHz | [evaluation.md](evaluation.md) |
+| D61 | 2026-10-10 | AE feature bands: 50–100, 100–200, 200–400, 400–560 kHz; AE broadband 50–560 kHz | [evaluation.md](evaluation.md) |
+| D62 | 2026-10-10 | Downsampling: AE ×2 (1.25 MHz), US ×5 (500 kHz); filter and placement open | [datasets/herning.md](datasets/herning.md) |
+| D63 | 2026-10-12 | Results document `report/results.tex`; numbers generated by `scripts/make_report.py`; entries R1, R2, … with status (superseded by D98) | [repo.md](repo.md) |
+| D64 | 2026-10-12 | Downsampling on the fly; AE and US both to 1.25 MHz (supersedes D62 US factor) (not used for the SSL input since D165) | [datasets/herning.md](datasets/herning.md) |
+| D65 | 2026-10-12 | TS-JEPA wrapped from official code (830ee5c); masking, epochs, layers, lr, pooling open | [training.md](training.md) |
+| D66 | 2026-10-13 | TS-JEPA: both masking variants, 5,000 epochs, 1 encoder layer, mean pooling; lr open (item 1 partly superseded by D102) | [training.md](training.md) |
+| D67 | 2026-10-14 | TS-JEPA learning rate: search 1e-3..1e-6, fixed variant, 80/20 split of FordA train, logistic-regression probe, seed 0 | [training.md](training.md) |
+| D68 | 2026-10-14 | Dataset examination code (EDA notebooks, one-off checks) in `eda/<dataset>/`; Herning checks moved there; uv group `eda`; notebooks committed without outputs | [repo.md](repo.md) |
+| D69 | 2026-10-16 | TS-JEPA learning rate 6e-5 (official default), no search (supersedes D67) | [training.md](training.md) |
+| D70 | 2026-10-16 | Step 1 datasets: FordA, Paderborn (split by bearing), Herning; FD-A/FD-B only for the TF-C reproduction; FordB, CWRU open (CWRU settled by D115) | [evaluation.md](evaluation.md) |
+| D71 | 2026-10-17 | TF-C study as an ablation of the time–frequency consistency idea; separate from the baseline list; standalone runs for now (superseded by D95) | [training.md](training.md) |
+| D72 | 2026-10-17 | TF-C ablation first on simple datasets: FordA, in-domain; Herning later, unfiltered first (superseded by D95) | [training.md](training.md) |
+| D73 | 2026-10-19 | PatchTST (self-supervised) wrapped from the official code (204c21e); official Learner and callbacks; any number of channels | [training.md](training.md) |
+| D74 | 2026-10-19 | PatchTST settings: patch 12/stride 12, 100 epochs, official lr finder, 12.5 % validation hold-out, d_ff 256, default size, last-patch representation (item 7 superseded by D87) | [training.md](training.md) |
+| D75 | 2026-10-16 | Baselines: floor, raw samples, \|FFT\|, MSSP statistics, MiniRocket; untrained encoders as control; supervised-from-scratch deferred (first recorded as D69, renumbered; item d partly superseded by D85) | [evaluation.md](evaluation.md) |
+| D76 | 2026-10-16 | Baseline inputs: raw as recorded; one-sided linear \|FFT\|; MSSP statistics (broadband only without physical sampling rate); MiniRocket official code and settings (item 3 partly superseded by D85) | [evaluation.md](evaluation.md) |
+| D77 | 2026-10-16 | Baselines as methods without training, through the same pretrain/evaluate scripts | [evaluation.md](evaluation.md) |
+| D78 | 2026-10-16 | Baselines use the SSL runs' seeds; differences reported paired per seed | [evaluation.md](evaluation.md) |
+| D79 | 2026-10-16 | Speed: wall-clock per stage (fit, encode, probe), device as used, hardware recorded; TS2Vec/T-Loss FordA rerun with timing | [evaluation.md](evaluation.md) |
+| D80 | 2026-10-16 | Reporting: paired difference to the best baseline per budget, label-efficiency figure, time columns, new R entry | [evaluation.md](evaluation.md) |
+| D81 | 2026-10-19 | MiniRocket: own ridge probe via scikit-learn's normalize replacement; target 0.950 (FordA); numba seeded from NumPy; compile time measured at import | [evaluation.md](evaluation.md) |
+| D82 | 2026-10-19 | MSSP statistics from the MSSP code copied unchanged (antropy); fs = 1 on FordA; both probes, SVM scale caveat (FordA part superseded by D85) | [evaluation.md](evaluation.md) |
+| D83 | 2026-10-19 | Floor as a probe (most frequent class), run with the raw-samples baseline; regression floor with the ridge probe | [evaluation.md](evaluation.md) |
+| D84 | 2026-10-19 | Baselines on FordA first, Herning after Q1/Q2, Paderborn once converted; none on FD-B; untrained-encoder control later | [evaluation.md](evaluation.md) |
+| D85 | 2026-10-19 | catch24 (pycatch22, per channel) as the generic feature baseline on all datasets; MSSP band statistics kept on Herning only (Herning: no catch24, D188) | [evaluation.md](evaluation.md) |
+| D86 | 2026-10-19 | PatchTST pooling diagnostic: saved FordA models re-encoded with mean and flatten pooling, same probes; reported as diagnostic, not as the PatchTST result | [evaluation.md](evaluation.md) |
+| D87 | 2026-10-19 | PatchTST representation: mean over patch vectors (supersedes D74 item 7); the strongest version is the baseline; FordA result = run 20261019_154248_patchtst_forda_mean | [training.md](training.md) |
+| D88 | 2026-10-20 | No training-setting tuning on FordA; tuning reserved for harder datasets, chosen on the unlabelled pretraining validation loss; which methods it applies to is open | [training.md](training.md) |
+| D89 | 2026-10-19 | Raw-samples baseline: floor and SVM probes only; logistic cell not run (series not phase-aligned); raw run only where series are short enough (first recorded as D87, renumbered) | [evaluation.md](evaluation.md) |
+| D90 | 2026-10-20 | catch24 with pycatch22==1.0.2 (features match hctsa v3.0.0); mask_nans false, run stops on NaN; cloud catch24 results (0.5.0) rerun | [evaluation.md](evaluation.md) |
+| D91 | 2026-10-17 | `studies/` holds studies and paper material; method-independent diagnostics in `harness/diagnostics.py`; first study `studies/tfc_ablation/` (first recorded as D71, renumbered) | [repo.md](repo.md) |
+| D92 | 2026-10-17 | TF-C study `studies/tfc_ablation/`: examination of collapse and ablation by building blocks; own training loop; stages open (first recorded as D72, renumbered; superseded by D95) | [training.md](training.md) |
+| D93 | 2026-10-17 | Collapse diagnostics (effective rank, spectrum, std, cosine similarity, SIGReg statistic) every epoch to `collapse.csv`; settings and threshold in D94 (first recorded as D73, renumbered) | [evaluation.md](evaluation.md) |
+| D94 | 2026-10-17 | Collapse diagnostics settings (all representations, alignment, 1,024 fixed SIGReg slices); dead dimension = std < 1 % of the largest; FordA validation run: seed 0, all training windows (first recorded as D74, renumbered) | [evaluation.md](evaluation.md) |
+| D95 | 2026-10-20 | TF-C study (combines D71, D72, D92): ablation of the time–frequency consistency idea in two parts, collapse and building blocks; standalone in `studies/tfc_ablation/`; ablation on FordA in-domain first; collapse also on FD-A (reproduction record) and FordA; Herning later, unfiltered first; open points partly settled by D96, D97 | [training.md](training.md) |
+| D96 | 2026-10-20 | TF-C study plan: official TF-C measured as is (flaws documented, not fixed); our TF-C as reference; ablation stages A–E (L_T; L_F; both; + S_TF; + L_C); FordA first, then D70 datasets; h for A–C, h and z for D–E; 1 seed first, then up to 3 | [training.md](training.md) |
+| D97 | 2026-10-20 | Ablation stage details: D weighted like E; C probed on h_T, h_F, [h_T; h_F]; one branch only in A and B; λ = 0.5 pending check of the paper; implementation in `studies/tfc_ablation/ablation.py` | [training.md](training.md) |
+| D98 | 2026-10-20 | Results document: current results only, by topic, no entry numbers; generated run index of every folder in `runs/`; superseded results leave the text (supersedes D63) | [repo.md](repo.md) |
+| D99 | 2026-10-20 | Runs meant for the report start from a committed tree; creating a run folder warns when there are uncommitted changes (run still starts) | [repo.md](repo.md) |
+| D100 | 2026-10-20 | Figures of a study drawn by a notebook in the study folder (functions in a module, runs in a config); inline only, no figure files; committed with outputs cleared | [repo.md](repo.md) |
+| D101 | 2026-10-21 | Ablation variants: F (E without the pair terms, S_TF weighted as in E), G (hinged L_C), H (augmented pairs as positives); S_pair terms logged separately; note added to D97 (E weights S_TF three times as much as D) | [training.md](training.md) |
+| D102 | 2026-10-21 | TS-JEPA compared in its masking-fixed version only; official variant not in the comparison (supersedes part of D66 item 1); FordA runs used without timing, rerun deferred (rerun dropped by D210) | [training.md](training.md) |
+| D103 | 2026-10-21 | FordA report: TS-JEPA (masking fixed) and PatchTST added from existing runs; "not timed" rows; TS-JEPA reproduction check on the official-masking run (SVM probe) | [repo.md](repo.md) |
+| D104 | 2026-10-21 | TS-TCC wrapped from the official code (15bdfd6) as `external/tstcc`; CA-TCC deferred with pseudo-labelling (CA-TCC part superseded by D208) | [training.md](training.md) |
+| D105 | 2026-10-21 | TS-TCC on FordA: TS2Vec paper's setup (HAR config, 320 output channels, batch 128); official config checked by the adapter; target 0.930 | [training.md](training.md) |
+| D106 | 2026-10-21 | TS-TCC representation: encoder output max-pooled over time | [evaluation.md](evaluation.md) |
+| D107 | 2026-10-21 | TS-TCC official code used as is; five departures from the paper recorded (fixed views, weak view, channel-0 permutation, segment count, one t per batch) (item 3 fixed by D156) | [training.md](training.md) |
+| D108 | 2026-10-21 | TS-TCC runs on FordA: seeds 0–2, D26 probes and budgets, timing, reproduction check vs 0.930 | [evaluation.md](evaluation.md) |
+| D109 | 2026-10-23 | TF-JEPA, SimMTM and FreRA wrapped from the official code (fda93c1, 169513b, 7236fbf); FordA configs with open placeholders; settings open | [training.md](training.md) |
+| D110 | 2026-10-23 | TF-JEPA pretraining views as in the official code (clean inputs in both passes; augmented views unused) (superseded by D113) | [training.md](training.md) |
+| D111 | 2026-10-26 | SimMTM batch size 128 on FordA (paper Table 10; code 32); loss curve to be checked at epoch 10 | [training.md](training.md) |
+| D112 | 2026-10-26 | FreRA l1_weight 0.1, the script's default (as D69); README 0.003 and paper λ recorded as a finding | [training.md](training.md) |
+| D113 | 2026-10-26 | TF-JEPA: one pass per step, paper's loss (reported as "TF-JEPA (single pass)"; supersedes D110); drop_last true; probes on [z_time; z_freq] | [training.md](training.md) |
+| D114 | 2026-10-26 | TF-JEPA on FordA: batch size 128 (official configs, paper profiling), 20 epochs (README example; default 5) | [training.md](training.md) |
+| D115 | 2026-10-23 | CWRU added to the Step 1 datasets (classification); run-to-failure datasets not added; RUL undecided (run-to-failure part superseded by D189) | [evaluation.md](evaluation.md) |
+| D116 | 2026-10-27 | CWRU: all files converted; subsets chosen per experiment | [datasets/cwru.md](datasets/cwru.md) |
+| D117 | 2026-10-27 | CWRU: 28 mil faults not used in experiments (NTN bearings, other fault depths) | [datasets/cwru.md](datasets/cwru.md) |
+| D118 | 2026-10-27 | CWRU: outer-race positions (@3, @6, @12) kept apart, not merged (storage settled by D120) | [datasets/cwru.md](datasets/cwru.md) |
+| D119 | 2026-10-27 | CWRU: 40 mil faults not used in experiments (as D117) | [datasets/cwru.md](datasets/cwru.md) |
+| D120 | 2026-10-27 | CWRU: outer-race position stored as the recorded clock hour (3, 6, 12) | [datasets/cwru.md](datasets/cwru.md) |
+| D121 | 2026-10-27 | Datasets split by bearing: pretraining never sees recordings of test bearings; D33 check at bearing level | [evaluation.md](evaluation.md) |
+| D122 | 2026-10-27 | Our TF-C for the benchmarks uses stage H's loss (augmented cross-domain pairs as positives) in pretraining and fine-tuning; required setting `tfc.loss.variant` (`paper` / `positives`); study configs and `tfc_fd.yaml` keep `paper`; new `configs/tfc_positives_fd.yaml` | [training.md](training.md) |
+| D123 | 2026-10-27 | TF-C (positives) on FordA and every later benchmark dataset, same protocol as the other methods; FordA: pretrain.py + evaluate.py (D26 probes, seeds 0–2, timing) via adapter `tfc_frozen`; probes on z = [z_T; z_F]; FordA settings open in `configs/tfc_forda.yaml` | [training.md](training.md) |
+| D124 | 2026-10-27 | TF-C (positives) settings on FordA as in the FordA ablation (paper/code values, D42 scaling; 40 epochs, batch 64) | [training.md](training.md) |
+| D125 | 2026-10-27 | CWRU: no healthy class (fault diagnosis only; detection on Paderborn); test bearings = held-out faulty bearings | [datasets/cwru.md](datasets/cwru.md) |
+| D126 | 2026-10-27 | CWRU: normal files used for pretraining (48 kHz; rate matching decided with the pretraining setup) (rate matching settled by D136) | [datasets/cwru.md](datasets/cwru.md) |
+| D127 | 2026-10-27 | CWRU split: both ends pooled, five fault classes; one size per class and end held out; repeated random draws (count open) (superseded by D128) | [datasets/cwru.md](datasets/cwru.md) |
+| D128 | 2026-10-27 | CWRU split: train on 7 and 14 mil, test on 21 mil (both ends, five classes; fixed; supersedes D127) (sampling rate clarified by D140) (superseded as the main split by D163) (superseded by D218) | [datasets/cwru.md](datasets/cwru.md) |
+| D129 | 2026-10-27 | Datasets split by bearing: logreg probe's CV folds grouped by bearing (StratifiedGroupKFold, 5), shuffled per seed, redrawn if a training part lacks a class (reproduction-probe point settled by D133) (guard narrowed by D148) | [evaluation.md](evaluation.md) |
+| D130 | 2026-10-27 | `STATUS.md`: living list of what is done, ready and open (takes over from `HANDOFF.md`; superseded by D261) | [repo.md](repo.md) |
+| D131 | 2026-10-27 | CWRU input: DE and FE as one two-channel series; base plate not used; MiniRocket open | [datasets/cwru.md](datasets/cwru.md) |
+| D132 | 2026-10-27 | Harness on Python 3.14, the version the environment runs (supersedes the Python version in D14) | [repo.md](repo.md) |
+| D133 | 2026-10-27 | logreg is the standard probe (reported everywhere); svm_ts2vec only for reproduction of published numbers; ridge_minirocket only as MiniRocket's FordA reproduction check | [evaluation.md](evaluation.md) |
+| D134 | 2026-10-27 | Random-init baseline: each method's untrained encoder (initial weights of the trained run, same seed) probed as the trained one; variants (a) as initialised, (b) batch-norm statistics from the training series; configs `*_random.yaml` / `*_random_bn.yaml`; FordA, CWRU, Paderborn (probes superseded by D135) | [evaluation.md](evaluation.md) |
+| D135 | 2026-10-27 | Random-init runs probed with logreg only (no svm_ts2vec, no reproduction_probe); supersedes the probe part of D134 | [evaluation.md](evaluation.md) |
+| D136 | 2026-10-27 | CWRU windows: 2,048 samples, no overlap; normal files resampled 48 → 12 kHz (resample_poly) (normalisation and placement: D137) | [datasets/cwru.md](datasets/cwru.md) |
+| D137 | 2026-10-27 | CWRU: windows consecutive from file start, last incomplete dropped; each channel standardised with training mean/std (amplitude kept); baselines raw (D76) | [datasets/cwru.md](datasets/cwru.md) |
+| D138 | 2026-10-27 | CWRU label budgets as D29 (random windows, stratified by class, per seed); optimism about label diversity noted | [datasets/cwru.md](datasets/cwru.md) |
+| D139 | 2026-10-27 | CWRU conversion: one run per .mat file; per-capture fault and bearing-ID columns; speed as recorded; units unknown; quirks of 99, 277/278, 28 mil files; status final | [datasets/cwru.md](datasets/cwru.md) |
+| D140 | 2026-10-27 | CWRU: experiments use the 12 kHz fault files (48 kHz converted, not used); quirks of 174, 175, 217 | [datasets/cwru.md](datasets/cwru.md) |
+| D141 | 2026-10-27 | CWRU: missing speed replaced by the table speed where a speed is needed, marked as estimated (pipeline step) | [datasets/cwru.md](datasets/cwru.md) |
+| D142 | 2026-10-27 | Longer-training check on FordA: TF-JEPA 40, SimMTM 20, TF-C 80 epochs (twice the configs'); judged by probe accuracy | [training.md](training.md) |
+| D143 | 2026-10-27 | TS2Vec and T-Loss log the loss per iteration/step (official callback; hook on the loss module); FordA runs repeated | [training.md](training.md) |
+| D144 | 2026-10-27 | PatchTST: learning-rate finder per seed kept (D74 item 3); finding: per-seed results follow the suggested rate | [training.md](training.md) |
+| D145 | 2026-10-28 | Training length stays at each method's standard setting, no search; D142 longer runs kept as checks (TF-JEPA 40 ep. modest gain, SimMTM 20 no gain, TF-C 80 worse) | [training.md](training.md) |
+| D146 | 2026-10-28 | Own methods: RankMe on training windows (no labels) as the indicator for training length / checkpoint; details open until the first own method | [training.md](training.md) |
+| D147 | 2026-10-28 | Windowed inputs: split, windows and standardisation set in the config (harness/windows.py, harness/labels.py); pretrain.py path for configs with 'split' | [repo.md](repo.md) |
+| D148 | 2026-10-28 | Grouped folds: a class whose labelled windows all come from one bearing is accepted and recorded (narrows D129's guard) | [evaluation.md](evaluation.md) |
+| D149 | 2026-10-28 | Raw-samples baseline not run on CWRU (only the floor would remain: D89, D133) | [evaluation.md](evaluation.md) |
+| D150 | 2026-10-28 | MiniRocket on multichannel data: official multivariate code (same commit, official settings); FordA unchanged | [evaluation.md](evaluation.md) |
+| D151 | 2026-10-28 | CWRU: no tuning; official settings, changed only where the input shape forces it; data-dependent official rules applied | [training.md](training.md) |
+| D152 | 2026-10-28 | CWRU: RankMe of the final training representations of every method, diagnostic only (never used to choose settings) | [evaluation.md](evaluation.md) |
+| D153 | 2026-10-28 | TS2Vec and T-Loss on CWRU: FordA settings unchanged (TS2Vec 600 iterations by its data-size rule) | [training.md](training.md) |
+| D154 | 2026-10-28 | TS-JEPA on multichannel data: channels flattened within each patch (CWRU: 10 patches of 204 samples per channel, last 8 dropped); safety fix for channel count | [training.md](training.md) |
+| D155 | 2026-10-28 | TF-JEPA on multichannel data: channel-independent (shared model, vectors concatenated); width = window length (2,048) as designed | [training.md](training.md) |
+| D156 | 2026-10-28 | TS-TCC on CWRU: input_channels 2, features_len 258, num_classes 5; permutation fixed for multichannel data (FordA unchanged) | [training.md](training.md) |
+| D157 | 2026-10-28 | LightGBM baseline: `min_data_in_leaf = min(20, max(1, n_train // 10))`; features, role and other settings open (superseded by D233) | [evaluation.md](evaluation.md) |
+| D158 | 2026-10-28 | PatchTST, FreRA, TF-C (positives) on CWRU: settings unchanged (PatchTST 170 patches; RevIN removes window amplitude, noted) | [training.md](training.md) |
+| D159 | 2026-10-28 | SimMTM on CWRU: TSlength_aligned 2048, CNNoutput_channel 87; both channels encoded and reconstructed (decoder 2 x 2048) | [training.md](training.md) |
+| D160 | 2026-10-28 | Datasets split by bearing: test accuracy also listed per test bearing (diagnostic; per_bearing.csv, logreg, every seed and budget) | [evaluation.md](evaluation.md) |
+| D161 | 2026-10-28 | Squared envelope spectrum baseline: as \|FFT\| except whole-band squared-envelope demodulation first; CWRU now, Paderborn later, not FordA | [evaluation.md](evaluation.md) |
+| D162 | 2026-10-29 | Submodules tstcc and frera: `ignore = untracked` in .gitmodules (as tloss, minirocket), so __pycache__ no longer marks runs as uncommitted | [repo.md](repo.md) |
+| D163 | 2026-10-30 | CWRU main split: random windows, every bearing and load on both sides (supersedes D128 as the main split; proportion, probe folds, literature protocol open; healthy class settled by D168) (superseded by D218) | [datasets/cwru.md](datasets/cwru.md) |
+| D164 | 2026-10-30 | CWRU pretraining: training windows and normal files only, never test windows; one fixed test set, one pretraining per seed | [datasets/cwru.md](datasets/cwru.md) |
+| D165 | 2026-10-30 | Herning SSL input: per-window band features (D60/D61 octaves; log energy, Hjorth mobility/complexity, kurtosis as MSSP code; Butterworth at 2.5 MHz; 1 ms windows; 200 × 48 per sweep; standardised with training stats); supersedes D51 | [datasets/herning.md](datasets/herning.md) |
+| D166 | 2026-10-30 | Pooled band-feature baseline: the D165 features averaged over a sweep's windows, probed (superseded by D187: mean + SD) | [evaluation.md](evaluation.md) |
+| D167 | 2026-10-30 | CWRU literature protocol: Zhao et al. (2020) benchmark (10 classes, drive end, 0 hp, 1,024 windows, stratified random 80/20), healthy file resampled to 12 kHz; normalisation, split seed, budgets open (healthy class and per-class accuracy: D168) | [datasets/cwru.md](datasets/cwru.md) |
+| D168 | 2026-10-30 | CWRU healthy class: left out of the main task (D125 stays); kept in the literature protocol, with accuracy also per class (resampling check: band-edge difference recognisable on unseen bearings) | [datasets/cwru.md](datasets/cwru.md) |
+| D169 | 2026-10-30 | Herning validation split: the sweeps with κ, random 80/20, one fixed draw (seed 0); pretraining on training sweeps only; D56 hold-out remains the intended test | [datasets/herning.md](datasets/herning.md) |
+| D170 | 2026-10-30 | κ ridge probe for the Herning validation: folds not grouped (deviation from D59), shuffled, R² for α; floor = training mean; unstratified label budgets; MAE and R² | [evaluation.md](evaluation.md) |
+| D171 | 2026-10-30 | CWRU main split: 80 % training / 20 % test, stratified by class (`train_test_split`, as Zhao et al.); fixed or per seed: D174 | [datasets/cwru.md](datasets/cwru.md) |
+| D172 | 2026-10-30 | Herning band features stored once (`scripts/derive_band_features.py`, renamed by D181 → `data/derived/herning/band_features.h5`), read with `windows: features_file`; settings checked on load | [datasets/herning.md](datasets/herning.md) |
+| D173 | 2026-10-30 | SSL methods on Herning as D151 on CWRU: official settings, shape-forced changes only (TS-TCC 48/27, SimMTM 200/10/48, TS-JEPA 10 × 20 steps, TF-JEPA width 200, PatchTST 16 patches; RevIN hides per-sweep levels, noted) (TS-JEPA item corrected by D195) | [datasets/herning.md](datasets/herning.md) |
+| D174 | 2026-10-30 | CWRU splits (main task and literature protocol) fixed for all seeds, `random_state=40` as Zhao et al.; their exact test windows not reproduced (resampled healthy file) | [datasets/cwru.md](datasets/cwru.md) |
+| D175 | 2026-10-30 | CWRU main task: logreg probe with plain stratified 5-fold CV, not grouped (D129 not applied; still applies to Paderborn) | [datasets/cwru.md](datasets/cwru.md) |
+| D176 | 2026-10-30 | CWRU leakage check (D33) by window (recording + start sample) for the random-window splits; check by recording and bearing kept for bearing splits | [datasets/cwru.md](datasets/cwru.md) |
+| D177 | 2026-10-30 | CWRU literature protocol: normalisation as D137 (per-channel mean and SD from the training windows); a departure from Zhao et al.'s per-window options | [datasets/cwru.md](datasets/cwru.md) |
+| D178 | 2026-10-30 | CWRU literature protocol: label budgets 10 % and 100 % (1 % dropped: fewer labels than classes) | [datasets/cwru.md](datasets/cwru.md) |
+| D179 | 2026-10-30 | CWRU literature protocol: standard logreg probe (plain stratified 5-fold CV) and floor, as the main task; accuracy per class from the same probe | [datasets/cwru.md](datasets/cwru.md) |
+| D180 | 2026-10-30 | CWRU config names: D128 configs kept as `*_cwru_bearing.yaml`; `*_cwru.yaml` = main task; `*_cwru_zhao.yaml` = literature protocol (superseded by D240) | [datasets/cwru.md](datasets/cwru.md) |
+| D181 | 2026-10-30 | MSSP domain baseline on Herning: 14 statistics over the whole sweep per octave band (same as D165) + broadband (AE 50–560, UL 0–178 kHz), 196 per sweep; stored once (`scripts/derive_features.py`, generalised from D172) | [evaluation.md](evaluation.md) |
+| D182 | 2026-10-30 | Split-representation pilot (METHOD_IDEAS M1): TS2Vec on CWRU, condition = `load_hp`; step 0 = load probe on existing representations; variants 0/A/B/C | [training.md](training.md) |
+| D183 | 2026-10-30 | `ts2vec_split`: z_op 32 / z_state 288, pooled heads, TS2Vec loss on all dims, MLP adversary with gradient reversal and DANN ramp, HSIC (Gaussian / delta), batch 64 (plain TS2Vec rerun at 64); weights, MLP sizes, iterations, split open | [training.md](training.md) |
+| D184 | 2026-10-30 | Pilot evaluation: factor x block matrix (fault class, load × z_op, z_state, full); logreg + MLP probe ≥ adversary (MLP probe superseded by D209) | [evaluation.md](evaluation.md) |
+| D185 | 2026-10-30 | Pilot: both CWRU splits (D163 main, D128 bearing); 600 iterations at batch 64; ramp max 1.0; load head 1.0, removal {0.1, 1, 10}; MLPs one hidden layer of 64 (evaluation MLP probe superseded by D209) | [training.md](training.md) |
+| D186 | 2026-11-02 | Herning: stored 1/12-octave sub-band power (FFT per 1 ms window of each D165 Butterworth band signal; 99 per window; float32); SSL input stays D165; kurtogram deferred | [datasets/herning.md](datasets/herning.md) |
+| D187 | 2026-11-02 | Pooled baseline: mean and SD of each band feature over a sweep's windows (96 per sweep; supersedes D166's mean); MSSP baseline uses `raw` (identity on its one window) | [evaluation.md](evaluation.md) |
+| D188 | 2026-11-02 | No catch24 baseline on Herning (whole sweep or per band); Herning baselines: pooled band features, MSSP, floor (narrows D85) | [evaluation.md](evaluation.md) |
+| D189 | 2026-11-02 | Datasets added: XJTU-SY, HUST or UOS (open), Ottawa UODS-VAFDC, DCASE 2022 bearing; configured one at a time; other candidates in DATASET_CANDIDATES.md (partly supersedes D115) (HUST/UOS settled by D190) | [evaluation.md](evaluation.md) |
+| D190 | 2026-11-02 | Both HUST and UOS used (settles D189 point) | [evaluation.md](evaluation.md) |
+| D191 | 2026-11-02 | XJTU-SY: fault element, piecewise-linear RUL, two health stages, health indicator; FPT by 3σ rule on RMS (details open); split by bearing (delegated to Claude) (RUL target superseded by D228; FPT settled by D229, D230; task 1 dropped and split settled by D231) | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D192 | 2026-11-02 | Anomaly detection: frozen embeddings of normal data; 1-NN and Mahalanobis scores; mean over windows; AUROC, pAUC (0.1), DCASE Ω; on DCASE, Paderborn, Ottawa, XJTU-SY (delegated to Claude) | [evaluation.md](evaluation.md) |
+| D193 | 2026-11-03 | XJTU-SY raw data stored as downloaded in `data/raw/xjtu_sy/` (RAR archive kept packed); fault element per bearing confirmed | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D194 | 2026-11-03 | Raw data of HUST, UOS (subsets 1–3), DCASE 2022 bearing (dev), Ottawa UODS-VAFDC stored in `data/raw/` | [evaluation.md](evaluation.md) |
+| D195 | 2026-11-03 | TS-JEPA on Herning: 10 patches of 18 steps per channel (patch length rounded down to a multiple of the tokenizer kernel with several channels), last 20 steps unused; corrects D173 item 3 | [datasets/herning.md](datasets/herning.md) |
+| D196 | 2026-11-03 | Synthetic test bed (M5): toy generator, canonical datasets synthetic_{crossed,confounded,departures}, 144 runs each, two sensors, all factors on captures | [datasets/synthetic.md](datasets/synthetic.md) |
+| D197 | 2026-11-03 | Split representation: one head per operating-condition factor (synthetic: speed, temperature; CWRU: load); removal per factor | [training.md](training.md) |
+| D198 | 2026-11-03 | Pilot: `conditions:` config key -> per-window factor classes passed to ts2vec_split; synthetic splits (random, leave one speed out [speed open], departures); nominal-only pretraining comparison; 40 configs in studies/split_pilot/configs | [training.md](training.md) |
+| D199 | 2026-11-03 | Pilot: leave one speed out with all four synthetic speeds in turn (32 configs); block probes and MLP probe settings one at a time | [training.md](training.md) |
+| D200 | 2026-11-03 | TS-JEPA epoch diagnostic (CWRU main task, seed 0; literature protocol since 2026-11-05, D218): RankMe and logreg accuracy on 20 % validation windows from training, every 250 epochs; schedule decided afterwards | [training.md](training.md) |
+| D201 | 2026-11-04 | One seed while exploring: `pretrain.py --seeds 0` overrides the config's seeds for that run (recorded in the run's config.yaml); protocol otherwise unchanged; full seeds for conclusions | [evaluation.md](evaluation.md) |
+| D202 | 2026-11-04 | TF-C loss comparison: pairs as positives (H) vs negatives (paper, E) vs left out (D: C = S_TF; F: C = 3 S_TF), λ fixed; new variants `left_out`, `left_out_x3`; benchmark pipeline; FordA, CWRU, then Paderborn and further datasets (which: open); seed 0 | [training.md](training.md) |
+| D203 | 2026-11-04 | Comparison tables across runs: `scripts/compare.py` + hand-written run lists (`configs/compare/`); pairing checked (D78); best baseline and per-seed differences (D80); missing cells listed (D13); significance tests / CD diagrams deferred until ~10 datasets | [evaluation.md](evaluation.md) |
+| D204 | 2026-11-04 | Pilot: minimal synthetic set first (A remaining, B1, C1 on all 7 splits) with `--seeds 0` (D201); other weights and CWRU later | [training.md](training.md) |
+| D205 | 2026-11-04 | Pilot block probes: z_op / z_state / full x class (all label fractions), factors and bearing (100 %); pred_nominal on departures; impossible targets skipped; folds as config (MLP probe sentence superseded by D209) | [evaluation.md](evaluation.md) |
+| D206 | 2026-11-04 | Split-representation pilot: seed 0 only for all further runs and for the block probes (3-seed runs probed at seed 0) | [training.md](training.md) |
+| D207 | 2026-11-04 | Pilot follow-up: B1 with the live encoder saved and probed (save_live_encoder); plain HSIC at weights 100 and 1000; departures and random, seed 0 | [training.md](training.md) |
+| D208 | 2026-11-04 | CA-TCC dropped (supersedes the CA-TCC part of D104) | [training.md](training.md) |
+| D209 | 2026-11-04 | No MLP probe in the split-representation pilot; logreg (and floor) only (supersedes the MLP probe of D184, D185 item 5, D205) | [evaluation.md](evaluation.md) |
+| D210 | 2026-11-04 | TS-JEPA FordA rerun with timing dropped (settles D102) | [training.md](training.md) |
+| D211 | 2026-11-04 | TF-C FD-A → FD-B transfer with all four TF-C variants (paper, left_out, left_out_x3, positives); pipeline, probes, seeds open | [training.md](training.md) |
+| D212 | 2026-11-04 | Paderborn conversion: vibration + 2 currents (D48); run = bearing × condition, 20 captures; labels from damage sheets + Lessmeier et al. (2016) incl. their 3 classes; quirks recorded; read from the archives with unrar-cffi (item 8 superseded by D213) | [datasets/paderborn.md](datasets/paderborn.md) |
+| D213 | 2026-11-04 | Raw archives unpacked once into `data/raw/<dataset>/` (archive layout); readers read unpacked files, no archive package; Paderborn and XJTU-SY done | [data.md](data.md) |
+| D214 | 2026-11-04 | Benchmark datasets use the standard splits of the literature; more datasets to be added; which split counts as standard when there are several is open (settled by D216) | [evaluation.md](evaluation.md) |
+| D215 | 2026-11-04 | Split-representation pilot parked after the synthetic runs (removal not working); results and next options in METHOD_IDEAS M1 | [training.md](training.md) |
+| D216 | 2026-11-04 | One split per benchmark dataset: official split, else the authors' protocol, else the most widely used; CWRU settled by D218 | [evaluation.md](evaluation.md) |
+| D217 | 2026-11-04 | TF-C with the consistency term only (λ = 0, L_T and L_F removed): arms `left_out` (S_TF only) and `positives` (cross-domain positives only); benchmark pipeline, z only; FordA + CWRU, seed 0; config change only | [training.md](training.md) |
+| D218 | 2026-11-04 | CWRU: one split, the Zhao et al. protocol (D167, `*_cwru_zhao.yaml`); main split (D163) and bearing split (D128) no longer used for new results; D202/D217 CWRU runs need `_zhao` configs | [datasets/cwru.md](datasets/cwru.md) |
+| D219 | 2026-11-04 | Remaining CWRU runs (4 main-task methods, 13 literature-protocol configs) with seed 0 only, via copies in `runs/cwru_seed0_configs/`; compare all methods on seed 0 (superseded by D240) | [datasets/cwru.md](datasets/cwru.md) |
+| D220 | 2026-11-05 | Paderborn split: Lessmeier et al. (2016) Section 7.3 — 3 classes × 5 real/healthy bearings, 3 train / 2 test per class, 10 combinations, mean accuracy; open points settled by D222 | [datasets/paderborn.md](datasets/paderborn.md) |
+| D221 | 2026-11-05 | Paderborn pretraining: all recordings except the combination's six test bearings (all settings, incl. the 17 bearings outside Section 7.3) (superseded by D225) | [datasets/paderborn.md](datasets/paderborn.md) |
+| D222 | 2026-11-05 | Paderborn probes/test: setting 0 only, all 20 measurements, vibration only, 5,120-sample windows without overlap (as TF-C's FD); settings 1–3 not used (D225) | [datasets/paderborn.md](datasets/paderborn.md) |
+| D223 | 2026-11-05 | HUST conversion: literature standard (steady-state vibration `data` only, 7 fault classes from file names), harness conventions otherwise (one run per file); run-up recordings not converted | [datasets/hust.md](datasets/hust.md) |
+| D224 | 2026-11-05 | XJTU-SY conversion: run = bearing (15), capture = 1-min CSV sample (`m0001`…), both channels, nominal start (n − 1) × 60 s, units g, fault element verbatim, no derived labels (D191); quirks recorded (none found) | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D225 | 2026-11-05 | Paderborn pretraining on each combination's training windows only (9 bearings, setting 0; supersedes D221) | [datasets/paderborn.md](datasets/paderborn.md) |
+| D226 | 2026-11-05 | HUST task/split: the authors' 7-class experiment — all 99 recordings, 2,048-sample windows with 75 % overlap, 2,500 random windows per class, stratified 80/20 split (random_state 0, fixed); harness conventions for pretraining, standardisation, budgets, probe | [datasets/hust.md](datasets/hust.md) |
+| D227 | 2026-11-05 | TF-C variants on Paderborn (D220 protocol): positives, paper, left_out, left_out_x3 (D202) and the two λ = 0 arms (D217); seed 0, 10 combinations; `configs/tfc_paderborn*.yaml` | [training.md](training.md) |
+| D228 | 2026-11-05 | XJTU-SY RUL target as DSCN (Wang et al., 2019): (N − n)/N, linear from the start, no FPT (supersedes D191 task 2 target); DSCN split/metrics/inputs recorded, not decided | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D229 | 2026-11-05 | XJTU-SY FPT (tasks 3–4) on the horizontal channel, as Wang et al. (2020) and Lei et al. (2019); reference segment and consecutive exceedances open, from Li et al. (2015) (settled by D230) | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D230 | 2026-11-05 | XJTU-SY FPT (tasks 3–4): Li et al. (2015) as published — horizontal kurtosis, two-sided 3σ, l+1-consecutive trigger; 20-min reference (our choice); 2_4, 3_2, 3_4, 3_5 left out of tasks 3–4 | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D231 | 2026-11-05 | XJTU-SY split: DSCN — bearings 1–4 per condition train, 1_5/2_5/3_5 test; one pooled probe (our choice); pretraining without test bearings; PHM08 score + RMSE (min) from half-life, plus MAE/R²; fault-element task dropped; tasks 3–4 on 1_5, 2_5 | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D232 | 2026-11-05 | XJTU-SY windows/input/tasks: whole 1-min samples, both channels, per-window z-score (DSCN Eq. 14); S = 5 embedding of representations at the probe; ridge on 4 bearing-grouped folds; RUL clipped to [0, 0.99] for Eq. 15, span n ≥ N/2; health stage from D230 FPT; HI waits for D192 (delegated to Claude) | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D233 | 2026-11-05 | LightGBM baseline dropped; not added to the harness (supersedes D157) | [evaluation.md](evaluation.md) |
+| D234 | 2026-11-05 | Paderborn run-to-failure data (time-varying load and speed; Zenodo 10868257) added as benchmark dataset `paderborn_rtf`; task/split separately, authors' protocol as standard (D214) | [evaluation.md](evaluation.md) |
+| D235 | 2026-11-05 | Paderborn RTF: download one experiment at a time, convert, unpack small files, then delete the ZIPs (vibration raw files not kept; Zenodo is the archive) | [datasets/paderborn-rtf.md](datasets/paderborn-rtf.md) |
+| D236 | 2026-11-05 | Paderborn RTF conversion: run per experiment, capture per measurement, channels A and C as int16 ADC codes (checked per file), telemetry from the CSVs, units V | [datasets/paderborn-rtf.md](datasets/paderborn-rtf.md) |
+| D237 | 2026-11-05 | FreRA and TF-JEPA save only the weights encode() uses (FreRA: encoder + frequency weights, no projector; TF-JEPA: online encoders + projectors); results unchanged | [repo.md](repo.md) |
+| D238 | 2026-11-05 | `.gitattributes`: text files stored with LF (`* text=auto eol=lf`) | [repo.md](repo.md) |
+| D239 | 2026-11-05 | One standard run per method and dataset: `configs/<method>_<dataset>.yaml`, the dataset's one split (D216), seed 0; only these in benchmark tables; superseded / other-protocol runs in `runs/archive/`; diagnostics keep suffixed names, outside the tables | [evaluation.md](evaluation.md) |
+| D240 | 2026-11-05 | CWRU: `*_cwru_zhao.yaml` renamed `*_cwru.yaml`; main- and bearing-split configs deleted; TF-C variant configs on the protocol (D202, D217); 25 earlier runs archived; D219's main-split runs cancelled, seed-0 copies deleted (supersedes D180, D219) | [datasets/cwru.md](datasets/cwru.md) |
+| D241 | 2026-11-05 | D239 on FordA and Herning: TS-JEPA masking-fixed config renamed `tsjepa_forda.yaml`; PatchTST mean run standard; superseded runs archived; TS2Vec / T-Loss standard run (10-20 or 10-27) open; seeds `[0]` in all standard configs (TS2Vec / T-Loss settled by D242) | [evaluation.md](evaluation.md) |
+| D242 | 2026-11-05 | TS2Vec and T-Loss on FordA: 10-20 and 10-27 runs archived; standard runs made again (seed 0, current code) | [evaluation.md](evaluation.md) |
+| D243 | 2026-11-05 | TF-C variants (D202, D217) also on HUST, XJTU-SY (RUL and health stage) and Herning (validation data); λ = 0 arms on FordA; configs `tfc_<dataset>_<variant>.yaml`; seed 0; positives arm = standard run | [training.md](training.md) |
+| D244 | 2026-11-10 | Spectral probe study (`studies/spectral_probe/`): 16 equal-width bands, log absolute / relative band energy, log total energy, centroid (relative + centroid only on FordA, XJTU-SY); ridge per target on the stored Z, 1/10/100 % (superseded by D246), R²; FFT, catch24, MiniRocket, random-init references; existing runs of FordA, CWRU, HUST, XJTU-SY, Paderborn (10 combinations); Herning left out | [evaluation.md](evaluation.md) |
+| D245 | 2026-11-10 | Spectral probe premise tests: (a) D244 targets as features of the benchmark logreg probe (run's own label fractions); (b) spectral R² against benchmark logreg accuracy, notebook; per-band class test not now; CWRU keeps 1 % in the spectral probe (superseded by D246) | [evaluation.md](evaluation.md) |
+| D246 | 2026-11-10 | Spectral probe on all training windows only (no 1/10 %); ridge alpha grid 10⁻⁶…10⁸ (supersedes D244's label fractions and alpha grid, D245's CWRU 1 % sentence); probes run again | [evaluation.md](evaluation.md) |
+| D247 | 2026-11-10 | XJTU-SY: first 2,560 points per minute as DSCN Section 4.1.4 (supersedes D232 item 1); ridge_grouped alpha grid 10⁻⁶…10⁸; FFT/catch22/envelope/MiniRocket baselines on the RUL task; 2026-11-05 runs archived; investigation: no code error | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D248 | 2026-11-10 | UOS conversion: run per file (1,152), channel `Data` in g as int32 ADC codes (checked per file, ≤ 8 ulp), STFT products not converted; condition columns; task/split open | [datasets/uos.md](datasets/uos.md) |
+| D249 | 2026-11-10 | Ottawa UODS-VAFDC conversion: run per bearing (20), stages 0–2 as captures, accelerometer + microphone float64 at 42 kHz, speed/load telemetry; C_19_1 = C_19_2 recorded | [datasets/ottawa-vafdc.md](datasets/ottawa-vafdc.md) |
+| D250 | 2026-11-10 | Ottawa task/split: dataset authors' protocol (Sehri et al., 2025): domains 2/4/6/8 train+val, 10 test, 5 classes; train/val division, windows, inputs open | [datasets/ottawa-vafdc.md](datasets/ottawa-vafdc.md) |
+| D251 | 2026-11-10 | DCASE 2022 bearing conversion: run per section, capture per clip, int16 PCM codes (1/32768), labels and attributes as columns; official dev train/test split, AUC/pAUC (needs D192 scorers) | [datasets/dcase2022-bearing.md](datasets/dcase2022-bearing.md) |
+| D252 | 2026-11-10 | Spectral probe premise test (c): each band's relative energy alone as the feature of the benchmark logreg probe (per channel, all training windows); `results/<dataset>_bands.csv` | [evaluation.md](evaluation.md) |
+| D253 | 2026-11-10 | Harness standard: method inputs standardised per channel with the pretraining data's statistics (D137) for every dataset; no per-instance normalisation, also where the reference protocol uses it (CWRU/Zhao, XJTU-SY/DSCN: documented departures); baselines too (D255) | [training.md](training.md) |
+| D254 | 2026-11-10 | XJTU-SY: whole one-minute windows again (supersedes D247 item 1; DSCN's 2,560 points come from another recording scheme, per RCNN) and D253 standardisation instead of DSCN's per-sample z-score (supersedes D232 item 3); 2026-11-10 runs archived | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D255 | 2026-11-10 | D253's normalisation also for all baselines (supersedes D76 item 1's raw values and D253's baseline exception); 12 configs; Paderborn FFT and Herning MSSP runs to redo; FordA as distributed | [training.md](training.md) |
+| D256 | 2026-11-10 | Configs for the other methods on Paderborn and HUST (7 SSL each) and baselines for HUST and XJTU-SY stage (22 files, shape-forced values only, D151); TS-JEPA epochs = FordA's 565,000 steps capped at 5,000 epochs (Paderborn 2,004, HUST 1,290); mixed precision not used; TF-JEPA and XJTU-SY SSL configs not now | [training.md](training.md) |
+| D257 | 2026-11-12 | Standard choices (harness rule → paper/official code → common practice) taken without asking; the user decides what has no standard; D-entries for user decisions and departures | [repo.md](repo.md) |
+| D258 | 2026-11-12 | Every chat updates the checklist (`claude/CHECKLIST.md`) itself when it finishes work; rule in CLAUDE.md, checklist header, Project instructions | [repo.md](repo.md) |
+| D259 | 2026-11-12 | Current rules in `docs/` (protocol, method and dataset cards); the decision log stays the history | [repo.md](repo.md) |
+| D260 | 2026-11-12 | Configs composed from `configs/datasets/` and `configs/methods/` parts via `defaults:` (amends D16) | [repo.md](repo.md) |
+| D261 | 2026-11-12 | `STATUS.md` generated by `scripts/status.py` (supersedes D130) | [repo.md](repo.md) |
+| D262 | 2026-11-12 | Layout: `harness/baselines/`, `harness/features/`; TF-C reproduction and method checks in `studies/`; EDA configs in `eda/` (extends D18, D68, D91) | [repo.md](repo.md) |
+| D263 | 2026-11-12 | Experiments start simple and grow one refinement at a time, when asked; any extra beyond the standard runs (longer training, checkpoints, seeds, variants) for all methods or none | [repo.md](repo.md) |
+| D264 | 2026-11-12 | FreRA skipped where its official model does not fit on the GPU: Paderborn (projector Linear(d, d), d = 82,176, 6.75 B weights) and XJTU-SY, as TF-JEPA (D256) | [training.md](training.md) |
+| D265 | 2026-11-12 | Spectral probe on XJTU-SY (run-to-failure, `per_bearing: true`): Pearson's r between predictions and targets within each test bearing, besides the overall R² | [evaluation.md](evaluation.md) |
+| D266 | 2026-11-12 | XJTU-SY: 12 windows of 2,560 points per minute (DSCN's length), representation averaged per minute for the probes (`pool_per_capture: mean`); supersedes D254 item 1; all methods but FreRA fit; TS-JEPA 173 epochs | [datasets/xjtu-sy.md](datasets/xjtu-sy.md) |
+| D267 | 2026-11-17 | Benchmark baselines: \|FFT\|, envelope, MiniRocket (+ floor); catch24 and raw samples leave the benchmark; Herning keeps MSSP and pooled band features (narrows D75, D85, D89) | [evaluation.md](evaluation.md) |
+| D268 | 2026-11-17 | catch24 also out of the spectral probe study (configs for FordA, HUST, Paderborn); reference rows: FFT, MiniRocket, random-init (amends D267, D244) | [evaluation.md](evaluation.md) |
+| D269 | 2026-11-17 | EDA `.tex` dataset descriptions removed; `report/results.tex` removed, the user writes the results document themselves (amends D98) | [repo.md](repo.md) |
+
+<!--
+Entry template:
+
+## YYYY-MM-DD — Dn: Short title
+**Decision:** What was decided.
+**Alternatives considered:** Other options and why they were not chosen.
+**Rationale:** Why this option.
+-->

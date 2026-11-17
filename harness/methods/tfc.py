@@ -1,7 +1,7 @@
 """TF-C, our implementation (D35 step 3, D36, D41, D122).
 
 Follows the TF-C paper (Zhang et al., 2022, arXiv 2206.08496) and fixes the problems
-found in the official code (decisions/training.md, D36 and D41). In short:
+found in the official code (decisions_archive/training.md, D36 and D41). In short:
 
     x  ──► time branch:      G_T (CNN) ─► h_T ─► R_T (projector) ─► z_T
     |FFT(x)| ─► frequency branch: G_F (CNN) ─► h_F ─► R_F (projector) ─► z_F

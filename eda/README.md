@@ -16,9 +16,6 @@ Environment: notebook tools are in the uv group `eda` (not installed by default)
     uv sync --group eda
 
 Per dataset folder (one for every converted dataset, plus `jim-tec/`):
-- `<dataset>.tex` — description of the dataset (LaTeX; build from the folder with `pdflatex <dataset>`):
-  source, dimensions of the time series, combinations of faults/bearings/operating conditions,
-  findings from EDA, tests the data support, splits. The test rig is not described (available online).
 - `<dataset>_eda.ipynb` — EDA notebook; starts by loading the canonical tables and one signal.
   Herning and Jim-Tec keep their existing notebooks (below) instead.
 

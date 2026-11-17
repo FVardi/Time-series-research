@@ -3,7 +3,7 @@
 Questions that need a decision but are better discussed first. Each entry: the
 question, why it matters, the options with their trade-offs, and Claude's
 suggestion (clearly marked, not a decision). When a question is settled, record the
-decision in `decisions/` (D-number) and mark the entry here as "Settled by Dn" —
+decision in `DECISIONS.md` (D-number) and mark the entry here as "Settled by Dn" —
 entries are not deleted.
 
 ---

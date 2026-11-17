@@ -18,7 +18,7 @@ $queues = @{
         "tfc_xjtu_sy_paper", "tfc_xjtu_sy_left_out", "tfc_xjtu_sy_left_out_x3", "tfc_xjtu_sy_left_out_lambda0", "tfc_xjtu_sy_positives_lambda0",
         "tfc_xjtu_sy_stage_paper", "tfc_xjtu_sy_stage_left_out", "tfc_xjtu_sy_stage_left_out_x3", "tfc_xjtu_sy_stage_left_out_lambda0", "tfc_xjtu_sy_stage_positives_lambda0"
     )
-    cpu = @("fft_xjtu_sy", "envelope_xjtu_sy", "catch22_xjtu_sy", "minirocket_xjtu_sy")
+    cpu = @("fft_xjtu_sy", "envelope_xjtu_sy", "minirocket_xjtu_sy")  # catch22 dropped as a baseline (D267, D268)
 }
 
 $log = "runs\queue_xjtu_$Queue.log"

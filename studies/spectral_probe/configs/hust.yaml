@@ -24,3 +24,5 @@ runs:
   - runs/20261110_171649_patchtst_hust
   - runs/20261110_165941_simmtm_hust
   - runs/20261110_173118_frera_hust
+  # MiniRocket as reference row (catch24 dropped, D268)
+  - runs/20261113_052457_minirocket_hust

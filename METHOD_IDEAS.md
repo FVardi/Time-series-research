@@ -3,7 +3,7 @@
 Running log of ideas for the user's own SSL method. Each entry: the idea, where it
 comes from, what it assumes about the data, why it might suit lubrication
 monitoring, risks, and open questions. Claude's suggestions are clearly marked and
-are not decisions. When an idea is adopted, record it in `decisions/` (D-number)
+are not decisions. When an idea is adopted, record it in `DECISIONS.md` (D-number)
 and mark the entry here as "Adopted as Dn"; entries are not deleted.
 
 Working approach (user, 2026-11-03): this file is a bank of ideas. The own method starts

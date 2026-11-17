@@ -2,7 +2,7 @@
 
 Running log of datasets that could be used to test the methods, beyond the ones in use.
 Claude's suggestions are listed here; they are not decisions. When a dataset is adopted,
-record it in `decisions/` (D-number) and mark the entry here as "Adopted as Dn";
+record it in `DECISIONS.md` (D-number) and mark the entry here as "Adopted as Dn";
 entries are not deleted. Details below are as stated on the source pages (checked
 2026-11-02); anything not verified is marked as such.
 

@@ -9,12 +9,12 @@ Collaboration rules for Claude: `CLAUDE.md`.
 | question | where |
 |---|---|
 | What has run, what is ready, what is missing? | `STATUS.md` — generated: `uv run python scripts/status.py` (D261) |
-| What is still to do? | the project checklist (claude.ai Project doc `claude/CHECKLIST.md`, D258) |
+| What is still to do? | the user's own checklist in `report/` |
 | What are the current rules? | `docs/protocol.md` (all datasets and methods), `docs/methods/`, `docs/datasets/` (D259) |
-| Why is it like that, and when was it decided? | `DECISIONS.md` (index) and `decisions/` (full entries, never deleted) |
+| Why is it like that, and when was it decided? | `DECISIONS.md` (from D270); D1–D269 in `decisions_archive/` (frozen) |
 | Questions for the supervisor | `QUESTIONS.md` |
 | Ideas for the own method; candidate datasets | `METHOD_IDEAS.md`; `DATASET_CANDIDATES.md` |
-| Results report (updated only when asked) | `report/results.tex` |
+| Results document (written by the user, D269) | `report/` |
 
 ## Layout (D18, D262)
 

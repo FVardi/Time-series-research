@@ -1,6 +1,6 @@
-# Spectral probe (D244; checklist task A)
+# Spectral probe (D244)
 
-Status: active (checklist task A). Probes and premise tests (a) and (c) run on FordA, CWRU, HUST and Paderborn; XJTU-SY rerun, premise test (b) and the rows of new runs are open.
+Status: active. Probes and premise tests (a) and (c) run on FordA, CWRU, HUST and Paderborn; XJTU-SY rerun, premise test (b) and the rows of new runs are open.
 
 Do the SSL representations hold the spectrum of their input, in a form a linear probe can read?
 Nothing is retrained: the stored representations (`seed_0/Z_*.npy`) of existing runs are probed for

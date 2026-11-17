@@ -1,4 +1,4 @@
-"""Spectral probe (D244, checklist task A): can a linear probe read the spectrum of the input from the
+"""Spectral probe (D244): can a linear probe read the spectrum of the input from the
 stored representations?
 
 For every run listed in a config (one config per dataset, in studies/spectral_probe/configs/):

@@ -28,7 +28,7 @@ MiniRocket on FordA with its own ridge probe (`ridge_minirocket`, target 0.950) 
 
 ## Dropped
 LightGBM (D233). catch24 (D85, D90; `pycatch22==1.0.2` per channel) and raw samples (D89, FordA only,
-SVM probe) left the benchmark (D267); their runs and configs are kept, and catch24 stays a reference
-row in the spectral probe study (D244). Supervised-from-scratch models and non-linear probes are deferred (D75).
+SVM probe) left the benchmark (D267); their runs and configs are kept; catch24 also left the spectral probe study
+(D268). Supervised-from-scratch models and non-linear probes are deferred (D75).
 
 History: D46, D75–D90, D134, D135, D149, D150, D161, D166, D181, D187, D188, D233, D255, D267.
