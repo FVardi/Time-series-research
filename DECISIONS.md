@@ -272,6 +272,7 @@ Entries are never deleted; a changed decision is marked "Superseded by Dn".
 | D264 | 2026-11-12 | FreRA skipped where its official model does not fit on the GPU: Paderborn (projector Linear(d, d), d = 82,176, 6.75 B weights) and XJTU-SY, as TF-JEPA (D256) | [decisions/training.md](decisions/training.md) |
 | D265 | 2026-11-12 | Spectral probe on XJTU-SY (run-to-failure, `per_bearing: true`): Pearson's r between predictions and targets within each test bearing, besides the overall R² | [decisions/evaluation.md](decisions/evaluation.md) |
 | D266 | 2026-11-12 | XJTU-SY: 12 windows of 2,560 points per minute (DSCN's length), representation averaged per minute for the probes (`pool_per_capture: mean`); supersedes D254 item 1; all methods but FreRA fit; TS-JEPA 173 epochs | [decisions/datasets/xjtu-sy.md](decisions/datasets/xjtu-sy.md) |
+| D267 | 2026-11-17 | Benchmark baselines: \|FFT\|, envelope, MiniRocket (+ floor); catch24 and raw samples leave the benchmark; Herning keeps MSSP and pooled band features (narrows D75, D85, D89) | [decisions/evaluation.md](decisions/evaluation.md) |
 
 <!--
 Entry template:

@@ -78,9 +78,9 @@ decisions are not listed. Dataset- and method-specific rules and departures are 
 - **P21 Speed** is measured per stage (fit, encode, probe), on the device the method would use,
   hardware recorded (D79, D81).
 - **P22 Baselines** every SSL method must beat: floor; |FFT| (one-sided, linear); squared envelope
-  spectrum (bearing data); catch24; MiniRocket; raw samples (SVM probe only, short series);
-  domain baselines on Herning (MSSP statistics, pooled band features) (D75, D76, D85, D89, D149,
-  D150, D161, D181, D187, D188). Untrained (random-init) encoders as a diagnostic (D134, D135).
+  spectrum (bearing data); MiniRocket; domain baselines on Herning (MSSP statistics, pooled band
+  features) (D75, D76, D150, D161, D181, D187, D188, D267; catch24 and raw samples dropped, D267).
+  Untrained (random-init) encoders as a diagnostic (D134, D135).
   Details: [methods/baselines.md](methods/baselines.md).
 
 ## 5. Runs and reporting

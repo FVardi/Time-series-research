@@ -1,5 +1,6 @@
 # Comparison on FordA (D203): which run counts for each method, chosen by hand.
 # One standard run per method (D239, D241). PatchTST: mean pooling (D87); the flatten run is a diagnostic (D86).
+# Baselines: |FFT| and MiniRocket (D267; no envelope on FordA, D161; catch24 and raw samples dropped).
 # TS2Vec and T-Loss: the standard runs made again on 2026-11-10 (D242).
 # role: method = compared against the best baseline; baseline = candidate for the best baseline (D80).
 name: compare_forda
@@ -14,7 +15,5 @@ settings:
     TF-JEPA: {run: runs/20261027_153543_tfjepa_forda, role: method}
     SimMTM: {run: runs/20261027_153657_simmtm_forda, role: method}
     FreRA: {run: runs/20261027_153909_frera_forda, role: method}
-    Raw samples: {run: runs/20261020_143928_raw_forda, role: baseline}
     FFT: {run: runs/20261020_144122_fft_forda, role: baseline}
-    catch24: {run: runs/20261020_144235_catch22_forda, role: baseline}
     MiniRocket: {run: runs/20261020_152809_minirocket_forda, role: baseline}
