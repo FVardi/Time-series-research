@@ -1,6 +1,6 @@
 # Spectral probe (D244)
 
-Status: active. Probes and premise tests (a) and (c) run on FordA, CWRU, HUST and Paderborn; XJTU-SY rerun, premise test (b) and the rows of new runs are open.
+Status: active. Probes run on FordA, CWRU, HUST and Paderborn with all finished runs (2026-11-17; catch24 dropped, D268), premise tests (a) and (c) on the same four (results kept; no longer shown in the notebook, and premise test (b) removed, D271). η² (D270) on the same four (2026-11-18). Open: CWRU's other methods and XJTU-SY (waiting for runs).
 
 Do the SSL representations hold the spectrum of their input, in a form a linear probe can read?
 Nothing is retrained: the stored representations (`seed_0/Z_*.npy`) of existing runs are probed for
@@ -26,7 +26,17 @@ logreg probe, all together (a) and each band's relative energy on its own (c), w
     uv run --no-sync python studies/spectral_probe/classify_spectral.py studies/spectral_probe/configs/forda.yaml
 
 (and `cwru`, `hust`, `paderborn`, `xjtu_sy`), written to `results/<config name>_classify.csv` (a) and `results/<config name>_bands.csv` (c).
-Premise test (b) and the figures: `spectral_probe.ipynb` (run from the repo root; clear the outputs before committing).
+Class contrast of the bands (D270): η² of each relative band energy over the training windows (signal
+and labels only), against the bands' probe R² in the notebook:
+
+    uv run --no-sync python studies/spectral_probe/band_eta2.py studies/spectral_probe/configs/cwru.yaml
+
+(and `forda`, `hust`, `paderborn`; regression runs skipped), written to `results/<config name>_eta2.csv`.
+Figures (run from the repo root; clear the outputs before committing):
+- `spectral_probe.ipynb`: how well the bands are read from the SSL representations and the FFT reference (R²),
+  and against each band's η² (D270).
+- `band_spectra.ipynb`: the spectra of a dataset's windows per class, as the encoders received them, with the
+  probe bands overlaid, to judge the bands by eye (D271).
 
 `probe_spectral.py` writes `results/<config name>.csv`: one row per run (or `fft_reference`), label fraction, probe
 (`ridge`, `floor_mean`), channel and target, with the band edges (cycles per sample, and Hz where

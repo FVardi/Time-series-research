@@ -1,0 +1,101 @@
+\chapter{Spectral prediction from SSL representations}
+
+% Spectral probe study (D244; studies/spectral_probe/). Standard runs only (D239), seed 0, all training windows.
+% Copied from studies/spectral_probe/results/<dataset>.csv on 2026-11-18.
+
+Do the SSL representations hold the spectrum of their input, in a form a linear probe can read? Nothing is retrained: the stored representations of each run are probed for spectral targets computed from the windows the encoder received -- log band energy in 16 equal-width bands from 0 to Nyquist (absolute), log share of the total energy per band (relative), log total energy and spectral centroid. One ridge probe per target, trained on all training windows ($\alpha$ by CV over $10^{-6}$--$10^{8}$, D246), scored by test $R^2$. Reference rows: the probe on the window's |FFT| (FFT reference) and the training mean (floor). FordA has only the relative energies and the centroid (its series are z-normalised). XJTU-SY waits for its rerun.
+
+\section{CWRU}
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+representation & relative (mean of 16) & absolute (mean of 16) & total & centroid \\
+\midrule
+TF-C & 0.853 & 0.871 & 0.990 & 0.784 \\
+\midrule
+FFT reference & 0.934 & 0.959 & 0.991 & 0.833 \\
+floor & -0.000 & -0.001 & -0.000 & -0.000 \\
+\bottomrule
+\end{tabular}
+\caption{CWRU: test $R^2$ of the ridge probe for each spectral target, seed 0, all training windows. Band targets: mean over the 16 bands.}
+\end{table}
+
+\section{FordA}
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lcc}
+\toprule
+representation & relative (mean of 16) & centroid \\
+\midrule
+TS2Vec & 0.234 & 0.942 \\
+T-Loss & 0.211 & 0.922 \\
+TS-TCC & 0.329 & 0.971 \\
+TS-JEPA & 0.248 & 0.937 \\
+PatchTST & 0.265 & 0.972 \\
+TF-C & 0.236 & 0.968 \\
+TF-JEPA & 0.393 & 0.964 \\
+SimMTM & 0.322 & 0.977 \\
+FreRA & 0.389 & 0.987 \\
+\midrule
+MiniRocket & 0.355 & 0.992 \\
+\midrule
+FFT reference & 0.852 & 0.966 \\
+floor & -0.001 & -0.000 \\
+\bottomrule
+\end{tabular}
+\caption{FordA: test $R^2$ of the ridge probe for each spectral target, seed 0, all training windows. Band targets: mean over the 16 bands.}
+\end{table}
+
+\section{HUST}
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+representation & relative (mean of 16) & absolute (mean of 16) & total & centroid \\
+\midrule
+TS2Vec & 0.708 & 0.894 & 0.991 & 0.749 \\
+T-Loss & 0.725 & 0.897 & 0.986 & 0.716 \\
+TS-TCC & 0.758 & 0.877 & 0.965 & 0.746 \\
+TS-JEPA & 0.632 & 0.858 & 0.926 & 0.678 \\
+PatchTST & 0.424 & 0.585 & 0.692 & 0.404 \\
+TF-C & 0.903 & 0.962 & 0.993 & 0.943 \\
+SimMTM & 0.720 & 0.904 & 0.967 & 0.804 \\
+FreRA & 0.758 & 0.934 & 0.970 & 0.783 \\
+\midrule
+MiniRocket & 0.948 & 0.985 & 0.996 & 0.954 \\
+\midrule
+FFT reference & 0.774 & 0.854 & 0.901 & 0.733 \\
+floor & -0.000 & -0.000 & -0.000 & -0.000 \\
+\bottomrule
+\end{tabular}
+\caption{HUST: test $R^2$ of the ridge probe for each spectral target, seed 0, all training windows. Band targets: mean over the 16 bands.}
+\end{table}
+
+\section{Paderborn}
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lcccc}
+\toprule
+representation & relative (mean of 16) & absolute (mean of 16) & total & centroid \\
+\midrule
+TS2Vec & 0.608 & 0.720 & 0.945 & 0.521 \\
+T-Loss & 0.555 & 0.704 & 0.907 & 0.517 \\
+TS-TCC & 0.668 & 0.781 & 0.703 & 0.468 \\
+TS-JEPA & 0.003 & 0.271 & 0.334 & -0.845 \\
+PatchTST & 0.515 & -0.233 & -1.256 & 0.587 \\
+TF-C & 0.526 & 0.499 & 0.541 & 0.539 \\
+SimMTM & 0.471 & 0.632 & 0.951 & 0.696 \\
+\midrule
+MiniRocket & 0.663 & 0.691 & 0.943 & 0.606 \\
+\midrule
+FFT reference & 0.719 & 0.825 & 0.898 & 0.791 \\
+floor & -0.224 & -0.558 & -1.782 & -0.307 \\
+\bottomrule
+\end{tabular}
+\caption{Paderborn: test $R^2$ of the ridge probe for each spectral target, seed 0, all training windows. Band targets: mean over the 16 bands. Mean over the 10 train/test combinations.}
+\end{table}

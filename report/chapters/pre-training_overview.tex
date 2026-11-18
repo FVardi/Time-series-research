@@ -1,0 +1,24 @@
+\chapter{Pre-training overview}
+
+% Standard pretraining runs (D239: configs/<method>_<dataset>.yaml, seed 0), from the progress table in STATUS.md
+% (scripts/status.py, 2026-11-18).
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lccccccccc}
+\toprule
+dataset & TS2Vec & T-Loss & TS-TCC & TS-JEPA & PatchTST & TF-C & TF-JEPA & SimMTM & FreRA \\
+\midrule
+CWRU &  &  &  &  &  & \checkmark &  &  &  \\
+FordA & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+Herning & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+HUST & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- & \checkmark & \checkmark \\
+Paderborn & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark & -- & \checkmark &  \\
+XJTU-SY (RUL) &  &  &  &  &  &  & -- &  & -- \\
+XJTU-SY (stage) &  &  &  &  &  &  & -- &  & -- \\
+\bottomrule
+\end{tabular}
+\caption{Standard pretraining runs (seed 0) per dataset and SSL method, as of 2026-11-18. \checkmark\ run and evaluated; ($\circ$) started, not evaluated; empty: config ready, not run; -- no config. Paderborn: all 10 train/test combinations.}
+\end{table}

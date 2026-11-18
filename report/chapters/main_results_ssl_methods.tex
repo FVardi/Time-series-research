@@ -1,0 +1,153 @@
+
+\chapter{Main results SSL methods}
+
+% Results of the standard runs (D239: configs/<method>_<dataset>.yaml, seed 0), copied from the run
+% folders listed in STATUS.md on 2026-11-17. Main probe per dataset; floor = probe that ignores the features.
+% Upper block: SSL methods; lower block: baselines. Run = date stamp of the folder in runs/.
+
+\section{CWRU}
+\begin{table}[h]
+\centering
+\begin{tabular}{lccl}
+\toprule
+method & \multicolumn{2}{c}{label budget} & run \\
+ & 10\,\% & 100\,\% & \\
+\midrule
+TF-C & 0.987 & 0.996 & \texttt{\footnotesize 20261105\_153432} \\
+\midrule
+floor & 0.106 & 0.102 & \\
+\bottomrule
+\end{tabular}
+\caption{CWRU: test accuracy of the \texttt{logreg} probe, seed 0.}
+\end{table}
+
+\section{FordA}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+method & \multicolumn{3}{c}{label budget} & run \\
+ & 1\,\% & 10\,\% & 100\,\% & \\
+\midrule
+TS2Vec & 0.878 & 0.889 & 0.922 & \texttt{\footnotesize 20261110\_095303} \\
+T-Loss & 0.853 & 0.909 & 0.924 & \texttt{\footnotesize 20261110\_095353} \\
+TS-TCC & 0.894 & 0.902 & 0.924 & \texttt{\footnotesize 20261027\_151321} \\
+TS-JEPA & 0.892 & 0.926 & 0.948 & \texttt{\footnotesize 20261016\_114616} \\
+PatchTST & 0.633 & 0.857 & 0.902 & \texttt{\footnotesize 20261019\_154248} \\
+TF-C & 0.889 & 0.900 & 0.914 & \texttt{\footnotesize 20261027\_144405} \\
+TF-JEPA & 0.827 & 0.860 & 0.908 & \texttt{\footnotesize 20261027\_153543} \\
+SimMTM & 0.581 & 0.809 & 0.896 & \texttt{\footnotesize 20261027\_153657} \\
+FreRA & 0.630 & 0.864 & 0.923 & \texttt{\footnotesize 20261027\_153909} \\
+\midrule
+$|$FFT$|$ & 0.817 & 0.937 & 0.939 & \texttt{\footnotesize 20261020\_144122} \\
+catch22 & 0.783 & 0.819 & 0.843 & \texttt{\footnotesize 20261020\_144235} \\
+MiniRocket & 0.892 & 0.916 & 0.942 & \texttt{\footnotesize 20261020\_152809} \\
+\midrule
+floor & 0.516 & 0.516 & 0.516 & \\
+\bottomrule
+\end{tabular}
+\caption{FordA: test accuracy of the \texttt{logreg} probe, seed 0.}
+\end{table}
+
+\section{Herning}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+method & \multicolumn{3}{c}{label budget} & run \\
+ & 1\,\% & 10\,\% & 100\,\% & \\
+\midrule
+TS2Vec & 0.856 & 0.930 & 0.936 & \texttt{\footnotesize 20261102\_113644} \\
+T-Loss & 0.590 & 0.788 & 0.848 & \texttt{\footnotesize 20261102\_113943} \\
+TS-TCC & 0.629 & 0.963 & 0.972 & \texttt{\footnotesize 20261102\_155619} \\
+TS-JEPA & 0.749 & 0.933 & 0.954 & \texttt{\footnotesize 20261103\_111018} \\
+PatchTST & 0.059 & 0.523 & 0.749 & \texttt{\footnotesize 20261103\_095519} \\
+TF-C & 0.252 & 0.900 & 0.926 & \texttt{\footnotesize 20261103\_095257} \\
+TF-JEPA & 0.683 & 0.933 & 0.970 & \texttt{\footnotesize 20261103\_100951} \\
+SimMTM & 0.677 & 0.913 & 0.938 & \texttt{\footnotesize 20261102\_162014} \\
+FreRA & 0.399 & 0.713 & 0.877 & \texttt{\footnotesize 20261103\_092507} \\
+\midrule
+MSSP statistics & 0.461 & 0.938 & 0.972 & \texttt{\footnotesize 20261102\_103532} \\
+pooled band features & 0.856 & 0.968 & 0.978 & \texttt{\footnotesize 20261102\_112102} \\
+\midrule
+floor & -0.041 & -0.007 & -0.002 & \\
+\bottomrule
+\end{tabular}
+\caption{Herning: test $R^2$ of the \texttt{ridge} probe, seed 0.}
+\end{table}
+
+\section{HUST}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+method & \multicolumn{3}{c}{label budget} & run \\
+ & 1\,\% & 10\,\% & 100\,\% & \\
+\midrule
+TS2Vec & 0.625 & 0.859 & 0.941 & \texttt{\footnotesize 20261110\_165020} \\
+T-Loss & 0.652 & 0.841 & 0.915 & \texttt{\footnotesize 20261110\_193315} \\
+TS-TCC & 0.721 & 0.922 & 0.979 & \texttt{\footnotesize 20261110\_165216} \\
+TS-JEPA & 0.441 & 0.650 & 0.727 & \texttt{\footnotesize 20261111\_065149} \\
+PatchTST & 0.279 & 0.409 & 0.458 & \texttt{\footnotesize 20261110\_171649} \\
+TF-C & 0.936 & 0.985 & 0.997 & \texttt{\footnotesize 20261105\_150730} \\
+SimMTM & 0.505 & 0.679 & 0.893 & \texttt{\footnotesize 20261110\_165941} \\
+FreRA & 0.455 & 0.699 & 0.942 & \texttt{\footnotesize 20261110\_173118} \\
+\midrule
+$|$FFT$|$ & 0.776 & 0.971 & 0.992 & \texttt{\footnotesize 20261113\_050828} \\
+envelope & 0.549 & 0.685 & 0.881 & \texttt{\footnotesize 20261113\_051009} \\
+catch22 & 0.670 & 0.834 & 0.864 & \texttt{\footnotesize 20261113\_052313} \\
+MiniRocket & 0.853 & 0.991 & 0.999 & \texttt{\footnotesize 20261113\_052457} \\
+\midrule
+floor & 0.143 & 0.143 & 0.143 & \\
+\bottomrule
+\end{tabular}
+\caption{HUST: test accuracy of the \texttt{logreg} probe, seed 0.}
+\end{table}
+
+\section{Paderborn}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+method & \multicolumn{3}{c}{label budget} & run \\
+ & 1\,\% & 10\,\% & 100\,\% & \\
+\midrule
+TS2Vec & 0.636 $\pm$ 0.113 & 0.615 $\pm$ 0.102 & 0.631 $\pm$ 0.103 & \texttt{\footnotesize 20261110\_201526} \\
+T-Loss & 0.535 $\pm$ 0.085 & 0.536 $\pm$ 0.086 & 0.544 $\pm$ 0.098 & \texttt{\footnotesize 20261111\_172715} \\
+TS-TCC & 0.495 $\pm$ 0.091 & 0.476 $\pm$ 0.072 & 0.499 $\pm$ 0.116 & \texttt{\footnotesize 20261110\_234442} \\
+TS-JEPA & 0.647 $\pm$ 0.207 & 0.688 $\pm$ 0.207 & 0.663 $\pm$ 0.193 & \texttt{\footnotesize 20261113\_034759} \\
+PatchTST & 0.463 $\pm$ 0.104 & 0.497 $\pm$ 0.127 & 0.493 $\pm$ 0.112 & \texttt{\footnotesize 20261111\_065139} \\
+TF-C & 0.569 $\pm$ 0.150 & 0.588 $\pm$ 0.126 & 0.580 $\pm$ 0.144 & \texttt{\footnotesize 20261105\_182230} \\
+SimMTM & 0.669 $\pm$ 0.037 & 0.693 $\pm$ 0.094 & 0.670 $\pm$ 0.117 & \texttt{\footnotesize 20261111\_020709} \\
+\midrule
+$|$FFT$|$ & 0.421 $\pm$ 0.130 & 0.434 $\pm$ 0.126 & 0.464 $\pm$ 0.138 & \texttt{\footnotesize 20261113\_035548} \\
+envelope & 0.457 $\pm$ 0.169 & 0.520 $\pm$ 0.143 & 0.511 $\pm$ 0.111 & \texttt{\footnotesize 20261113\_041102} \\
+catch22 & 0.651 $\pm$ 0.119 & 0.594 $\pm$ 0.171 & 0.613 $\pm$ 0.147 & \texttt{\footnotesize 20261113\_044303} \\
+MiniRocket & 0.528 $\pm$ 0.144 & 0.532 $\pm$ 0.145 & 0.538 $\pm$ 0.134 & \texttt{\footnotesize 20261113\_050818} \\
+\midrule
+floor & 0.333 $\pm$ 0.000 & 0.333 $\pm$ 0.000 & 0.333 $\pm$ 0.000 & \\
+\bottomrule
+\end{tabular}
+\caption{Paderborn: test accuracy of the \texttt{logreg} probe, seed 0. Mean $\pm$ SD over the 10 train/test combinations.}
+\end{table}
+
+\section{XJTU-SY (stage)}
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccl}
+\toprule
+method & \multicolumn{3}{c}{label budget} & run \\
+ & 1\,\% & 10\,\% & 100\,\% & \\
+\midrule
+$|$FFT$|$ & 0.903 & 0.826 & 0.742 & \texttt{\footnotesize 20261113\_054007} \\
+envelope & 0.964 & 0.627 & 0.629 & \texttt{\footnotesize 20261113\_054156} \\
+catch22 & 0.637 & 0.683 & 0.908 & \texttt{\footnotesize 20261113\_054347} \\
+MiniRocket & 0.550 & 0.550 & 0.550 & \texttt{\footnotesize 20261113\_055748} \\
+\midrule
+floor & 0.450 & 0.450 & 0.450 & \\
+\bottomrule
+\end{tabular}
+\caption{XJTU-SY (stage): test accuracy of the \texttt{logreg} probe, seed 0.}
+\end{table}
+
+

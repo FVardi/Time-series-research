@@ -1,0 +1,171 @@
+
+\chapter{Data sets}
+
+% What each benchmark dataset contains and which part each current split uses. Compact: fault kind in the rows,
+% severity in the columns, operating conditions present in the cell. Read from data/canonical/ and
+% configs/datasets/ on 2026-11-17.
+
+\section{CWRU}
+\textbf{Split} (Zhao et al.\ 2020 benchmark; D167, D174, D218): ten classes -- healthy and inner/ball/outer @6 at 7/14/21 mil, drive end, 0 hp, 12 kHz (healthy file 97 resampled from 48 kHz). The files are cut into 1,024-sample windows without overlap; the windows are split 80/20 at random, stratified by class (\texttt{random\_state} 40, the same for every seed). Pretraining on the training windows only. Every used file is therefore in both training and test.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lllcccc}
+\toprule
+rate & fault end & location & 7 mil & 14 mil & 21 mil & 28 mil \\
+\midrule
+12k & DE & ball & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & 0/1/2/3 \\
+12k & DE & inner & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & 0/1/2/3 \\
+12k & DE & outer @12 & 0/1/2/3 & -- & 0/1/2/3 & -- \\
+12k & DE & outer @3 & 0/1/2/3 & -- & 0/1/2/3 & -- \\
+12k & DE & outer @6 & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & \colorbox{bothc}{0}/1/2/3 & -- \\
+\midrule
+12k & FE & ball & 0/1/2/3 & 0/1/2/3 & 0/1/2/3 & -- \\
+12k & FE & inner & 0/1/2/3 & 0/1/2/3 & 0/1/2/3 & -- \\
+12k & FE & outer @12 & 0/1/2/3 & -- & -- & -- \\
+12k & FE & outer @3 & 0/1/2/3 & 0/1/2/3 & 1/2/3 & -- \\
+12k & FE & outer @6 & 0/1/2/3 & 0 & 0 & -- \\
+\midrule
+48k & DE & ball & 0/1/2/3 & 0/1/2/3 & 0/1/2/3 & -- \\
+48k & DE & inner & 0/1/2/3 & 0/1/2/3 & 0/1/2/3 & -- \\
+48k & DE & outer @12 & 0/1/2/3 & -- & 0/1/2/3 & -- \\
+48k & DE & outer @3 & 0/1/2/3 & -- & 0/1/2/3 & -- \\
+48k & DE & outer @6 & 0/1/2/3 & 0/1/2/3 & 0/1/2/3 & -- \\
+\midrule
+48k & -- & healthy & \multicolumn{4}{c}{\colorbox{bothc}{0}/1/2/3} \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{CWRU: motor loads [hp] recorded per fault; one recording (about 10 s) per load, 161 in all. Bearings: 6205 (SKF) at the drive end (DE), 6203 (SKF) at the fan end (FE); 28 mil in NTN equivalents. Outer-race faults at 3, 6 or 12 o'clock. Loads 0--3 hp $\approx$ 1,797--1,730 rpm. Coloured: the recordings in the split.}
+\end{table}
+
+\section{FordA}
+\textbf{Split}: the official UCR train/test split, used as distributed (D27, D30). Pretraining on the training series.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lccc}
+\toprule
+class & \cellcolor{trainc}train & \cellcolor{testc}test & total \\
+\midrule
+-1 & \cellcolor{trainc}1846 & \cellcolor{testc}681 & 2527 \\
+1 & \cellcolor{trainc}1755 & \cellcolor{testc}639 & 2394 \\
+\midrule
+total & \cellcolor{trainc}3601 & \cellcolor{testc}1320 & 4921 \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{FordA (UCR archive): series (500 samples, engine noise) per class and official split. No faults, conditions or bearings are documented.}
+\end{table}
+
+\section{Herning}
+\textbf{Split} (validation only; D169): the sweeps with a $\kappa$ label (MSSP exclusions applied) are split 80/20 at random, one fixed draw. Every temperature and rpm level is therefore in both training and test, so the split measures recognising the operating point. Intended later: a temperature hold-out (D56; QUESTIONS.md Q1).
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{lll}
+\toprule
+factor & levels &  \\
+\midrule
+bearing & SKF SYJ25 & bore 25 mm, 9 rolling elements \\
+lubricant & Keratech 22 & parafin oil \\
+temperature target & 40--100 $^\circ$C in steps of 5 & 13 levels \\
+rpm target & 0--3000 in steps of 100 & 31 levels, swept at every temperature \\
+captures & \cellcolor{bothc}3959 & $\approx$10 per temperature $\times$ rpm \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{Herning (own rig, validation run). No faults: the target is the viscosity ratio $\kappa$. Not counted: 5 captures at the 25 $^\circ$C target (cool-down, excluded as in the MSSP code).}
+\end{table}
+
+\section{HUST}
+\textbf{Split} (the dataset authors' classification experiment; D226): seven classes, all 99 recordings. 2,048-sample windows with 75\,\% overlap; 2,500 windows per class drawn at random and split 80/20, stratified (14,000 / 3,500; \texttt{random\_state} 0, the same for every seed). Overlapping windows of one recording fall on both sides, as in the authors' protocol. Pretraining on the training windows.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{llccccccc}
+\toprule
+type & $d_i$/$d_o$/ball [mm], balls & N & I & O & B & IO & IB & OB \\
+\midrule
+6204 & 20/47/7.6, 8 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & -- & \cellcolor{bothc}0/2/4 & -- & \cellcolor{bothc}0/2/4 \\
+6205 & 25/52/7.8, 9 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 \\
+6206 & 30/62/9, 9 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 \\
+6207 & 35/72/11, 9 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 \\
+6208 & 40/80/12, 9 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 & \cellcolor{bothc}0/2/4 \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{HUST: loads [$\times$100 W] recorded per bearing type and fault (N healthy, I inner, O outer, B ball; two letters = combined fault); one recording per load, 99 in all (51.2 kHz, steady state).}
+\end{table}
+
+\section{Paderborn}
+\textbf{Split} (Lessmeier et al.\ 2016, Section 7.3, Table 10; D220, D222, D225): three classes, five bearings each -- healthy K001--K005, outer ring KA04/15/16/22/30, inner ring KI04/14/16/18/21 (real damage). Three bearings per class train, two test; the 10 combinations rotate which (the same rows for all classes), and the score is the mean over them. Every used bearing is therefore in training in some combinations and in test in others. Only operating condition N15\_M07\_F10 (1500 rpm, 0.7 Nm, 1000 N), all 20 measurements, vibration only. Pretraining on each combination's training windows.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{llllcccc}
+\toprule
+origin & class & damaged ring & damage method & none & extent 1 & 2 & 3 \\
+\midrule
+healthy & healthy & none & -- & \colorbox{bothc}{5} of 6 & -- & -- & -- \\
+\midrule
+artificial & IR & IR & electric engraver & -- & 2 & 2 & -- \\
+artificial & IR & IR & n/a & -- & 1 & -- & -- \\
+artificial & OR & OR & EDM machining & -- & 1 & -- & -- \\
+artificial & OR & OR & drilled & -- & 1 & 2 & -- \\
+artificial & OR & OR & electric engraver & -- & 1 & 2 & -- \\
+\midrule
+real & IR & IR & lifetime test & -- & \colorbox{bothc}{1} of 2 & \colorbox{bothc}{1} of 1 & \colorbox{bothc}{1} of 1 \\
+real & IR & IR+OR & lifetime test & -- & \colorbox{bothc}{2} of 2 & 1 & 1 \\
+real & OR & IR+OR & lifetime test & -- & 1 & -- & -- \\
+real & OR & OR & lifetime test & -- & \colorbox{bothc}{4} of 4 & \colorbox{bothc}{1} of 1 & -- \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{Paderborn (Lessmeier et al., 2016): number of bearings (type 6203) per kind of damage and extent (worst damage where there are several); 32 in all; coloured: bearings in the split. Every bearing is recorded at the same four operating conditions (900 rpm, 0.7 Nm, 1000 N; 1500 rpm, 0.1 Nm, 1000 N; 1500 rpm, 0.7 Nm, 400 N; 1500 rpm, 0.7 Nm, 1000 N), 20 measurements of 4 s each.}
+\end{table}
+
+\section{XJTU-SY}
+\textbf{Splits} (DSCN, Table 1; D230, D231): per condition, bearings 1--4 train and bearing 5 tests; one probe pooled over the three conditions. \emph{RUL} (regression, target $(N-n)/N$): all 15 bearings. \emph{Health stage} (classification, healthy before / degrading after the first predicting time, FPT): 2\_4, 3\_2 and 3\_4 have no usable FPT and are pretraining data only; 3\_5 has none and is left out. Pretraining on every non-test bearing.
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{ccccccc}
+\toprule
+rpm & radial force [kN] & bearing 1 & 2 & 3 & 4 & 5 \\
+\midrule
+2100 & 12 & \cellcolor{trainc}O & \cellcolor{trainc}O & \cellcolor{trainc}O & \cellcolor{trainc}C & \cellcolor{testc}I+O \\
+2250 & 11 & \cellcolor{trainc}I & \cellcolor{trainc}O & \cellcolor{trainc}C & \cellcolor{trainc}O & \cellcolor{testc}O \\
+2400 & 10 & \cellcolor{trainc}O & \cellcolor{trainc}I+B+C+O & \cellcolor{trainc}I & \cellcolor{trainc}I & \cellcolor{testc}O \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{XJTU-SY (Wang et al., 2020): fault element at failure of each bearing (LDK UER204, run to failure); O outer race, I inner race, C cage, B ball. One 1.28-s sample of two accelerometers (25.6 kHz) per minute. Split: RUL.}
+\end{table}
+
+
+
+
+\begin{table}[ht]
+\centering
+\footnotesize
+\begin{tabular}{ccccccc}
+\toprule
+rpm & radial force [kN] & bearing 1 & 2 & 3 & 4 & 5 \\
+\midrule
+2100 & 12 & \cellcolor{trainc}O & \cellcolor{trainc}O & \cellcolor{trainc}O & \cellcolor{trainc}C & \cellcolor{testc}I+O \\
+2250 & 11 & \cellcolor{trainc}I & \cellcolor{trainc}O & \cellcolor{trainc}C & \cellcolor{pretc}O & \cellcolor{testc}O \\
+2400 & 10 & \cellcolor{trainc}O & \cellcolor{pretc}I+B+C+O & \cellcolor{trainc}I & \cellcolor{pretc}I & O \\
+\bottomrule
+\end{tabular}
+\\[4pt] \splitlegend
+\caption{XJTU-SY (Wang et al., 2020): fault element at failure of each bearing (LDK UER204, run to failure); O outer race, I inner race, C cage, B ball. One 1.28-s sample of two accelerometers (25.6 kHz) per minute. Split: health stage; uncoloured = left out.}
+\end{table}
+
+

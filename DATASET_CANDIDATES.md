@@ -223,3 +223,202 @@ Still no open rolling-bearing dataset with labelled lubrication states (second s
 - **PHM-Vibench** (PHM Society Asia-Pacific 2025; Apache 2.0 code): says 20+ datasets with standardized protocols, but the public data bundle currently covers CWRU only. Worth watching as a source of standard protocols. https://github.com/PHMbench/PHM-Vibench
 - **Universal vibration dataset** (arXiv 2504.11581): pooled bearing data for transfer learning; sources and release not stated in the abstract.
 - **awesome-bearing-dataset** (28 datasets with links): https://github.com/VictorBauler/awesome-bearing-dataset
+
+---
+
+## Added 2026-11-18 (third search): well-known non-bearing benchmarks
+
+Asked for: well-known time series datasets outside bearings (EEG etc.) for testing the SSL
+methods. Details as stated on the source pages (checked 2026-11-18); "not checked" means it
+was not verified on a source page. Subject- or patient-wise splits are the nearest analogue
+of the harness's unseen-bearing splits.
+
+**Overlap warnings:** C35 SleepEEG is built from the Sleep-EDF sleep-cassette recordings
+(C38). AdaTime's MFD data (C37) is reportedly derived from Paderborn (not checked), which
+would overlap with D47 and FD-A/FD-B. Public BIOT checkpoints were pretrained on CHB-MIT,
+TUAB and TUEV, so those sets are in-domain for BIOT.
+
+### Where the compared SSL methods report results
+
+#### C35 — TF-C fine-tuning sets: SleepEEG, Epilepsy, Gesture, EMG
+- Preprocessed by the TF-C authors and put on figshare (same source as FD-A/FD-B, D39).
+- SleepEEG: 153 whole-night EEG recordings from 82 healthy subjects (sleep cassette), 1 lead, 100 Hz. TF-C uses it for pretraining.
+- Epilepsy: single-channel EEG from 500 subjects, 23.6 s each; TF-C merged the first 4 classes, giving a binary seizure label.
+- Gesture: accelerometer, 8 gestures; only 440 measurements could be recovered via UCR (the original paper reports 4,480).
+- EMG: single-channel, tibialis anterior, 4 kHz, from **three volunteers (healthy, neuropathy, myopathy)**, so class and subject coincide.
+- Why: TF-C and follow-ups (e.g. SimMTM, FEI; not all rechecked) report on these, so they are the cheapest way to make harness numbers comparable with published ones. Train/val/test file layout not checked.
+- https://figshare.com/articles/dataset/TF-C_Pretrain_SleepEEG/19930178 ; .../TF-C_Pretrain_Epilepsy/19930199 ; .../TF-C_Pretrain_Gesture/19930247 ; .../TF-C_Pretrain_EMG/19930250 ; code https://github.com/mims-harvard/TFC-pretraining
+
+#### C36 — UCR (128 univariate) and UEA (30 multivariate) archives; Multiverse archive (2026)
+- UCR expanded from 85 to 128 datasets in 2018; UEA has 30 multivariate classification datasets (2018). Each dataset has a fixed train/test split. FordA (D27) comes from UCR.
+- Multiverse (Middlehurst et al., arXiv 2603.20352, March 2026): expands the UEA archive from 30 to 133 classification problems, or 147 including preprocessed versions of datasets with missing values or unequal lengths.
+- Why: TS2Vec-style evaluations average over whole archives (not rechecked today). Mostly short, low-rate series, unlike bearings.
+- https://www.timeseriesclassification.com ; https://arxiv.org/abs/2603.20352
+
+#### C37 — AdaTime domain-adaptation benchmark (Ragab, Eldele et al., ACM TKDD 2023)
+- Datasets: UCIHAR, WISDM, HHAR, sleep stage classification (SSC, from Sleep-EDF) and MFD (machine fault diagnosis). Each subject is a domain, with fixed source→target scenarios: 5 per dataset in arXiv v1, 10 in the version later papers use. Preprocessed data via the GitHub repo.
+- Why: a ready-made, standard protocol for shift between subjects, which is the closest literature analogue to unseen bearings and conditions. Built for domain adaptation, but the fixed scenarios also work as cross-domain test splits for frozen SSL encoders.
+- https://github.com/emadeldeen24/AdaTime ; https://arxiv.org/abs/2203.08321
+
+### EEG
+
+#### C38 — Sleep-EDF Database Expanded (PhysioNet)
+- 197 whole-night PSGs: EEG (Fpz-Cz, Pz-Oz), horizontal EOG, chin EMG, event marker. 153 SC files (1987–1991 study of age effects, healthy subjects aged 25–101) plus 44 ST files (1994 temazepam study, 22 subjects). EEG at 100 Hz. Hypnograms W, R, 1, 2, 3, 4, M, ? (R&K).
+- 8.1 GB; Open Data Commons Attribution v1.0; open download (no login).
+- **Literature protocols:** Sleep-EDF-20 (39 recordings from 20 subjects, Fpz-Cz, 30-s epochs, 20-fold subject-wise CV, from the DeepSleepNet line) and Sleep-EDF-78 (197 recordings from 78 subjects, 10-fold subject-wise CV).
+- https://physionet.org/content/sleep-edfx/
+
+#### C39 — TUH EEG corpus (Temple University): TUEG, TUAB, TUEV
+- Access: free, but you have to email a signed request form to help@nedcdata.org and then download by rsync with the credentials you get back. Licence terms are on the form (not read).
+- TUEG: 26,846 clinical EEG recordings (2002–2017), the usual large unlabelled pool for EEG pretraining.
+- TUAB v3.0.1: normal/abnormal; 2,993 EDF files, 60 GB. LaBraM describes it as 23 channels at 256 Hz.
+- TUEV: six classes (SPSW, GPED, PLED, EYEM, ARTF, BCKG); train and eval partitions.
+- **Protocol:** TUAB and TUEV are the standard downstream pair for EEG foundation models (BIOT, LaBraM, CBraMod, ...). LaBraM states it follows BIOT's TUAB/TUEV splitting exactly (BIOT's split details not checked).
+- https://isip.piconepress.com/projects/nedc/html/tuh_eeg
+
+#### C40 — CHB-MIT Scalp EEG (PhysioNet)
+- 23 cases from 22 paediatric subjects with intractable seizures; 256 Hz, 16-bit; most files have 23 EEG signals and are one hour long. 198 seizures; 42.6 GB; ODC-By 1.0; open.
+- Continuous recordings with rare seizures, so very imbalanced. No single standard split found.
+- https://physionet.org/content/chbmit/
+
+#### C41 — BCI Competition IV dataset 2a (MOABB: BNCI2014_001)
+- 9 subjects, 22 EEG channels at 250 Hz, 4 motor-imagery classes (left hand, right hand, feet, tongue). Two sessions on different days, 288 trials each.
+- **Standard split:** the competition's split, with the first session as labelled calibration data and the second as evaluation (its true labels have since been released). Loadable through MOABB.
+- Why: shift between sessions (same subject, another day); very few labels.
+- Licence not confirmed. https://bbci.de/competition/iv/
+
+#### C42 — PhysioNet EEG Motor Movement/Imagery (EEGMMIDB)
+- 109 volunteers, over 1,500 one- and two-minute recordings, 64 channels at 160 Hz (BCI2000). 14 runs per subject: eyes-open/closed baselines and executed/imagined fist or feet movements.
+- No single standard split found; licence not checked. Many subjects, so it suits cross-subject splits.
+- https://physionet.org/content/eegmmidb/
+
+#### C43 — Sleep Heart Health Study (SHHS, NSRR) — low priority
+- 5,804 adults aged 40+; about 350 GB of EDF. Requires an approved Data Access and Use Agreement.
+- Sleep-staging papers use a 5-fold subject-wise protocol.
+- https://sleepdata.org/datasets/shhs
+
+### ECG
+
+#### C44 — PTB-XL (PhysioNet, v1.0.3)
+- 21,799 clinical 12-lead ECGs (10 s) from 18,869 patients; 500 Hz plus a 100 Hz downsampled copy; 71 SCP-ECG statements (multi-label: diagnostic, form, rhythm). About 3 GB; CC BY 4.0.
+- **Standard split by the authors:** `strat_fold` 1–10 (patient-wise, stratified); folds 1–8 train, 9 validation, 10 test. Folds 9–10 had at least one human evaluation of their labels.
+- Why: multichannel data with a clean, official patient-wise split, and it is large.
+- https://physionet.org/content/ptb-xl/
+
+#### C45 — MIT-BIH Arrhythmia (PhysioNet)
+- 48 two-channel records of about 30 minutes each. Beats are grouped into the AAMI EC57 classes (N, S, V, F, Q).
+- **Standard split:** de Chazal et al. (2004) inter-patient split: DS1 (22 records) for training and DS2 (22 records) for testing, so no patient is on both sides. Sampling rate (360 Hz) not rechecked.
+- https://physionet.org/content/mitdb/
+
+#### C46 — PhysioNet/CinC Challenge 2017 (AF classification)
+- 8,528 single-lead AliveCor ECGs, 9–61 s, 300 Hz; classes Normal, AF, Other, Noisy. The 3,658-record hidden test set was never released, so papers build their own splits.
+- https://archive.physionet.org/pn3/challenge/2017
+
+### Human activity / wearables
+
+#### C47 — UCI HAR (Human Activity Recognition Using Smartphones)
+- 30 volunteers wearing a waist-mounted smartphone; 3-axis accelerometer and gyroscope at 50 Hz; 6 activities. Windows of 128 samples.
+- **Official subject-wise split:** 21 volunteers train / 9 test, giving 7,352 / 2,947 windows. 58 MB.
+- Used by TS-TCC and AdaTime. https://archive.ics.uci.edu/dataset/240
+
+#### C48 — HHAR (Heterogeneity Activity Recognition, UCI)
+- 9 users; 8 smartphones and 4 smartwatches of several models; accelerometer and gyroscope at each device's maximum rate (about 50–200 Hz); 6 activities (biking, sitting, standing, walking, stairs up/down).
+- No official split; AdaTime's scenarios (C37) are the common protocol.
+- Why: shift between devices plays the role of the sensor/rig nuisance.
+- https://archive.ics.uci.edu/dataset/344
+
+#### C49 — CAPTURE-24 (Oxford, Scientific Data 2024)
+- Wrist-worn Axivity AX3 data from 151 participants, about 24 h each, free-living; 3,883 h in total, 2,562 h annotated. CC BY 4.0.
+- Why: lots of unlabelled and labelled data from many subjects (scale for pretraining). No standard split checked.
+- https://doi.org/10.5287/bodleian:NGx0JOMP5
+
+### Audio (high sampling rate)
+
+#### C50 — Google Speech Commands v2
+- 105,829 one-second clips, 35 words, 16 kHz mono WAV. Fixed split through `validation_list.txt` / `testing_list.txt`. CC BY 4.0.
+- Why: a high-rate 1-D signal with a standard split, useful for the open problem of high sampling rates.
+- https://arxiv.org/abs/1804.03209
+
+#### C51 — ESC-50
+- 2,000 environmental sound clips (5 s, 44.1 kHz, mono), 50 classes. 5 predefined folds; clips from the same source recording are kept in one fold. CC BY-NC (ESC-10 subset: CC BY).
+- https://github.com/karolpiczak/ESC-50
+
+### Protocol sources worth watching (EEG)
+- EEG-FM-Bench (arXiv 2508.17742), AdaBrain-Bench (arXiv 2507.09882), NeuroAtlas (arXiv 2605.14698; 42 datasets), OmniEEG-Bench (arXiv 2606.00815; 54 datasets): recent attempts to fix unified EEG protocols. Not read beyond abstracts.
+
+### Added later on 2026-11-18: resting-state EEG and more non-EEG sets
+
+#### C52 — Resting-state EEG: Alzheimer's, frontotemporal dementia and healthy controls (Miltiadous et al. 2023; OpenNeuro ds004504)
+- 88 subjects (36 AD, 23 FTD, 29 healthy controls), resting state with eyes closed; 19 scalp electrodes (10–20 system), 500 Hz. Recordings average roughly 12–14 min per group. Raw and preprocessed EEG in BIDS; MMSE score per subject.
+- Licence CC0. On OpenNeuro (whether download needs a login was not checked).
+- **No official split.** The authors use leave-one-subject-out (LOSO) on 4-s epochs with 50% overlap, averaging over subjects. LOSO is the common protocol, but it means 88 folds per method (compute).
+- https://openneuro.org/datasets/ds004504 ; paper https://www.mdpi.com/2306-5729/8/6/95
+
+#### C53 — Other resting-state EEG sets (no split; low priority under the "official split" criterion)
+- Test-retest resting and cognitive-state EEG (Wang et al., Scientific Data 2022): 60 participants, 3 sessions (two within 90 min, one a month later); eyes open/closed plus memory, music and subtraction states. https://doi.org/10.1038/s41597-022-01607-9
+- Dortmund Vital Study (Getzmann et al., Scientific Data 2024): 64-channel resting EEG, 608 participants aged 20–70, eyes open/closed before and after 2 h of tasks; 5-year follow-up for 208. BIDS on OpenNeuro. https://doi.org/10.1038/s41597-024-03797-w
+
+#### C54 — Monash/UEA/UCR Time Series Extrinsic Regression (TSER) archive
+- 19 regression datasets (energy, environment, health incl. PPG heart rate and BIDMC respiration/HR/SpO2, sentiment, forecasting). **Fixed train/test files ship with the archive**: random 70/30 for most; time-based for some (e.g. HouseholdPowerConsumption, BeijingPM); subject-based for PPGDalia (subjects 1–10 train); the original competition split for IEEEPPG.
+- `.ts` format, loadable with sktime/aeon. Licence not stated in the paper (depends on each source).
+- Why: the only standard archive for whole-series **regression**, the task type of κ estimation.
+- http://timeseriesregression.org/ ; https://arxiv.org/abs/2006.10996
+
+#### C55 — DCASE 2021 Task 2 (MIMII DUE + ToyADMOS2): machine sounds under domain shift
+- Seven machine types: fan, gearbox, pump, slide rail, valve (MIMII DUE, real machines) plus ToyCar and ToyTrain (ToyADMOS2). First channel only (single fixed microphone). Anomalies come from intentionally damaged machines.
+- **Official split:** development set (normal-only train; test with normal and anomalous), additional training set and evaluation set (about 200 clips per machine type, section and domain). Source and target domains are defined per section. Ground truth for the evaluation set was released after the challenge.
+- CC BY-NC-SA 4.0 (stated on the evaluation-set record). Zenodo.
+- Why: non-bearing machinery (including a gearbox), operating-condition domain shift, and a fixed protocol. Complements C14/C29 (bearing-only).
+- Dev https://zenodo.org/record/4562016 ; additional training https://zenodo.org/record/4660992 ; eval https://zenodo.org/record/4884786 ; task paper https://arxiv.org/abs/2106.04492
+
+#### Note on C35 (TF-C sets), checked on the TF-C README 2026-11-18
+- Each dataset comes as three `.pt` files (fixed partitions). Fine-tuning splits (train/val/test): Epilepsy 60/20/11,420; Gesture 320/120/120; EMG 122/41/41; FD-B 60/21/13,559. Pretraining sets: SleepEEG 371,055 samples, HAR 10,299, ECG 43,673, FD-A 8,184.
+- README rule: train:val about 3:1, classes balanced where possible, the rest is test. Samples from one recording stay in one partition where possible, except Epilepsy (a re-split Epilepsy version was added later).
+- Licences per README: SleepEEG, ECG, EMG ODC-By 1.0; Epilepsy CC BY 4.0; FD-A/B CC BY-NC 4.0; HAR no commercial use; Gesture none named. Code MIT.
+
+---
+
+## Shortlist by access and split (Claude's ranking, 2026-11-18)
+
+Criteria (the user's, 2026-11-18): publicly and easily available (no form, no data-use agreement), and an official split or one common split, so that few decisions are needed.
+
+**Tier 1: open download and a fixed official split (no split decision)**
+
+| Entry | Dataset | Domain | Split |
+|---|---|---|---|
+| C36 | UCR / UEA (+ Multiverse) | mixed | fixed train/test files |
+| C54 | TSER archive | mixed, **regression** | fixed train/test files |
+| C35 | TF-C sets (Epilepsy, Gesture, EMG; SleepEEG/HAR/ECG for pretraining) | EEG, accelerometer, EMG, ECG | fixed `.pt` partitions |
+| C44 | PTB-XL | 12-lead ECG | `strat_fold` 1–8 / 9 / 10 (patient-wise) |
+| C47 | UCI HAR | accelerometer, gyroscope | 21 / 9 volunteers |
+| C41 | BCI Competition IV 2a | EEG | session 1 train / session 2 test |
+| C45 | MIT-BIH | ECG | de Chazal DS1 / DS2 (common; not official) |
+| C37 | AdaTime (UCIHAR, WISDM, HHAR, SSC) | accelerometer, EEG | fixed source→target scenarios |
+| C50 | Speech Commands v2 | audio, 16 kHz | validation/testing lists |
+| C55 | DCASE 2021 Task 2 | machine sound | dev / eval |
+
+**Tier 2: open, but the common protocol is cross-validation (no decision, more runs)**
+
+| Entry | Dataset | Protocol |
+|---|---|---|
+| C38 | Sleep-EDF-20 | 20-fold subject-wise, i.e. leave-one-subject-out over 20 subjects |
+| C51 | ESC-50 | 5 predefined folds (non-commercial licence) |
+| C52 | ds004504 resting-state EEG | LOSO, 88 folds |
+
+**Drop under these criteria:** TUAB/TUEV (C39, signed form), SHHS (C43, data-use agreement), CHB-MIT (C40), EEGMMIDB (C42), CAPTURE-24 (C49), PhysioNet 2017 (C46; hidden test set never released), other resting-state sets (C53) (no standard split). HHAR (C48) only through AdaTime's scenarios.
+
+#### C56 — Resting-state EEG for sleep deprivation (Xiang et al., Scientific Data 2024; OpenNeuro ds004902, v1.0.8) — added 2026-11-18
+- 71 participants, each recorded in two sessions: normal sleep (NS, session 1) and sleep deprivation (SD, session 2). The session labels are not the time order, which was counterbalanced and is given in the metadata. Resting state, eyes open and partly eyes closed.
+- 61 electrodes (Brain Products), 500 Hz. Sleepiness and mood questionnaires per participant. Collected March 2019 – December 2020. CC0 (per the EEGDash listing: 218 recordings).
+- **No official or common split found.** The natural task (NS vs SD, the same people in both classes) needs a subject-wise split chosen by us. Under the 2026-11-18 criteria it belongs with the "drop" group or tier 2. Not downloaded.
+- https://openneuro.org/datasets/ds004902/versions/1.0.8 ; paper https://doi.org/10.1038/s41597-024-03268-2
+
+### Downloaded 2026-11-18 (tier 1; downloaded only, not adopted, no decisions made)
+Raw files in `data/raw/` (unpacked by `scripts/unpack_raw.py`, which deletes each archive after checking every file size):
+- `ucr_archive/` (Univariate2018_ts), `uea_archive/` (Multivariate2018_ts), `tser/<dataset>/` (19 datasets): UEA-hosted aeon-toolkit mirror, timeseriesclassification.com/aeon-toolkit.
+- `tfc_sleepeeg/`, `tfc_epilepsy/` (figshare version 2, the re-split), `tfc_har/`, `tfc_gesture/`, `tfc_ecg/`, `tfc_emg/`: TF-C figshare items (`train.pt`/`val.pt`/`test.pt`). FD-A/FD-B were already in `fd_a/`, `fd_b/`.
+- `ptbxl/` (PhysioNet v1.0.3), `mitbih/` (PhysioNet v1.0.0), `uci_har/` (UCI repository id 240).
+- `bci_iv_2a/` (A01T–A09E.mat from BNCI Horizon 2020, data set 001-2014; CC BY-ND 4.0).
+- `adatime_har/`, `adatime_hhar/`, `adatime_wisdm/`, `adatime_ssc/` (NTU DR-NTU dataverse, CC BY-NC 4.0; AdaTime's FD set not downloaded because of the Paderborn overlap).
+- `speech_commands_v2/` (download.tensorflow.org, v0.02).
+- `dcase2021_task2/dev_data/`, `eval_data/` and `ground_truth_data/` (Zenodo 4562016, 4660992, 4884786, 5257674; CC BY-NC-SA 4.0).
